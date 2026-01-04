@@ -4,7 +4,7 @@ from decimal import Decimal, ROUND_DOWN, ROUND_UP
 from typing import Union
 
 
-DecimalLike = Union[Decimal, str, int]
+DecimalLike = Union[Decimal, str, int, float]
 
 
 def to_decimal(x: DecimalLike) -> Decimal:
@@ -14,7 +14,7 @@ def to_decimal(x: DecimalLike) -> Decimal:
     - Rejects float inputs (silent float->str conversions are easy to mess up).
     - Accepts Decimal, str, int.
     """
-    if isinstance(x, float):  # type: ignore[unreachable]
+    if isinstance(x, float):
         raise TypeError("float is not allowed; pass Decimal, str, or int")
     if isinstance(x, Decimal):
         return x
