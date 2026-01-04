@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Dict, Iterable, List
 
 
 @dataclass(frozen=True, slots=True)
@@ -11,15 +11,15 @@ class VenueInfo:
 
 
 # Start tiny. We’ll expand over time.
-DEFAULT_VENUES: Dict[str, VenueInfo] = {
+DEFAULT_VENUES: dict[str, VenueInfo] = {
     "kraken": VenueInfo(venue="kraken", ohio_allowed=True),
     "coinbase": VenueInfo(venue="coinbase", ohio_allowed=True),
     "gemini": VenueInfo(venue="gemini", ohio_allowed=True),
 }
 
 
-def ohio_eligible(venues: Iterable[str]) -> List[str]:
-    out: List[str] = []
+def ohio_eligible(venues: Iterable[str]) -> list[str]:
+    out: list[str] = []
     for v in venues:
         key = v.strip().lower()
         info = DEFAULT_VENUES.get(key)

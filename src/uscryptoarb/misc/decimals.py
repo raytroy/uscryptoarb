@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_DOWN, ROUND_UP
-from typing import Union
+from decimal import ROUND_DOWN, ROUND_UP, Decimal
 
-
-DecimalLike = Union[Decimal, str, int, float]
+DecimalLike = Decimal | str | int | float
 
 
 def to_decimal(x: DecimalLike) -> Decimal:

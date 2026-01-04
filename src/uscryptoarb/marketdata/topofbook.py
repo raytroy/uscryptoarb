@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Optional
 
 from uscryptoarb.misc.decimals import DecimalLike, to_decimal
 
@@ -12,7 +11,7 @@ class TopOfBook:
     venue: str
     pair: str  # canonical BASE/QUOTE like "SOL/USDC"
     ts_local_ms: int  # local receive time in ms since epoch
-    ts_exchange_ms: Optional[int]  # exchange-provided time if available
+    ts_exchange_ms: int | None  # exchange-provided time if available
 
     bid_px: Decimal
     bid_sz: Decimal
@@ -49,7 +48,7 @@ def tob_from_raw(
     venue: str,
     pair: str,
     ts_local_ms: int,
-    ts_exchange_ms: Optional[int],
+    ts_exchange_ms: int | None,
     bid_px: DecimalLike,
     bid_sz: DecimalLike,
     ask_px: DecimalLike,

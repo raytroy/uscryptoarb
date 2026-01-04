@@ -132,7 +132,7 @@ uscryptoarb/
 │   │   └── decimal_utils.py  # to_decimal, floor_to_step
 │   ├── validation/
 │   │   ├── __init__.py
-│   │   ├── missing.py        # is_missing, require_present
+│   │   ├── guards.py         # is_missing, require_present, require_positive, require_non_negative
 │   │   └── orderbook.py      # validate_orderbook
 │   ├── calculation/
 │   │   ├── __init__.py
@@ -190,22 +190,67 @@ withdrawal_db: List[WithdrawalFee]      # withdrawalDatabase
 trading_info_db: List[TradingAccuracy]  # tradingInfoDatabase
 ```
 
-### 6.2 MissingCheck Pattern
+### 6.2 Validation Guards Pattern
 
+Runtime validation guards complement static typing by catching issues that type hints cannot express: empty strings, empty collections, non-finite Decimals.
+
+**Use at data boundaries**: API responses, config loading, user input, anywhere external data enters the system.
 ```python
+from uscryptoarb.validation import (
+    is_missing,
+    require_present,
+    require_positive,
+    require_non_negative,
+)
+
+# is_missing() - check if value is "missing"
+# Missing means: None, "", [], {}, (), Decimal("NaN"), Decimal("Infinity")
+# NOT missing: 0, False, Decimal("0"), "   " (whitespace)
+
 def is_missing(value: Any) -> bool:
     """Equivalent to Mathematica's MissingCheck[]."""
     if value is None:
         return True
-    if isinstance(value, (list, dict, tuple)) and len(value) == 0:
+    if isinstance(value, str) and value == "":
+        return True
+    if isinstance(value, (list, dict, tuple, set, frozenset)) and len(value) == 0:
+        return True
+    if isinstance(value, Decimal) and not value.is_finite():
         return True
     return False
 
+# require_present() - enforce required values exist
 def require_present(value: T, name: str) -> T:
-    """Raise if missing."""
+    """Raise ValueError if missing, else return value unchanged."""
     if is_missing(value):
         raise ValueError(f"Required value '{name}' is missing")
     return value
+
+# require_positive() - for prices, sizes, fees (must be > 0)
+def require_positive(value: Decimal, name: str) -> Decimal:
+    """Raise if missing, zero, or negative."""
+    ...
+
+# require_non_negative() - for balances, quantities (can be 0, not negative)
+def require_non_negative(value: Decimal, name: str) -> Decimal:
+    """Raise if missing or negative. Zero is allowed."""
+    ...
+```
+
+**Usage examples:**
+```python
+# At API boundary
+def parse_ticker_response(data: dict) -> TopOfBook:
+    bid_px = require_positive(to_decimal(data.get("bid")), "bid_price")
+    ask_px = require_positive(to_decimal(data.get("ask")), "ask_price")
+    ...
+
+# At config boundary  
+def load_config(path: str) -> AppConfig:
+    cfg = yaml.safe_load(...)
+    venues = require_present(cfg.get("venues"), "venues")
+    threshold = require_positive(to_decimal(cfg.get("threshold")), "threshold")
+    ...
 ```
 
 ### 6.3 Return Metrics
@@ -527,7 +572,7 @@ Types: feat, fix, refactor, test, docs, chore
 |-------------|---------------|----------|
 | `MarketBaseConvert[]` | `core.pair_utils` | `market_base_convert()` |
 | `PairTranslator[]` | `core.pair_utils` | `pair_translator()` |
-| `MissingCheck[]` | `validation.missing` | `is_missing()` |
+| `MissingCheck[]` | `validation.guards` | `is_missing(), require_present(), require_positive(), require_non_negative()` |
 | `OrderBookParser[]` | `connectors.*.parser` | `parse_orderbook()` |
 | `ReturnCalc[]` | `calculation.returns` | `calc_return()` |
 | `ArbCalcFinal[]` | `calculation.arb_calc` | `calc_arb_final()` |

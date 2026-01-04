@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
 from uscryptoarb.markets.pairs import parse_pair
 from uscryptoarb.venues.registry import ohio_eligible
@@ -9,8 +8,8 @@ from uscryptoarb.venues.registry import ohio_eligible
 
 @dataclass(frozen=True, slots=True)
 class AppConfig:
-    venues: List[str]
-    pairs: List[str]
+    venues: list[str]
+    pairs: list[str]
 
 
 def validate_config(cfg: AppConfig) -> None:
