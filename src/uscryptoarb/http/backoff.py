@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Callable
 import random
+from collections.abc import Callable
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,9 +22,12 @@ class BackoffPolicy:
     jitter_ratio: float = 0.10
 
 
+DEFAULT_BACKOFF_POLICY = BackoffPolicy()
+
+
 def compute_delay_ms(
     attempt: int,
-    policy: BackoffPolicy = BackoffPolicy(),
+    policy: BackoffPolicy = DEFAULT_BACKOFF_POLICY,
     rand: Callable[[], float] = random.random,
 ) -> int:
     if attempt < 0:

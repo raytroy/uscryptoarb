@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict
 
 from uscryptoarb.markets.pairs import CanonicalPair, parse_pair
 
@@ -12,7 +11,7 @@ class SymbolTranslator:
     Maps canonical pairs (BASE/QUOTE) to venue-specific symbols.
     """
     venue: str
-    canonical_to_venue: Dict[str, str]
+    canonical_to_venue: dict[str, str]
 
     def to_venue_symbol(self, pair: str | CanonicalPair) -> str:
         key = pair.as_str if isinstance(pair, CanonicalPair) else parse_pair(pair).as_str

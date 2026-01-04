@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from uscryptoarb.misc.decimals import to_decimal, ceil_to_step, floor_to_step
+from uscryptoarb.misc.decimals import ceil_to_step, floor_to_step, to_decimal
 
 
 def test_d_rejects_float() -> None:
