@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Optional
 
-from uscryptoarb.misc.decimals import to_decimal
+from uscryptoarb.misc.decimals import DecimalLike, to_decimal
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,10 +50,10 @@ def tob_from_raw(
     pair: str,
     ts_local_ms: int,
     ts_exchange_ms: Optional[int],
-    bid_px,
-    bid_sz,
-    ask_px,
-    ask_sz,
+    bid_px: DecimalLike,
+    bid_sz: DecimalLike,
+    ask_px: DecimalLike,
+    ask_sz: DecimalLike,
 ) -> TopOfBook:
     """
     Convenience constructor that converts numeric-ish inputs to Decimal via to_decimal().
