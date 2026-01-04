@@ -10,7 +10,14 @@ dependencies = []
 dev = [
   "pytest>=8.0",
   "ruff>=0.6.0",
+  "mypy>=1.11",
 ]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
 
 [tool.ruff]
 line-length = 100
