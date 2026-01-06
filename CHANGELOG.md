@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `py.typed` marker for PEP 561 compliance
 
 ### Changed
-- Updated PROJECT_INSTRUCTIONS.md to document validation guards pattern
+- Documented "Data Trust Boundaries" pattern (validate at boundaries, trust downstream) across PROJECT_INSTRUCTIONS.md (Section 6.2), CLAUDE_INSTRUCTIONS.md, and `validation/guards.py` module docstring
 
 ## [0.0.1] - 2025-01-04
 

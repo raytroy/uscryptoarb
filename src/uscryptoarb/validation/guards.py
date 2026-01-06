@@ -1,12 +1,63 @@
 """
 Runtime validation guards for data boundaries.
 
-Use at API boundaries, config loading, and anywhere external data enters the system.
-These complement static typing by catching subtle issues like empty strings,
-empty collections, and non-finite Decimals that type hints can't express.
+PATTERN: "Validate at Boundaries, Trust Downstream"
+=========================================================
 
-This module implements patterns from the original Mathematica system's MissingCheck[],
-extended with additional guards for financial calculations.
+Validation happens ONLY at data boundaries:
+    - Connector parse_*/fetch_* functions (API responses)
+    - Factory functions like tob_from_raw() (raw → domain type)
+    - Config loaders (YAML/env → AppConfig)
+    - Dataclass __post_init__ methods (critical invariants)
+
+Validation does NOT happen in:
+    - calculation/ modules — just math on validated types
+    - strategy/ modules — just logic on validated types
+
+If you're adding require_* calls in calculation or strategy,
+something is wrong upstream. Fix the boundary instead.
+
+GUARDS API:
+    is_missing(value) -> bool
+        True for: None, "", [], {}, (), set(), Decimal("NaN"), Decimal("Inf")
+        False for: 0, False, Decimal("0"), "   " (whitespace)
+
+    require_present(value, name) -> T
+        Raise ValueError if missing, else return value unchanged.
+        Use for: required fields that must exist.
+
+    require_positive(value, name) -> Decimal
+        Raise ValueError if missing, zero, or negative.
+        Use for: prices, fees, sizes (must be > 0).
+
+    require_non_negative(value, name) -> Decimal
+        Raise ValueError if missing or negative. Zero is allowed.
+        Use for: balances, quantities (can be 0).
+
+EXAMPLE - Factory Function (the primary validation boundary):
+
+    def tob_from_raw(*, venue: str, pair: str, bid_px: DecimalLike, ...) -> TopOfBook:
+        t = TopOfBook(
+            venue=venue,
+            pair=pair,
+            bid_px=to_decimal(bid_px),  # Rejects floats
+            ...
+        )
+        validate_tob(t)  # Checks invariants
+        return t
+
+    # Connector uses factory — validation happens HERE
+    async def fetch_ticker(self, pair: str) -> TopOfBook:
+        raw = await api.get_ticker(pair)
+        return tob_from_raw(venue="kraken", pair=pair, bid_px=raw["bid"], ...)
+
+    # Calculation trusts input — NO validation
+    def calc_spread(tob: TopOfBook) -> Decimal:
+        return tob.ask_px - tob.bid_px
+
+See PROJECT_INSTRUCTIONS.md Section 6.2 for full documentation.
+
+Mathematica equivalent: MissingCheck[]
 """
 from __future__ import annotations
 

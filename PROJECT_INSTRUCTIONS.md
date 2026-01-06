@@ -190,68 +190,189 @@ withdrawal_db: List[WithdrawalFee]      # withdrawalDatabase
 trading_info_db: List[TradingAccuracy]  # tradingInfoDatabase
 ```
 
-### 6.2 Validation Guards Pattern
+### 6.2 Data Trust Boundaries
 
-Runtime validation guards complement static typing by catching issues that type hints cannot express: empty strings, empty collections, non-finite Decimals.
+**Principle**: Validate once at data boundaries, trust downstream. This replaces the Mathematica pattern of checking `MissingQ` inside every function.
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  External Data  │────▶│  Boundary Layer  │────▶│  Pure Functions │
+│  (untrusted)    │     │  (validates)     │     │  (trusts input) │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+     API response          Connector/Parser        Calculation/Strategy
+     Config file           Factory function        No validation code
+     User input            __post_init__           Just math
+```
 
-**Use at data boundaries**: API responses, config loading, user input, anywhere external data enters the system.
+#### 6.2.1 Where Validation Lives
+
+| Location | What Gets Validated | Example |
+|----------|---------------------|---------|
+| Connector `parse_*` functions | API responses | `parse_kraken_ticker()` |
+| Factory functions | Raw inputs → domain types | `tob_from_raw()` |
+| `__post_init__` methods | Dataclass invariants | Crossed book check |
+| Config loaders | YAML/env inputs | `load_config()` |
+
+#### 6.2.2 Where Validation Does NOT Live
+
+| Layer | Why No Validation |
+|-------|-------------------|
+| `calculation/` | Inputs are already-validated domain types |
+| `strategy/` | Same — receives validated types from calculation |
+
+**If you're adding `if x is None` or `require_*` in calculation/strategy, something is wrong upstream.**
+
+#### 6.2.3 Validation Guards API
+
+Located in `validation/guards.py`:
 ```python
 from uscryptoarb.validation import (
-    is_missing,
-    require_present,
-    require_positive,
-    require_non_negative,
+    is_missing,           # Check: None, "", [], {}, NaN, Infinity
+    require_present,      # Raise if missing, return value unchanged
+    require_positive,     # For prices, fees (must be > 0)
+    require_non_negative, # For balances, quantities (can be 0)
 )
-
-# is_missing() - check if value is "missing"
-# Missing means: None, "", [], {}, (), Decimal("NaN"), Decimal("Infinity")
-# NOT missing: 0, False, Decimal("0"), "   " (whitespace)
-
-def is_missing(value: Any) -> bool:
-    """Equivalent to Mathematica's MissingCheck[]."""
-    if value is None:
-        return True
-    if isinstance(value, str) and value == "":
-        return True
-    if isinstance(value, (list, dict, tuple, set, frozenset)) and len(value) == 0:
-        return True
-    if isinstance(value, Decimal) and not value.is_finite():
-        return True
-    return False
-
-# require_present() - enforce required values exist
-def require_present(value: T, name: str) -> T:
-    """Raise ValueError if missing, else return value unchanged."""
-    if is_missing(value):
-        raise ValueError(f"Required value '{name}' is missing")
-    return value
-
-# require_positive() - for prices, sizes, fees (must be > 0)
-def require_positive(value: Decimal, name: str) -> Decimal:
-    """Raise if missing, zero, or negative."""
-    ...
-
-# require_non_negative() - for balances, quantities (can be 0, not negative)
-def require_non_negative(value: Decimal, name: str) -> Decimal:
-    """Raise if missing or negative. Zero is allowed."""
-    ...
 ```
 
-**Usage examples:**
+#### 6.2.4 Factory Function Pattern (Preferred)
+
+Factory functions are the primary validation boundary. They accept raw/untrusted inputs and return validated, frozen domain types:
 ```python
-# At API boundary
-def parse_ticker_response(data: dict) -> TopOfBook:
-    bid_px = require_positive(to_decimal(data.get("bid")), "bid_price")
-    ask_px = require_positive(to_decimal(data.get("ask")), "ask_price")
-    ...
-
-# At config boundary  
-def load_config(path: str) -> AppConfig:
-    cfg = yaml.safe_load(...)
-    venues = require_present(cfg.get("venues"), "venues")
-    threshold = require_positive(to_decimal(cfg.get("threshold")), "threshold")
-    ...
+# marketdata/topofbook.py
+def tob_from_raw(
+    *,
+    venue: str,
+    pair: str,
+    bid_px: DecimalLike,  # Could be str, int, Decimal
+    bid_sz: DecimalLike,
+    ask_px: DecimalLike,
+    ask_sz: DecimalLike,
+    ts_local_ms: int,
+    ts_exchange_ms: int | None,
+) -> TopOfBook:
+    """
+    Factory that validates at construction boundary.
+    
+    - Converts DecimalLike → Decimal (rejects floats)
+    - Validates all fields present and positive
+    - Checks orderbook invariants (not crossed)
+    
+    Raises ValueError if any validation fails.
+    """
+    t = TopOfBook(
+        venue=venue,
+        pair=pair,
+        bid_px=to_decimal(bid_px),
+        bid_sz=to_decimal(bid_sz),
+        ask_px=to_decimal(ask_px),
+        ask_sz=to_decimal(ask_sz),
+        ts_local_ms=int(ts_local_ms),
+        ts_exchange_ms=None if ts_exchange_ms is None else int(ts_exchange_ms),
+    )
+    validate_tob(t)  # Enforces all invariants
+    return t
 ```
+
+Connectors use factory functions — validation happens at the boundary:
+```python
+# connectors/kraken/ticker.py
+async def fetch_ticker(self, pair: str) -> TopOfBook:
+    raw = await self._client.get_ticker(pair)
+    ts_now = int(time.time() * 1000)
+    
+    # Factory validates; raises ValueError if garbage
+    return tob_from_raw(
+        venue="kraken",
+        pair=pair,
+        bid_px=raw["b"][0],  # Might be missing/garbage
+        bid_sz=raw["b"][2],
+        ask_px=raw["a"][0],
+        ask_sz=raw["a"][2],
+        ts_local_ms=ts_now,
+        ts_exchange_ms=None,
+    )
+```
+
+#### 6.2.5 __post_init__ Pattern (Defense in Depth)
+
+For critical invariants that must NEVER be violated, add `__post_init__` as a second layer. This catches programming errors even if a factory is bypassed:
+```python
+@dataclass(frozen=True, slots=True)
+class TopOfBook:
+    venue: str
+    pair: str
+    bid_px: Decimal
+    ask_px: Decimal
+    bid_sz: Decimal
+    ask_sz: Decimal
+    ts_local_ms: int
+    ts_exchange_ms: int | None
+    
+    def __post_init__(self) -> None:
+        # Critical invariant: book cannot be crossed
+        if self.bid_px > 0 and self.ask_px > 0 and self.bid_px >= self.ask_px:
+            raise ValueError(
+                f"Crossed book: bid {self.bid_px} >= ask {self.ask_px}"
+            )
+```
+
+#### 6.2.6 What "Trusted" Means Downstream
+
+After passing through a boundary, code can assume:
+
+| Guarantee | Enforced By | Downstream Benefit |
+|-----------|-------------|-------------------|
+| Not None/empty | `require_present()` | No `if x is None` checks |
+| Positive price | `require_positive()` | Safe to divide by price |
+| Non-negative qty | `require_non_negative()` | No negative quantity bugs |
+| Finite Decimal | `is_missing()` rejects NaN/Inf | Deterministic math |
+| Immutable | `@dataclass(frozen=True)` | Cannot mutate after validation |
+| Invariants hold | `__post_init__` | Book not crossed, etc. |
+
+#### 6.2.7 Error Handling at Boundaries
+
+Validation failures raise `ValueError` immediately. The orchestration layer handles recovery:
+```python
+# orchestration/scanner.py
+async def poll_all_venues(pairs: list[str]) -> dict[str, TopOfBook]:
+    results: dict[str, TopOfBook] = {}
+    
+    for venue, connector in connectors.items():
+        for pair in pairs:
+            try:
+                tob = await connector.fetch_ticker(pair)
+                results[f"{venue}:{pair}"] = tob
+            except ValueError as e:
+                # Validation failed — log and skip
+                logger.warning(f"Invalid data from {venue} for {pair}: {e}")
+                continue
+    
+    return results  # Only contains valid data
+
+# Pure functions receive only valid data
+opportunities = find_arbitrage(results)  # No validation inside
+```
+
+#### 6.2.8 Summary Rules
+
+1. **Validation guards live ONLY in**:
+   - `validation/` module (the guards themselves)
+   - Connector `parse_*` / `fetch_*` functions
+   - Factory functions (`*_from_raw`)
+   - Dataclass `__post_init__` methods
+   - Config `load_*` functions
+
+2. **Pure layers have ZERO validation code**:
+   - `calculation/` — just math
+   - `strategy/` — just logic
+   - If adding validation here, fix the boundary instead
+
+3. **Failed validation = immediate ValueError**:
+   - Don't return `None` or sentinel values
+   - Don't silently skip — raise and let orchestration decide
+
+4. **Frozen dataclasses are the contract**:
+   - Once constructed, a `TopOfBook` is guaranteed valid
+   - Downstream code trusts the type, not runtime checks
 
 ### 6.3 Return Metrics
 
