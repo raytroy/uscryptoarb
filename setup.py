@@ -1,6 +1,5 @@
 from setuptools import find_packages, setup
 
-
 setup(
     name="uscryptoarb",
     version="0.0.1",

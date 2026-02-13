@@ -17,6 +17,7 @@ class BackoffPolicy:
 
     Jitter is symmetric (+/- jitter_ratio).
     """
+
     base_ms: int = 250
     cap_ms: int = 5_000
     jitter_ratio: float = 0.10

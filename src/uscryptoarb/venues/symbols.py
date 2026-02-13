@@ -10,6 +10,7 @@ class SymbolTranslator:
     """
     Maps canonical pairs (BASE/QUOTE) to venue-specific symbols.
     """
+
     venue: str
     canonical_to_venue: dict[str, str]
 

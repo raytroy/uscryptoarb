@@ -1,4 +1,5 @@
 """Tests for validation.guards module."""
+
 from decimal import Decimal
 
 import pytest

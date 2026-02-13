@@ -1,4 +1,5 @@
 """Validation guards for data boundaries."""
+
 from uscryptoarb.validation.guards import (
     is_missing,
     require_non_negative,
