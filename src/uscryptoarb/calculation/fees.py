@@ -44,6 +44,7 @@ def calc_buy_leg(
     price: Decimal,
     amount: Decimal,
     fee_pct: Decimal,
+    flat_fee: Decimal = ZERO,
     withdrawal: WithdrawalFee | None = None,
 ) -> ArbLeg:
     """Calculate buy-side leg with fee breakdown.
@@ -53,7 +54,7 @@ def calc_buy_leg(
 
     Fee flow:
         base_cost = amount × price
-        trading_fee = base_cost × fee_pct
+        trading_fee = base_cost × fee_pct + flat_fee
         total_cost = base_cost × (1 + fee_pct)
 
     Withdrawal fee (if transferring market currency out of buy exchange):
@@ -65,13 +66,14 @@ def calc_buy_leg(
         price: Best ask price (what you pay per unit).
         amount: Market currency amount to buy (e.g. 0.1 BTC).
         fee_pct: Trading fee as a decimal fraction (e.g. 0.0026).
+        flat_fee: Fixed trading fee in base currency.
         withdrawal: Optional withdrawal fee for market currency.
 
     Returns:
         ArbLeg with complete fee breakdown.
     """
     base_cost = amount * price
-    trading_fee = base_cost * fee_pct
+    trading_fee = base_cost * fee_pct + flat_fee
 
     # Withdrawal fee on market currency (if moving crypto off buy exchange)
     w_fee = ZERO
@@ -98,6 +100,7 @@ def calc_sell_leg(
     price: Decimal,
     amount: Decimal,
     fee_pct: Decimal,
+    flat_fee: Decimal = ZERO,
     withdrawal: WithdrawalFee | None = None,
 ) -> ArbLeg:
     """Calculate sell-side leg with fee breakdown.
@@ -107,7 +110,7 @@ def calc_sell_leg(
 
     Fee flow:
         base_proceeds = amount × price
-        trading_fee = base_proceeds × fee_pct
+        trading_fee = base_proceeds × fee_pct + flat_fee
         net_proceeds = base_proceeds × (1 - fee_pct)
 
     Withdrawal fee (if transferring base currency out of sell exchange):
@@ -119,13 +122,14 @@ def calc_sell_leg(
         price: Best bid price (what you receive per unit).
         amount: Market currency amount to sell (e.g. 0.1 BTC).
         fee_pct: Trading fee as a decimal fraction (e.g. 0.006).
+        flat_fee: Fixed trading fee in base currency.
         withdrawal: Optional withdrawal fee for base currency.
 
     Returns:
         ArbLeg with complete fee breakdown.
     """
     base_proceeds = amount * price
-    trading_fee = base_proceeds * fee_pct
+    trading_fee = base_proceeds * fee_pct + flat_fee
 
     # Withdrawal fee on base currency (if moving fiat/stablecoin off sell exchange)
     w_fee = ZERO

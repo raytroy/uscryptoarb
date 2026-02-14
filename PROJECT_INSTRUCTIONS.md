@@ -141,9 +141,11 @@ uscryptoarb/
 │   │   └── orderbook.py      # validate_orderbook
 │   ├── calculation/
 │   │   ├── __init__.py
-│   │   ├── returns.py        # calc_return, calc_returns
-│   │   ├── fees.py           # apply_trading_fees, apply_withdrawal_fees
-│   │   └── arb_calc.py       # calc_arb_final
+│   │   ├── types.py          # TradingFeeRate, WithdrawalFee, TradingAccuracy, FeeSchedule, ArbLeg, ArbOpportunity
+│   │   ├── returns.py        # calc_return_raw, calc_return_grs, calc_return_net, calc_profit_base
+│   │   ├── fees.py           # calc_buy_leg, calc_sell_leg, effective_buy_cost, effective_sell_proceeds, total_buy_cost, net_sell_proceeds
+│   │   ├── sizing.py         # calc_kelly_fraction, calc_kelly_amount, calc_position_size
+│   │   └── arb_calc.py       # calc_arb_opportunity, calc_all_opportunities, sort_opportunities, filter_profitable
 │   ├── strategy/
 │   │   ├── __init__.py
 │   │   ├── selection.py      # select_trade, passes_threshold
@@ -463,7 +465,7 @@ Deliver correct, testable, observable code. Reliability over cleverness. When un
 
 ```markdown
 ## What Changed
-- `src/uscryptoarb/calculation/returns.py`: Added `calc_return()` function
+- `src/uscryptoarb/calculation/returns.py`: Added `calc_return_raw()` / `calc_return_grs()` / `calc_return_net()` functions
 - `tests/unit/test_calculation/test_returns.py`: Added tests
 
 ## Why
@@ -719,8 +721,9 @@ Quick reference (top-level pipeline):
 | `MissingCheck[]` | `validation.guards.is_missing()` + `require_*()` | ✅ Ported |
 | `MarketBaseConvert[]` | `core.pair_utils.market_base_convert()` | 📋 Planned |
 | `PairTranslator[]` | `core.pair_utils.pair_translator()` | 📋 Planned |
-| `ReturnCalc[]` | `calculation.returns.calc_return()` | 📋 Planned |
-| `ArbCalcFinal[]` | `calculation.arb_calc.calc_arb_final()` | 📋 Planned |
+| `ReturnCalc[]` | `calculation.returns.calc_return_raw()` / `calc_return_grs()` / `calc_return_net()` | ✅ Ported |
+| `ArbCalcFinal[]` | `calculation.arb_calc.calc_arb_opportunity()` | ✅ Ported |
+| `CalcKellyAmount[]` | `calculation.sizing.calc_kelly_amount()` | ✅ Ported |
 | `TradesToExecute[]` | `strategy.scanner.find_trades_to_execute()` | 📋 Planned |
 | `SelectTradeToExecute[]` | `strategy.selection.select_trade()` | 📋 Planned |
 | `ExecuteTradesL3[]` | `execution.orders.execute_trades()` | ⏳ Phase 4 |

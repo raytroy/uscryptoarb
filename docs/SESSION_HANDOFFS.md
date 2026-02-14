@@ -486,3 +486,52 @@
 - Withdrawal fee data in fee_schedules.json uses conservative estimates. Verify against live API when building fee config loader.
 - The `TradingAccuracy` dataclass lives in `calculation/types.py`. If connectors need to produce it (for live fee lookups), consider moving to `core/types.py` to avoid import direction issues.
 - Kelly golden test: $1000 bankroll, returnGrs=0.008, threshold=0.0055 → $0.59375 position. Intentionally conservative.
+
+---
+
+## 2026-02-14 — Calculation layer review fixes and documentation sync
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Fixed `calc_buy_leg()` / `calc_sell_leg()` to apply `flat_fee` from TradingFeeRate (was silently ignored)
+- Updated `calc_arb_opportunity()` to pass flat_fee through to leg calculations
+- Removed dead `CALC_CONTEXT_PREC` constant from returns.py
+- Added 2 new tests for non-zero flat_fee (buy and sell sides)
+- Synced PROJECT_INSTRUCTIONS.md Sections 5.3, 12, 13 with implemented code
+- Synced MATHEMATICA_MAP.md Sections 1, 5 with actual porting status
+- Fixed truncated Next Steps in SESSION_HANDOFFS.md calculation layer entry
+- Added LL-053 (TradingAccuracy migration trigger) and LL-054 (flat_fee must be applied)
+- Updated CHANGELOG.md with Fixed section
+
+### In Progress
+- Nothing
+
+### Blocked / Needs Decision
+- Nothing
+
+### Key Decisions Made
+- flat_fee added as optional parameter (default ZERO) for backward compatibility rather than refactoring to accept TradingFeeRate directly
+- TradingAccuracy stays in calculation/types.py for now; migration to core/types.py triggered when connectors need to produce it
+
+### Files Modified
+- MODIFIED: `src/uscryptoarb/calculation/fees.py` (flat_fee parameter added)
+- MODIFIED: `src/uscryptoarb/calculation/arb_calc.py` (passes flat_fee through)
+- MODIFIED: `src/uscryptoarb/calculation/returns.py` (removed dead constant)
+- MODIFIED: `tests/unit/test_calculation/test_fees.py` (2 new tests)
+- MODIFIED: `PROJECT_INSTRUCTIONS.md` (Sections 5.3, 12, 13)
+- MODIFIED: `docs/MATHEMATICA_MAP.md` (Sections 1, 5)
+- MODIFIED: `docs/SESSION_HANDOFFS.md` (fixed truncation + this entry)
+- MODIFIED: `docs/LESSONS_LEARNED.md` (LL-053, LL-054)
+- MODIFIED: `CHANGELOG.md` (Fixed section)
+
+### Next Steps (Priority Order)
+1. Strategy layer — `select_trade()`, threshold check, `find_trades_to_execute()`
+2. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+3. Gemini production connector (`connectors/gemini/`)
+
+### Notes for Next Session
+- All 52 tests pass (50 original + 2 new flat_fee tests)
+- flat_fee is now wired through but all exchanges still use 0. If an exchange introduces flat trading fees, the math is ready.
+- TradingAccuracy migration to core/types.py is documented in LL-053. Trigger: when any connector needs to import it.

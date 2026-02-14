@@ -45,6 +45,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `httpx>=0.27` added as runtime dependency
 - `notebooks/02_coinbase_exploration.ipynb`: Complete Coinbase API exploration — symbol mapping, BBO data, SDK vs httpx comparison, TopOfBook parsing, rate limits, error handling, product details
 
+### Fixed
+- `calculation/fees.py`: `calc_buy_leg()` and `calc_sell_leg()` now apply `flat_fee` from `TradingFeeRate` (was silently ignored; all exchanges currently use 0)
+- `calculation/arb_calc.py`: `calc_arb_opportunity()` now passes `flat_fee` through to leg calculations
+- `calculation/returns.py`: Removed unused `CALC_CONTEXT_PREC` constant
+- Documentation sync: PROJECT_INSTRUCTIONS.md Sections 5.3, 12, 13 updated to match implemented calculation layer
+- Documentation sync: MATHEMATICA_MAP.md Sections 1, 5 updated with correct statuses and module paths
+- Documentation sync: SESSION_HANDOFFS.md calculation layer entry — restored truncated Next Steps
+
 ### Changed
 - PROJECT_INSTRUCTIONS.md: Added operational docs to Source Documents (Section 2), Workflow (7.2), Propagation Rule (7.3), Deliverable Format (7.4), PR Checklist (10.3), Pre-Implementation and Propagation Checklists (13); replaced Section 12 inline table with pointer to MATHEMATICA_MAP.md
 - CLAUDE_INSTRUCTIONS.md: Added doc searches to workflow, pre-implementation verification, deliverable format, and reference section

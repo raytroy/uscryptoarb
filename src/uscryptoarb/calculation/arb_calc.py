@@ -85,6 +85,7 @@ def calc_arb_opportunity(
         price=buy_price,
         amount=trade_amount,
         fee_pct=buy_fees.buy_fee.pct_fee,
+        flat_fee=buy_fees.buy_fee.flat_fee,
         withdrawal=buy_fees.buy_withdrawal,
     )
 
@@ -94,6 +95,7 @@ def calc_arb_opportunity(
         price=sell_price,
         amount=trade_amount,
         fee_pct=sell_fees.sell_fee.pct_fee,
+        flat_fee=sell_fees.sell_fee.flat_fee,
         withdrawal=sell_fees.sell_withdrawal,
     )
 

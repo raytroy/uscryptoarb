@@ -69,6 +69,25 @@ class TestCalcBuyLeg:
         )
         assert leg.withdrawal_fee == Decimal("0.0011")
 
+    def test_buy_with_flat_trading_fee(self) -> None:
+        """flat_fee adds fixed cost on top of percentage fee."""
+        leg_no_flat = calc_buy_leg(
+            venue="kraken",
+            pair="BTC/USD",
+            price=Decimal("69113.0"),
+            amount=Decimal("0.1"),
+            fee_pct=Decimal("0.0026"),
+        )
+        leg_with_flat = calc_buy_leg(
+            venue="kraken",
+            pair="BTC/USD",
+            price=Decimal("69113.0"),
+            amount=Decimal("0.1"),
+            fee_pct=Decimal("0.0026"),
+            flat_fee=Decimal("1.50"),
+        )
+        assert leg_with_flat.trading_fee_base == leg_no_flat.trading_fee_base + Decimal("1.50")
+
 
 class TestCalcSellLeg:
     def test_basic_sell_no_withdrawal(self) -> None:
@@ -121,6 +140,25 @@ class TestCalcSellLeg:
             withdrawal=w,
         )
         assert leg.withdrawal_fee == Decimal("5.00")
+
+    def test_sell_with_flat_trading_fee(self) -> None:
+        """flat_fee adds fixed cost on top of percentage fee."""
+        leg_no_flat = calc_sell_leg(
+            venue="coinbase",
+            pair="BTC/USD",
+            price=Decimal("69200.0"),
+            amount=Decimal("0.1"),
+            fee_pct=Decimal("0.006"),
+        )
+        leg_with_flat = calc_sell_leg(
+            venue="coinbase",
+            pair="BTC/USD",
+            price=Decimal("69200.0"),
+            amount=Decimal("0.1"),
+            fee_pct=Decimal("0.006"),
+            flat_fee=Decimal("2.00"),
+        )
+        assert leg_with_flat.trading_fee_base == leg_no_flat.trading_fee_base + Decimal("2.00")
 
 
 class TestEffectiveCosts:

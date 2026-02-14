@@ -48,9 +48,9 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `TradingFeesDataStructure[]` | `TradingFees` | `core/types.py` | 📋 Planned | Association with: exchangeName, action (buy/sell), pctTradingfee, flatTradingfee |
-| `WithdrawalFeeDataStructure[]` | `WithdrawalFee` | `core/types.py` | 📋 Planned | Association with: exchangeName, currency, flatWithdrawalfee, percentageWithdrawalFee |
-| `TradingAccuracyDataStructure[]` | `TradingAccuracy` | `core/types.py` | 📋 Planned | Association with: exchangeName, currencyPair, maxTradeSize, minTradeSize, volumePrecision, notionalValue |
+| `TradingFeesDataStructure[]` | `TradingFeeRate` | `calculation/types.py` | ✅ Ported | Per-venue buy/sell fee rate with pct_fee and flat_fee. Flat fee currently 0 for all exchanges (Phase 1). |
+| `WithdrawalFeeDataStructure[]` | `WithdrawalFee` | `calculation/types.py` | ✅ Ported | Per-venue, per-currency withdrawal fee with flat_fee and pct_fee. |
+| `TradingAccuracyDataStructure[]` | `TradingAccuracy` | `calculation/types.py` | ✅ Ported | Per-venue, per-pair precision constraints (price_decimals, lot_decimals, min/max order size, tick/lot step). |
 | `OrderbookEachOrderDataStructure[]` | `OrderBookEntry` | `core/types.py` | 📋 Planned | Association with: price, volume. Used for individual orderbook levels. |
 | `OrderbookEachOrderDataStructureInverse[]` | — | — | 🔀 Redesigned | Handles inverse pairs (e.g., USD/BTC → BTC/USD). In Python, handled by `market_base_convert()` |
 | `ResponseDataStructure[]` | — | `connectors/*/parser.py` | 🔀 Redesigned | Generic JSON response parser. In Python, each connector has its own typed parser. |
@@ -99,7 +99,7 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `BidAskData[]` (Kraken) | `fetch_ticker()` | `connectors/kraken/` | 📋 Planned | Fetches ticker from Kraken. Notebook exploration complete. |
+| `BidAskData[]` (Kraken) | `fetch_ticker()` | `connectors/kraken/client.py` | ✅ Ported | Async httpx client with rate limiting. Produces TopOfBook via tob_from_raw(). |
 | `BidAskData[]` (Coinbase) | `fetch_tickers()` | `connectors/coinbase/` | ✅ Ported | Async httpx client. Per-pair requests via `/market/product_book` (no public batch — LL-052). Parser converts to TopOfBook via `tob_from_raw()`. |
 | `BidAskData[]` (Gemini) | `fetch_ticker()` | `connectors/gemini/` | 📋 Planned | Fetches ticker from Gemini. Notebook not yet created. |
 | `OrderBookPerExchange[]` | `fetch_orderbook()` | `connectors/*/orderbook.py` | ⏳ Deferred | Full orderbook depth. Phase 1 uses top-of-book only. Needed for trade sizing in Phase 3+. |
