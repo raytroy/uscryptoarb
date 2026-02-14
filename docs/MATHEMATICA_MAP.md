@@ -120,7 +120,7 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `TrimExchangesToCalc[]` | `filter_valid_exchanges()` | `strategy/scanner.py` | 📋 Planned | Filters exchanges that have valid data for a given pair. Removes exchanges with missing/stale data. |
+| `TrimExchangesToCalc[]` | `filter_valid_exchanges()` | `strategy/scanner.py` | 🔧 Improved | Combined L1/L2/L3 into single function with optional staleness parameter. Filters stale data; skips filtering when no staleness config provided. |
 | `TrimExchangesToCalcL2[]` | — | — | 🔀 Redesigned | L2 variant with additional filtering. In Python, combined into single function with optional parameters. |
 | `TrimExchangesToCalcL3[]` | — | — | 🔀 Redesigned | L3 variant. Same — combined into single function. |
 | `NonDupExchangesWithMoney[]` | `filter_funded_exchanges()` | `strategy/scanner.py` | ⏳ Deferred | Filters to exchanges where user has balance. Requires Phase 3+ (balance checking). |
@@ -175,8 +175,8 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `TradesToExecute[]` | `find_trades_to_execute()` | `strategy/scanner.py` | 📋 Planned | Top-level pipeline: BidAskData → Trim → ArbOppAll → ArbReturns → SelectTrade. Returns complete trade candidate or missing. |
-| `SelectTradeToExecute[]` | `select_trade()` | `strategy/selection.py` | 📋 Planned | Picks the single best trade from ranked opportunities. Applies threshold check. |
+| `TradesToExecute[]` | `find_trades_to_execute()` | `strategy/scanner.py` | ✅ Ported | Top-level pipeline: filter_valid_exchanges → calc_all_opportunities → sort → select_trade. Returns best ArbOpportunity or None. |
+| `SelectTradeToExecute[]` | `select_trade()` | `strategy/selection.py` | 🔧 Improved | Picks best trade by return_net (not sellMarket size). Uses > not >= for threshold. Checks only return_net (implies return_grs and return_raw). |
 | `ExecuteTradesL2[]` | `execute_trade_l2()` | `execution/orders.py` | ⏳ Deferred | Mid-level execution: checks threshold, delegates to L3 if passes. Phase 4. |
 | `ExecuteTradesL3[]` | `execute_trades()` | `execution/orders.py` | ⏳ Deferred | Full execution: check existing orders → get orderbooks → get balances → calc amount → execute. Phase 4. |
 | `RunFinal[]` | `run_scan_cycle()` | `__main__.py` | 📋 Planned | Top-level orchestration: TradesToExecute → threshold check → ExecuteTradesL3. Phase 1 will detect + alert only. |
@@ -221,12 +221,12 @@ Databases (fees, withdrawal, accuracy)
 
 | Status | Count |
 |--------|-------|
-| ✅ Ported | 25 |
+| ✅ Ported | 26 |
 | 🔄 In Progress | 0 |
-| 📋 Planned (Phase 1) | ~8 |
+| 📋 Planned (Phase 1) | ~6 |
 | ⏳ Deferred (Phase 2+) | ~15 |
 | ❌ Not Porting | 0 |
-| 🔀 Redesigned | ~10 |
+| 🔀 Redesigned | ~12 |
 | **Total tracked** | **~58** |
 
 ---
@@ -243,6 +243,7 @@ These are intentional differences between Mathematica and Python implementations
 | Response parsing | Single `ResponseDataStructure[]` | Per-connector typed parsers | Each exchange has unique response formats |
 | Pair translation | String manipulation with flags | Lookup-based SymbolTranslator | More maintainable, explicit mapping |
 | Function naming | CamelCase, multi-level (L2, L3) | snake_case, flattened where possible | Python conventions, reduce nesting |
+| Threshold check | returnRaw >= thr AND returnGrs >= thr | return_net > thr | return_net implies both (more conservative); > not >= avoids boundary risk |
 
 ---
 
@@ -252,3 +253,4 @@ These are intentional differences between Mathematica and Python implementations
 |------|---------|
 | 2026-02-13 | Initial creation with comprehensive function inventory from CryptoArbitrage_V14.9.4_NoKeys.nb |
 | 2026-02-14 | Updated Sections 7, 8, 9: 12 functions 📋→✅ for calculation layer implementation |
+| 2026-02-14 | Updated Sections 6, 10: TrimExchangesToCalc → 🔧 Improved, TradesToExecute → ✅ Ported, SelectTradeToExecute → 🔧 Improved. Added threshold behavior to differences table. |
