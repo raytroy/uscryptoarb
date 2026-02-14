@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `notebooks/02_coinbase_exploration.ipynb`: Coinbase Advanced Trade API exploration notebook covering product discovery, symbol mapping, BBO fetching (SDK and raw httpx), TopOfBook parsing, rate limit testing, and SDK vs httpx comparison
 - `docs/LESSONS_LEARNED.md`: Mistake prevention database with seed entries from project history
 - `docs/SESSION_HANDOFFS.md`: Append-only session continuity log for multi-chat workflows
 - `docs/DECISION_LOG.md`: Architectural decision records with rationale (10 seed entries)
@@ -40,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2025-01-04
 
 ### Added
+- `notebooks/02_coinbase_exploration.ipynb`: Coinbase Advanced Trade API exploration notebook covering product discovery, symbol mapping, BBO fetching (SDK and raw httpx), TopOfBook parsing, rate limit testing, and SDK vs httpx comparison
 - Initial project structure
 - `misc/decimals.py`: `to_decimal()`, `floor_to_step()`, `ceil_to_step()`
 - `markets/pairs.py`: `CanonicalPair`, `parse_pair()`
