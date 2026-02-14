@@ -36,9 +36,7 @@ class TestFilterValidExchanges:
             "kraken": kraken_btc_usd_tob,
             "coinbase": coinbase_btc_usd_tob,
         }
-        result = filter_valid_exchanges(
-            tobs, max_staleness_ms=5000, current_time_ms=None
-        )
+        result = filter_valid_exchanges(tobs, max_staleness_ms=5000, current_time_ms=None)
         assert result == tobs
 
     def test_filters_stale_data(
