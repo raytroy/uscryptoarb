@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Calculation layer** (`src/uscryptoarb/calculation/`) — pure math layer for Type-2 arbitrage detection
+  - `types.py`: TradingFeeRate, WithdrawalFee, TradingAccuracy, FeeSchedule, ArbLeg, ArbOpportunity dataclasses
+  - `returns.py`: calc_return_raw, calc_return_grs, calc_return_net, calc_profit_base
+  - `fees.py`: calc_buy_leg, calc_sell_leg, effective_buy_cost, effective_sell_proceeds, total_buy_cost, net_sell_proceeds
+  - `sizing.py`: calc_kelly_fraction, calc_kelly_amount, calc_position_size (Kelly Criterion)
+  - `arb_calc.py`: calc_arb_opportunity, calc_all_opportunities, sort_opportunities, filter_profitable
+- **Fee schedules fixture** (`tests/fixtures/fee_schedules.json`) — hardcoded fee/accuracy data for Kraken, Coinbase, Gemini across all 8 pairs
+- **50 unit tests** for calculation layer with deterministic Decimal fixtures
 - `connectors/coinbase/`: Second exchange connector (Coinbase)
   - `symbols.py`: Verified symbol mapping for all 8 target pairs (canonical → BTC-USD format)
   - `parser.py`: Pure parsing for product_book responses → TopOfBook, with ISO 8601 timestamp conversion

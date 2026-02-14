@@ -169,6 +169,35 @@
 
 ---
 
+
+### DEC-013: Phase 1 fee model — hardcoded flat rates
+
+- **Date**: 2026-02-14
+- **Status**: Accepted
+- **Context**: Kraken has 12 volume tiers, Coinbase has its own schedule. Building a full tiered lookup adds complexity.
+- **Decision**: Use hardcoded flat rates from config.yaml for Phase 1. Kraken taker: 0.26%, Coinbase taker: 0.60%, Gemini taker: 0.40%.
+- **Rationale**: Phase 1 is detection-only. Flat rates are sufficient for identifying opportunities. Accuracy can be improved in Phase 2 by reading the user's actual tier from authenticated API calls.
+- **Consequences**: Detected returns may be slightly off for users on lower fee tiers. Conservative (we overestimate fees).
+
+### DEC-014: Kelly Criterion parameters — industry defaults
+
+- **Date**: 2026-02-14
+- **Status**: Accepted
+- **Context**: Mathematica code uses `probSuccess` and `kellyNumber` as parameters without hardcoding defaults.
+- **Decision**: prob_success=0.95 (95% success rate), kelly_multiplier=0.25 (quarter Kelly). Configurable via function parameters.
+- **Rationale**: Quarter Kelly is standard conservative practice in quantitative trading. 95% probability reflects the high success rate of detected arb opportunities from the Mathematica system's 10,000+ trade history.
+- **Consequences**: Very conservative sizing — a $1000 bankroll with 0.25% edge yields ~$0.59 position. This is intentional; Kelly is for risk management, not profit maximization.
+
+### DEC-015: Include withdrawal fees in Phase 1
+
+- **Date**: 2026-02-14
+- **Status**: Accepted
+- **Context**: Mathematica code includes withdrawal fees in returnNet calculation. Question was whether to defer to Phase 3.
+- **Decision**: Include withdrawal fees now using conservative estimates from exchange documentation.
+- **Rationale**: Without withdrawal fees, returnNet would overstate profitability. A detected "profitable" opportunity that loses money to withdrawal fees is worse than no detection. Accurate net return is critical even for detection-only Phase 1.
+- **Consequences**: Requires maintaining a withdrawal fee database (tests/fixtures/fee_schedules.json). Fees are dynamic on Kraken so estimates may drift. Will need refresh mechanism in Phase 2+.
+
+
 ## Document History
 
 | Date | Entry | Description |
@@ -176,6 +205,7 @@
 | 2026-02-13 | DEC-001 through DEC-010 | Initial creation with decisions extracted from project history |
 | 2026-02-14 | DEC-011 | Raw httpx for Coinbase connector (partially supersedes DEC-005) |
 | 2026-02-14 | DEC-012 | Mathematica as reference not gospel — philosophical shift |
+| 2026-02-14 | Added DEC-013 (flat fee model), DEC-014 (Kelly defaults), DEC-015 (withdrawal fees in Phase 1) |
 
 
 ### DEC-011: Use raw httpx (not SDK) for Coinbase connector
