@@ -1,0 +1,16 @@
+{
+  "pricebook": {
+    "product_id": "BTC-USD",
+    "bids": [
+      {"price": "69845.94", "size": "0.08400565"}
+    ],
+    "asks": [
+      {"price": "69845.95", "size": "0.10558907"}
+    ],
+    "time": "2026-02-14T17:23:44.194522Z"
+  },
+  "last": "69845.945",
+  "mid_market": "69845.945",
+  "spread_bps": "0.00143172224",
+  "spread_absolute": "0.01"
+}

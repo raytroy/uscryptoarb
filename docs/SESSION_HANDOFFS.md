@@ -51,6 +51,71 @@
 
 ## Session Log
 
+## 2026-02-14 — Coinbase production connector implementation
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Implemented `connectors/coinbase/` (4 source files): __init__.py, symbols.py, parser.py, client.py
+- Created 4 fixture JSON files: coinbase_product_book_btc_usd.json, coinbase_product_book_ltc_btc.json, coinbase_product_book_sol_btc.json, coinbase_error_not_found.json
+- Created 3 test files + __init__.py: test_symbols.py (~5 tests), test_parser.py (~14 tests), test_client.py (~13 tests)
+- Updated tests/conftest.py with Coinbase fixture loaders
+- Updated CHANGELOG.md, MATHEMATICA_MAP.md, fixtures README, SESSION_HANDOFFS.md
+
+### In Progress
+- Nothing — Coinbase connector is complete
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- No new architectural decisions — followed established Kraken pattern (DEC-011)
+- Per-pair requests in fetch_tickers() loop (not batch) per LL-052
+- Partial failure handling: individual pair errors logged+skipped, partial results returned
+- ISO 8601 timestamp parser kept private to parser module — refactor to shared utility when Gemini needs it (Coding Rule 10.1)
+- DummyRateLimiter duplicated in test_client.py (not extracted to shared conftest yet — Coding Rule 10.1, wait for 3rd caller)
+
+### Key Differences from Kraken Connector
+- No batch endpoint: N requests instead of 1 (rate limiter called per pair)
+- Bids/asks are dicts not arrays: {"price": "...", "size": "..."} vs ["price", "whole_vol", "lot_vol"]
+- Exchange timestamps available (ISO 8601 with microseconds)
+- Coinbase error format: {"error": "NOT_FOUND", "message": "..."} vs {"error": ["EGeneral:..."]}
+- Rate limiter interval: 100ms (vs Kraken 500ms)
+- cache-control: no-cache header included (defense-in-depth per LL-051)
+
+### Files Created
+- `src/uscryptoarb/connectors/coinbase/__init__.py`
+- `src/uscryptoarb/connectors/coinbase/symbols.py`
+- `src/uscryptoarb/connectors/coinbase/parser.py`
+- `src/uscryptoarb/connectors/coinbase/client.py`
+- `tests/unit/test_connectors/test_coinbase/__init__.py`
+- `tests/unit/test_connectors/test_coinbase/test_symbols.py`
+- `tests/unit/test_connectors/test_coinbase/test_parser.py`
+- `tests/unit/test_connectors/test_coinbase/test_client.py`
+- `fixtures/coinbase_product_book_btc_usd.json`
+- `fixtures/coinbase_product_book_ltc_btc.json`
+- `fixtures/coinbase_product_book_sol_btc.json`
+- `fixtures/coinbase_error_not_found.json`
+
+### Files Modified
+- `tests/conftest.py` (added Coinbase fixture loaders)
+- `CHANGELOG.md` (added Coinbase connector entry)
+- `docs/MATHEMATICA_MAP.md` (updated Section 5 BidAskData Coinbase: 📋→✅)
+- `docs/README.md` (added Coinbase fixture provenance entries)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+2. Gemini production connector (`connectors/gemini/`)
+3. Calculation layer — fee math and return calcs
+
+### Notes for Next Session
+- Coinbase connector is DONE. Pattern is established for connector #3 (Gemini).
+- When implementing Gemini, check if _parse_iso_timestamp_ms() should be extracted to a shared utility (Coding Rule 10.1 — now has 2 potential callers if Gemini uses ISO 8601).
+- DummyRateLimiter appears in both test_kraken/test_client.py and test_coinbase/test_client.py. Extract to conftest when Gemini tests make it 3 callers.
+- The 100ms rate limiter interval means 8 pairs take ~800ms minimum. This is well within the 5s polling interval but worth noting for Phase 2 optimization.
+
 ---
 
 ## 2026-01-04 — Project initialization and infrastructure

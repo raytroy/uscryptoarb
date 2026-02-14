@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `connectors/coinbase/`: Second exchange connector (Coinbase)
+  - `symbols.py`: Verified symbol mapping for all 8 target pairs (canonical → BTC-USD format)
+  - `parser.py`: Pure parsing for product_book responses → TopOfBook, with ISO 8601 timestamp conversion
+  - `client.py`: Async httpx-based client with per-pair requests (no public batch endpoint — LL-052), rate limiting, retry with backoff, cache-control header (LL-051)
+- `fixtures/coinbase_*.json`: Coinbase API response fixtures from live exploration notebook (2026-02-14)
 - `notebooks/02_coinbase_exploration.ipynb`: Coinbase Advanced Trade API exploration notebook covering product discovery, symbol mapping, BBO fetching (SDK and raw httpx), TopOfBook parsing, rate limit testing, and SDK vs httpx comparison
 - `docs/LESSONS_LEARNED.md`: Mistake prevention database with seed entries from project history
 - `docs/SESSION_HANDOFFS.md`: Append-only session continuity log for multi-chat workflows

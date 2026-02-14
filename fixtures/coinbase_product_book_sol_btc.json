@@ -1,0 +1,16 @@
+{
+  "pricebook": {
+    "product_id": "SOL-BTC",
+    "bids": [
+      {"price": "0.0027451", "size": "12.100"}
+    ],
+    "asks": [
+      {"price": "0.0027468", "size": "8.500"}
+    ],
+    "time": "2026-02-14T17:23:47.891003Z"
+  },
+  "last": "0.00274595",
+  "mid_market": "0.00274595",
+  "spread_bps": "0.61928972",
+  "spread_absolute": "0.0000017"
+}
