@@ -144,3 +144,34 @@ _(Additional entries beyond API gotchas — add as encountered)_
 | Date | Entry | Author |
 |------|-------|--------|
 | 2026-02-13 | Initial creation with seed entries from project history | Claude |
+
+
+### LL-050: asyncio.run() fails inside Jupyter — use nest_asyncio or top-level await
+- **Date**: 2026-02-14
+- **Category**: Tooling
+- **Severity**: Medium
+- **What happened**: `asyncio.run()` raised `RuntimeError: cannot be called from a running event loop` in Coinbase exploration notebook.
+- **Root cause**: Jupyter/IPykernel already runs an asyncio event loop. `asyncio.run()` tries to create a new one, which is forbidden from within a running loop.
+- **Fix applied**: Added `nest_asyncio.apply()` at top of async cell, then used top-level `await` instead of `asyncio.run()`.
+- **Rule going forward**: In exploration notebooks, always use `nest_asyncio.apply()` or top-level `await` for async code. Reserve `asyncio.run()` for production scripts only.
+- **Affected files**: `notebooks/02_coinbase_exploration.ipynb`
+
+### LL-051: Coinbase cache-control: no-cache does NOT bypass server-side cache
+- **Date**: 2026-02-14
+- **Category**: Exchange-Specific
+- **Severity**: Medium
+- **What happened**: Two requests 200ms apart with and without `cache-control: no-cache` header returned identical timestamps, indicating the same cached response.
+- **Root cause**: Despite Coinbase docs stating "Set cache-control: no-cache header on the API requests to bypass caching," the server-side 1s cache appears to ignore this header on public endpoints. The header may only work on authenticated endpoints, or the docs may be inaccurate.
+- **Fix applied**: Documented finding. Production connector should not rely on this header for fresh data.
+- **Rule going forward**: Assume ~1s staleness on Coinbase public endpoints. For real-time data, use WebSocket (Phase 2). When testing cache behavior, use sleep >1s to distinguish cache from unchanged prices.
+- **Affected files**: `notebooks/02_coinbase_exploration.ipynb`
+
+### LL-052: Coinbase public endpoints are a subset — no public batch BBO
+- **Date**: 2026-02-14
+- **Category**: Exchange-Specific
+- **Severity**: High
+- **What happened**: `GET /api/v3/brokerage/market/best_bid_ask` returned 404 Not Found.
+- **Root cause**: Coinbase has two parallel endpoint families. Authenticated endpoints live under `/api/v3/brokerage/` and include `best_bid_ask` (batch BBO). Public endpoints live under `/api/v3/brokerage/market/` but only include: `product_book`, `products`, `product_candles`, `trades`, `server_time`. There is no public mirror of the batch `best_bid_ask` endpoint.
+- **Fix applied**: Production connector will use individual `/market/product_book` calls per pair (8 calls × ~36ms = ~300ms total, well within polling interval).
+- **Rule going forward**: When building connectors for public (unauthenticated) use, verify each endpoint exists in the "Public" section of the Coinbase API docs. Do not assume URL pattern `/market/{endpoint}` mirrors every authenticated `/{endpoint}`. When API keys are added (Phase 2+), switch to batch `/best_bid_ask` for efficiency.
+- **Affected files**: `notebooks/02_coinbase_exploration.ipynb`, future `connectors/coinbase/client.py`
