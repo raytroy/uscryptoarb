@@ -187,3 +187,21 @@
 - DECISION_LOG.md has 7 seed entries — add new decisions as they arise.
 
 ---
+
+## 2026-02-13 — Status correction
+
+**Interface**: Claude.ai WebUI
+**Branch**: main
+
+### Completed
+- Kraken exploration notebook was run locally and committed (completed prior to this session)
+- Kraken production connector fully built and tested based on notebook findings
+- Confirmed: `connectors/kraken/` (client.py, parser.py, symbols.py) + full test coverage
+
+### Next Steps (Priority Order)
+1. Coinbase exploration notebook (`notebooks/02_coinbase_exploration.ipynb`)
+2. Coinbase production connector (`connectors/coinbase/`)
+3. Calculation layer — fee math and return calcs
+
+### Notes for Next Session
+- Kraken connector is DONE. Do not reference the notebook as pending.
