@@ -131,17 +131,17 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `GetTradingFees[]` | `get_trading_fees()` | `calculation/fees.py` | 📋 Planned | Looks up trading fees for exchange + action (buy/sell). Returns TradingFees or missing. |
-| `GetWithdrawalFees[]` | `get_withdrawal_fees()` | `calculation/fees.py` | 📋 Planned | Looks up withdrawal fee for exchange + currency. Returns WithdrawalFee or missing. |
-| `GetAccuracyData[]` | `get_accuracy_data()` | `calculation/fees.py` | 📋 Planned | Looks up trading accuracy (min/max size, precision) for exchange + pair. |
+| `GetTradingFees[]` | `TradingFeeRate` dataclass | `calculation/types.py` | ✅ Ported | Per-venue buy/sell trading fee model for calculation context. |
+| `GetWithdrawalFees[]` | `WithdrawalFee` dataclass | `calculation/types.py` | ✅ Ported | Per-venue, per-currency withdrawal fee model. |
+| `GetAccuracyData[]` | `TradingAccuracy` dataclass | `calculation/types.py` | ✅ Ported | Precision/min/max model for exchange-compliant sizing. |
 
 ### Fee Application (Buy/Sell Sides)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| Buy side: `MktCurrAmt → BaseCurrAmt → MktCurrAmtGrs` | `calc_buy_side()` | `calculation/fees.py` | 📋 Planned | MktCurrAmt = input amount, BaseCurrAmt = MktCurrAmt × price, MktCurrAmtGrs = MktCurrAmt × (1 + fee_pct) |
-| Sell side: `MktCurrAmt → MktCurrAmtGrs` | `calc_sell_side()` | `calculation/fees.py` | 📋 Planned | MktCurrAmtGrs = MktCurrAmt × (1 - fee_pct) |
-| Net: `MktCurrAmtGrs → MktCurrAmtNet` | `calc_net_amount()` | `calculation/fees.py` | 📋 Planned | MktCurrAmtNet = MktCurrAmtGrs - withdrawal_fee |
+| Buy side: `MktCurrAmt → BaseCurrAmt → MktCurrAmtGrs` | `calc_buy_leg()` | `calculation/fees.py` | ✅ Ported | Buy leg with base cost, trading fee, and withdrawal fee breakdown. |
+| Sell side: `MktCurrAmt → MktCurrAmtGrs` | `calc_sell_leg()` | `calculation/fees.py` | ✅ Ported | Sell leg with proceeds, trading fee, and withdrawal fee breakdown. |
+| Net: `MktCurrAmtGrs → MktCurrAmtNet` | `total_buy_cost()` / `net_sell_proceeds()` | `calculation/fees.py` | ✅ Ported | Net amount helpers include trading and withdrawal fee effects. |
 | `LiquiPairsInfoParserL2[]` | — | `connectors/*/parser.py` | 📋 Planned | Parses exchange-specific trading info (min sizes, precision). In Python, each connector normalizes to `TradingAccuracy`. |
 
 ---
@@ -150,12 +150,12 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `ArbOppAll[]` | `calc_all_opportunities()` | `calculation/arb_calc.py` | 📋 Planned | Generates all pairwise exchange comparisons for a given trading pair. Core calculation: for each (buy_exchange, sell_exchange) combination, compute returns. |
-| `ArbCalcFinal[]` | `calc_arb_final()` | `calculation/arb_calc.py` | 📋 Planned | Final arbitrage calculation for a single (buy, sell) pair. Applies fees, withdrawal costs, accuracy constraints. Returns complete opportunity with all metrics. |
-| `ReturnCalc[]` | `calc_return()` | `calculation/returns.py` | 📋 Planned | `(end - start) / start`. Returns 0 if either input is 0 or missing. **Behavioral note**: Mathematica version returns `Missing[]` for zero inputs; Python version should raise `ValueError`. |
+| `ArbOppAll[]` | `calc_all_opportunities()` | `calculation/arb_calc.py` | ✅ Ported | Generates all pairwise directional opportunities for a pair. |
+| `ArbCalcFinal[]` | `calc_arb_opportunity()` | `calculation/arb_calc.py` | ✅ Ported | Full directed opportunity calc with raw/gross/net returns and profits. |
+| `ReturnCalc[]` | `calc_return_raw()` / `calc_return_grs()` / `calc_return_net()` | `calculation/returns.py` | ✅ Ported | Split into explicit raw/gross/net return functions. |
 | `ReturnCalcAll[]` | `calc_return_all()` | `calculation/returns.py` | 📋 Planned | Computes returnRaw, returnGrs, returnNet, and profit metrics in one pass. Takes buy/sell prices and fee-adjusted amounts. |
-| `ArbSort[]` | `sort_opportunities()` | `calculation/arb_calc.py` | 📋 Planned | Sorts arbitrage opportunities by a given metric (returnGrs, returnNet, profitNetInBase). |
-| `ArbReturns[]` | `rank_arb_returns()` | `calculation/arb_calc.py` | 📋 Planned | Wraps ArbSort for three metrics: tradeReturn (returnGrs), totalReturn (returnNet), profit (profitNetInBase). |
+| `ArbSort[]` / `ArbReturns[]` | `sort_opportunities()` / `filter_profitable()` | `calculation/arb_calc.py` | ✅ Ported | Sorting + threshold filtering helpers. |
+
 
 ---
 
@@ -163,9 +163,10 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `CalcArbAmount[]` | `calc_arb_amount()` | `calculation/sizing.py` | ⏳ Deferred | Determines trade size based on limiting reactant: min(buyBalance, sellBalance, buyLiquidity, sellLiquidity, bankrollLimit). Phase 3+. |
+| `CalcKellyAmount[]` | `calc_kelly_amount()` | `calculation/sizing.py` | ✅ Ported | Fractional Kelly position sizing with cap and edge clamp. |
 | `GetInterestedTradeOrderBooks[]` | `get_trade_orderbooks()` | `execution/pre_trade.py` | ⏳ Deferred | Fetches full orderbook for the specific trade being considered. Uses `pctOfMarket` (default 0.85) to determine depth needed. Phase 3+. |
 | `GetInterestedTradeOrderBooksL3[]` | — | — | 🔀 Redesigned | L3 variant with direction/length params. Combined into single function. |
+| `Kelly[]` | `calc_kelly_fraction()` | `calculation/sizing.py` | ✅ Ported | Pure Kelly fraction helper (edge × probability). |
 | `TradeToInvestigateBalances[]` | `get_trade_balances()` | `execution/pre_trade.py` | ⏳ Deferred | Gets current balances for the exchanges involved in a specific trade. Phase 3+. |
 
 ---
@@ -220,9 +221,9 @@ Databases (fees, withdrawal, accuracy)
 
 | Status | Count |
 |--------|-------|
-| ✅ Ported | 13 |
+| ✅ Ported | 25 |
 | 🔄 In Progress | 0 |
-| 📋 Planned (Phase 1) | ~20 |
+| 📋 Planned (Phase 1) | ~8 |
 | ⏳ Deferred (Phase 2+) | ~15 |
 | ❌ Not Porting | 0 |
 | 🔀 Redesigned | ~10 |
@@ -250,3 +251,4 @@ These are intentional differences between Mathematica and Python implementations
 | Date | Changes |
 |------|---------|
 | 2026-02-13 | Initial creation with comprehensive function inventory from CryptoArbitrage_V14.9.4_NoKeys.nb |
+| 2026-02-14 | Updated Sections 7, 8, 9: 12 functions 📋→✅ for calculation layer implementation |

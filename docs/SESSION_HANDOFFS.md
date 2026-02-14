@@ -422,3 +422,67 @@
 ### Notes for Next Session
 - The notebook Section 10 summary cell still has placeholder text (e.g., "~Xms" latency). The cell outputs tell the real story, but the markdown could be updated for completeness in a future pass.
 - `nest_asyncio` is a notebook-only dependency. Do not add it to pyproject.toml runtime deps.
+
+
+---
+
+## 2026-02-14 — Calculation layer Phase 1 implementation
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Implemented `calculation/` package (6 source files): __init__.py, types.py, returns.py, fees.py, sizing.py, arb_calc.py
+- Created `tests/unit/test_calculation/` (6 test files): __init__.py, conftest.py, test_returns.py, test_fees.py, test_sizing.py, test_arb_calc.py
+- Created `tests/fixtures/fee_schedules.json` with hardcoded fee data for Kraken, Coinbase, Gemini
+- All 50 tests pass
+- Updated DECISION_LOG.md (DEC-013, DEC-014, DEC-015), MATHEMATICA_MAP.md (12 functions 📋→✅), CHANGELOG.md, fixtures README, SESSION_HANDOFFS.md
+
+### In Progress
+- Nothing — calculation layer Phase 1 is complete
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- DEC-013: Hardcoded flat fee rates from config.yaml for Phase 1 (tiered lookup deferred)
+- DEC-014: Kelly Criterion defaults: prob_success=0.95, kelly_multiplier=0.25 (industry standard)
+- DEC-015: Withdrawal fees included now (critical for accurate net return calculation)
+- ArbLeg design: tracks trading_fee_base and withdrawal_fee as separate absolute amounts for full traceability
+- Withdrawal fee direction: buy-side withdrawal on market currency (BTC), sell-side withdrawal on base currency (USD/USDC)
+- No validation code in calculation/ — per DEC-003, LL-020
+
+### Files Created
+- `src/uscryptoarb/calculation/__init__.py`
+- `src/uscryptoarb/calculation/types.py`
+- `src/uscryptoarb/calculation/returns.py`
+- `src/uscryptoarb/calculation/fees.py`
+- `src/uscryptoarb/calculation/sizing.py`
+- `src/uscryptoarb/calculation/arb_calc.py`
+- `tests/unit/test_calculation/__init__.py`
+- `tests/unit/test_calculation/conftest.py`
+- `tests/unit/test_calculation/test_returns.py`
+- `tests/unit/test_calculation/test_fees.py`
+- `tests/unit/test_calculation/test_sizing.py`
+- `tests/unit/test_calculation/test_arb_calc.py`
+- `tests/fixtures/fee_schedules.json`
+
+### Files Modified
+- `docs/DECISION_LOG.md` (added DEC-013, DEC-014, DEC-015)
+- `docs/MATHEMATICA_MAP.md` (12 functions 📋→✅, updated statistics)
+- `CHANGELOG.md` (calculation layer entries)
+- `tests/fixtures/README.md` (fee_schedules.json provenance)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+2. Strategy layer — `select_trade()`, threshold check, `find_trades_to_execute()`
+3. Gemini production connector (`connectors/gemini/`)
+
+### Notes for Next Session
+- Calculation layer is PURE — no I/O, no validation, no side effects. All money math uses Decimal.
+- `parse_pair()` from `markets/pairs.py` is reused for market/base currency extraction (no duplication)
+- `floor_to_step()` from `misc/decimals.py` is reused in `calc_position_size()` (no duplication)
+- Withdrawal fee data in fee_schedules.json uses conservative estimates. Verify against live API when building fee config loader.
+- The `TradingAccuracy` dataclass lives in `calculation/types.py`. If connectors need to produce it (for live fee lookups), consider moving to `core/types.py` to avoid import direction issues.
+- Kelly golden test: $1000 bankroll, returnGrs=0.008, threshold=0.0055 → $0.59375 position. Intentionally conservative.
