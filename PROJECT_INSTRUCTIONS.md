@@ -23,6 +23,11 @@ Build a production-grade cross-exchange crypto arbitrage system for Ohio-eligibl
 | `CryptoArbitrage_V14.9.4_NoKeys.nb` | Mathematica reference implementation | Repo root |
 | `README.md` | User-facing documentation | Repo root |
 | `CHANGELOG.md` | Version history | Repo root |
+| `docs/LESSONS_LEARNED.md` | Mistake prevention database | `docs/` |
+| `docs/SESSION_HANDOFFS.md` | Multi-session continuity log | `docs/` |
+| `docs/DECISION_LOG.md` | Architectural decision records | `docs/` |
+| `docs/MATHEMATICA_MAP.md` | Comprehensive porting tracker | `docs/` |
+| `tests/fixtures/README.md` | Test fixture conventions | `tests/fixtures/` |
 
 ---
 
@@ -416,14 +421,19 @@ Deliver correct, testable, observable code. Reliability over cleverness. When un
 ### 7.2 Workflow (MANDATORY)
 
 ```
-1. ANALYZE - Understand requirements, check existing patterns
-2. PLAN    - Present approach with file list, wait for approval
-3. IMPLEMENT - Write code with full propagation
-4. VALIDATE - Run tests, verify behavior
+1. ANALYZE   - Understand requirements, check existing patterns
+               Search: LESSONS_LEARNED.md, DECISION_LOG.md, MATHEMATICA_MAP.md
+2. PLAN      - Present approach with file list, wait for approval
+3. IMPLEMENT - Write code with full propagation (including operational docs)
+4. VALIDATE  - Run tests, verify behavior
 5. SUMMARIZE - Document what changed and why
+               Update: SESSION_HANDOFFS.md (end of session)
+               Update: LESSONS_LEARNED.md (if mistakes were made)
+               Update: DECISION_LOG.md (if design decisions were made)
+               Update: MATHEMATICA_MAP.md (if functions were ported)
 ```
 
-**Never skip step 2 (approval).**
+**Never skip step 1 searches or step 2 (approval).**
 
 ### 7.3 Full Propagation Rule (CRITICAL)
 
@@ -440,6 +450,12 @@ Deliver correct, testable, observable code. Reliability over cleverness. When un
 | CHANGELOG.md | Every PR-worthy change |
 | config.yaml | If new config options added |
 | Example notebooks | If API changed |
+| `docs/MATHEMATICA_MAP.md` | If a Mathematica function was ported or status changed |
+| `docs/DECISION_LOG.md` | If an architectural or design decision was made |
+| `docs/LESSONS_LEARNED.md` | If a mistake was made and fixed |
+| `tests/fixtures/README.md` | If test fixtures were added or modified |
+
+**End-of-session**: Append to `docs/SESSION_HANDOFFS.md` with session summary.
 
 **Incomplete propagation = incomplete work.**
 
@@ -460,6 +476,10 @@ Implements Mathematica's ReturnCalc[] for computing price returns.
 - [x] Unit tests (3 test cases)
 - [ ] README (not needed - internal function)
 - [x] CHANGELOG (added to Unreleased)
+- [x] MATHEMATICA_MAP (updated status to ✅ Ported)
+- [ ] DECISION_LOG (no new decisions)
+- [ ] LESSONS_LEARNED (no mistakes encountered)
+- [ ] Fixtures README (no new fixtures)
 
 ## Validation
 ```bash
@@ -658,6 +678,7 @@ Types: feat, fix, refactor, test, docs, chore
 - [ ] mypy passes with no errors
 - [ ] ruff passes with no errors
 - [ ] Propagation complete (tests, docs, changelog)
+- [ ] Operational docs updated (MATHEMATICA_MAP, DECISION_LOG, LESSONS_LEARNED if applicable)
 - [ ] No secrets in code
 
 ---
@@ -689,18 +710,23 @@ Types: feat, fix, refactor, test, docs, chore
 
 ## 12. Mathematica Function Mapping
 
-| Mathematica | Python Module | Function |
-|-------------|---------------|----------|
-| `MarketBaseConvert[]` | `core.pair_utils` | `market_base_convert()` |
-| `PairTranslator[]` | `core.pair_utils` | `pair_translator()` |
-| `MissingCheck[]` | `validation.guards` | `is_missing(), require_present(), require_positive(), require_non_negative()` |
-| `OrderBookParser[]` | `connectors.*.parser` | `parse_orderbook()` |
-| `ReturnCalc[]` | `calculation.returns` | `calc_return()` |
-| `ArbCalcFinal[]` | `calculation.arb_calc` | `calc_arb_final()` |
-| `TradesToExecute[]` | `strategy.scanner` | `find_trades_to_execute()` |
-| `SelectTradeToExecute[]` | `strategy.selection` | `select_trade()` |
-| `ExecuteTradesL3[]` | `execution.orders` | `execute_trades()` |
-| `Final[]` | `__main__` | `run_scan_cycle()` |
+> **Full mapping**: See `docs/MATHEMATICA_MAP.md` for comprehensive function inventory with status, behavioral notes, and sub-functions.
+
+Quick reference (top-level pipeline):
+
+| Mathematica | Python | Status |
+|-------------|--------|--------|
+| `MissingCheck[]` | `validation.guards.is_missing()` + `require_*()` | ✅ Ported |
+| `MarketBaseConvert[]` | `core.pair_utils.market_base_convert()` | 📋 Planned |
+| `PairTranslator[]` | `core.pair_utils.pair_translator()` | 📋 Planned |
+| `ReturnCalc[]` | `calculation.returns.calc_return()` | 📋 Planned |
+| `ArbCalcFinal[]` | `calculation.arb_calc.calc_arb_final()` | 📋 Planned |
+| `TradesToExecute[]` | `strategy.scanner.find_trades_to_execute()` | 📋 Planned |
+| `SelectTradeToExecute[]` | `strategy.selection.select_trade()` | 📋 Planned |
+| `ExecuteTradesL3[]` | `execution.orders.execute_trades()` | ⏳ Phase 4 |
+| `RunFinal[]` | `__main__.run_scan_cycle()` | 📋 Planned |
+
+For sub-function details, porting status, and behavioral differences, consult `docs/MATHEMATICA_MAP.md`.
 
 ---
 
@@ -709,6 +735,9 @@ Types: feat, fix, refactor, test, docs, chore
 ### Pre-Implementation Checklist
 
 ```
+[ ] LESSONS_LEARNED.md searched for relevant gotchas
+[ ] DECISION_LOG.md searched for related settled decisions
+[ ] MATHEMATICA_MAP.md checked for porting status and dependencies (if porting)
 [ ] Mathematica function identified (if porting)
 [ ] Existing patterns in codebase reviewed
 [ ] All imports verified to exist
@@ -726,7 +755,41 @@ Types: feat, fix, refactor, test, docs, chore
 [ ] CHANGELOG.md updated
 [ ] README.md updated (if user-facing)
 [ ] config.yaml updated (if new options)
+[ ] MATHEMATICA_MAP.md updated (if porting)
+[ ] DECISION_LOG.md updated (if decisions made)
+[ ] LESSONS_LEARNED.md updated (if mistakes fixed)
+[ ] Fixtures README updated (if fixtures added)
+[ ] SESSION_HANDOFFS.md appended (end of session)
 ```
+
+---
+
+## 14. Operational Documents
+
+The `docs/` directory contains living documents that support project continuity and quality:
+
+| Document | Purpose | When to Use |
+|----------|---------|-------------|
+| `docs/LESSONS_LEARNED.md` | Prevent repeat mistakes | Search BEFORE implementing. Add entries AFTER fixing mistakes. |
+| `docs/SESSION_HANDOFFS.md` | Multi-session continuity | Read latest entry when starting a session. Append when ending. |
+| `docs/DECISION_LOG.md` | Track design decisions with rationale | Search before proposing design changes. Add entries when decisions are made. |
+| `docs/MATHEMATICA_MAP.md` | Comprehensive porting tracker | Check status before porting a function. Update after porting. |
+| `tests/fixtures/README.md` | Test fixture provenance | Document every fixture added. Reference when writing tests. |
+
+### Workflow Integration
+
+**Starting a new task**:
+1. Read `SESSION_HANDOFFS.md` for current state
+2. Search `LESSONS_LEARNED.md` for relevant gotchas
+3. Check `MATHEMATICA_MAP.md` for porting status and dependencies
+4. Check `DECISION_LOG.md` for relevant settled decisions
+
+**Finishing a task**:
+1. Update `MATHEMATICA_MAP.md` if a function was ported
+2. Add to `LESSONS_LEARNED.md` if mistakes were made
+3. Add to `DECISION_LOG.md` if design decisions were made
+4. Append to `SESSION_HANDOFFS.md` with session summary
+5. Update `CHANGELOG.md` per the propagation rule
 
 ---
 
@@ -735,3 +798,4 @@ Types: feat, fix, refactor, test, docs, chore
 | Date | Version | Changes |
 |------|---------|---------|
 | 2026-01-04 | 1.0.0 | Initial comprehensive instructions |
+| 2026-02-13 | 1.1.0 | Added operational docs (docs/ directory), Section 14, updated Sections 2, 7.2-7.4, 10.3, 12, 13 |

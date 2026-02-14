@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `docs/LESSONS_LEARNED.md`: Mistake prevention database with seed entries from project history
+- `docs/SESSION_HANDOFFS.md`: Append-only session continuity log for multi-chat workflows
+- `docs/DECISION_LOG.md`: Architectural decision records with rationale (10 seed entries)
+- `docs/MATHEMATICA_MAP.md`: Comprehensive Mathematica→Python porting tracker (~58 functions)
+- `tests/fixtures/README.md`: Test fixture conventions and provenance documentation
+- PROJECT_INSTRUCTIONS.md Section 14: Operational Documents reference and workflow integration
 - GitHub Actions CI workflow with Ruff, mypy, and pytest
 - `validation/guards.py`: Runtime validation guards (`is_missing`, `require_present`, `require_positive`, `require_non_negative`)
 - Unit tests for validation module (30+ test cases)
@@ -25,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `httpx>=0.27` added as runtime dependency
 
 ### Changed
+- PROJECT_INSTRUCTIONS.md: Added operational docs to Source Documents (Section 2), Workflow (7.2), Propagation Rule (7.3), Deliverable Format (7.4), PR Checklist (10.3), Pre-Implementation and Propagation Checklists (13); replaced Section 12 inline table with pointer to MATHEMATICA_MAP.md
+- CLAUDE_INSTRUCTIONS.md: Added doc searches to workflow, pre-implementation verification, deliverable format, and reference section
+- README.md: Added Documentation section with links to all project docs
 - Documented "Data Trust Boundaries" pattern (validate at boundaries, trust downstream) across PROJECT_INSTRUCTIONS.md (Section 6.2), CLAUDE_INSTRUCTIONS.md, and `validation/guards.py` module docstring
 - `pyproject.toml`: Added httpx to runtime dependencies
 
