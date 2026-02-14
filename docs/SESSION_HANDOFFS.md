@@ -205,3 +205,58 @@
 
 ### Notes for Next Session
 - Kraken connector is DONE. Do not reference the notebook as pending.
+
+---
+
+## 2026-02-13 — Coinbase exploration notebook
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Created `notebooks/02_coinbase_exploration.ipynb` with 10 sections:
+  1. Setup & imports (reuses existing SymbolTranslator, tob_from_raw, to_decimal, require_present)
+  2. Product discovery via SDK (all 8 target pairs)
+  3. Symbol mapping (COINBASE_SYMBOL_MAP + SymbolTranslator instance)
+  4. Best Bid/Ask via SDK public endpoints
+  5. Raw httpx comparison (async compatibility, cache-control header)
+  6. Parse to TopOfBook prototype parser
+  7. Rate limit testing (10 req/sec by IP)
+  8. Error handling scenarios
+  9. Product details (precision, min sizes)
+  10. Summary & production connector design recommendation
+- Updated CHANGELOG.md, MATHEMATICA_MAP.md, README.md
+
+### In Progress
+- Notebook needs to be run locally to capture live API output
+
+### Blocked / Needs Decision
+- DEC-010 (proposed): Coinbase connector — SDK wrapper vs raw httpx.
+  Notebook includes comparison section. Expectation: raw httpx (consistent with Kraken,
+  async-native, header control). Final decision after running notebook.
+
+### Key Decisions Made
+- Notebook structure mirrors Kraken notebook (per DEC-008)
+- Public endpoints used (no auth needed for Phase 1)
+- USD ≠ USDC verification included (per DEC-001)
+
+### Files Modified
+- CREATED: `notebooks/02_coinbase_exploration.ipynb`
+- MODIFIED: `CHANGELOG.md` (added notebook entry)
+- MODIFIED: `docs/MATHEMATICA_MAP.md` (updated Coinbase BidAskData status)
+- MODIFIED: `README.md` (updated Coinbase exchange status)
+- MODIFIED: `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. Run Coinbase notebook locally — verify API connectivity and capture live output
+2. Commit notebook with output
+3. Make DEC-010 decision (SDK vs httpx) based on notebook findings
+4. Build Coinbase production connector (`connectors/coinbase/`)
+5. Begin calculation layer (fee math, return calcs)
+
+### Notes for Next Session
+- The notebook tests both SDK and raw httpx approaches. Section 5 has the comparison.
+- Coinbase public endpoints have a 1s cache — use `cache-control: no-cache` header for fresh data.
+- Rate limit is 10 req/sec by IP (more generous than Kraken). RateLimiter interval: 150ms.
+- Coinbase SDK is sync-only. Raw httpx is the likely choice for production (consistent with Kraken connector).
+- All 8 target pairs should be available on Coinbase, but verify when running the notebook.

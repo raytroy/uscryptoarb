@@ -23,7 +23,7 @@ Cross-exchange, taker-only crypto arbitrage scanner for Ohio-eligible exchanges.
 | Exchange | Status | Pairs |
 |----------|--------|-------|
 | Kraken | ✅ Connector built | BTC/USD, BTC/USDC, LTC/USD, LTC/USDC, LTC/BTC, SOL/USD, SOL/USDC, SOL/BTC |
-| Coinbase | 🔲 Planned | — |
+| Coinbase | 🔲 Notebook complete | BTC/USD, BTC/USDC, LTC/USD, LTC/USDC, LTC/BTC, SOL/USD, SOL/USDC, SOL/BTC |
 | Gemini | 🔲 Planned | — |
 
 ## Setup
