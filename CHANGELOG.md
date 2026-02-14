@@ -13,9 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests for validation module (30+ test cases)
 - mypy strict configuration in pyproject.toml
 - `py.typed` marker for PEP 561 compliance
+- `connectors/base.py`: `ExchangeConnector` Protocol defining the interface for all exchange connectors
+- `connectors/kraken/`: First exchange connector (Kraken)
+  - `symbols.py`: Verified symbol mapping for all 8 target pairs (BTC/USD, BTC/USDC, LTC/USD, LTC/USDC, LTC/BTC, SOL/USD, SOL/USDC, SOL/BTC)
+  - `parser.py`: Pure parsing functions for ticker and orderbook responses → TopOfBook
+  - `client.py`: Async httpx-based client with rate limiting, retry, and startup symbol validation
+- `http/rate_limiter.py`: Async rate limiter for respecting exchange API limits
+- `venues/symbols.py`: Added `to_canonical()` reverse lookup to SymbolTranslator
+- `fixtures/`: Kraken API response fixtures from live exploration notebook
+- `tests/conftest.py`: Shared pytest fixtures for API response data
+- `httpx>=0.27` added as runtime dependency
 
 ### Changed
 - Documented "Data Trust Boundaries" pattern (validate at boundaries, trust downstream) across PROJECT_INSTRUCTIONS.md (Section 6.2), CLAUDE_INSTRUCTIONS.md, and `validation/guards.py` module docstring
+- `pyproject.toml`: Added httpx to runtime dependencies
 
 ## [0.0.1] - 2025-01-04
 
