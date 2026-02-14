@@ -43,6 +43,35 @@ Every fixture file MUST have an entry in this README documenting:
 
 _(Add entries as fixtures are created)_
 
+
+### coinbase_product_book_btc_usd.json
+- **Contains**: Coinbase product_book response for BTC-USD (limit=1). Standard USD pair with quote_increment=0.01.
+- **Source**: Live capture from Coinbase public API during notebook exploration
+- **Date captured**: 2026-02-14
+- **Used by**: `tests/unit/test_connectors/test_coinbase/test_parser.py`
+- **Notes**: Prices/sizes are strings (fed to to_decimal). Timestamp is ISO 8601 with microseconds.
+
+### coinbase_product_book_ltc_btc.json
+- **Contains**: Coinbase product_book response for LTC-BTC (limit=1). BTC-quoted pair with higher decimal precision (quote_increment=0.000001).
+- **Source**: Live capture from Coinbase public API during notebook exploration
+- **Date captured**: 2026-02-14
+- **Used by**: `tests/unit/test_connectors/test_coinbase/test_parser.py`
+- **Notes**: Tests parser handles 6-decimal-place quote prices correctly.
+
+### coinbase_product_book_sol_btc.json
+- **Contains**: Coinbase product_book response for SOL-BTC (limit=1). Coarsest pair (base_increment=0.001, quote_increment=0.0000001).
+- **Source**: Live capture from Coinbase public API during notebook exploration
+- **Date captured**: 2026-02-14
+- **Used by**: `tests/unit/test_connectors/test_coinbase/test_parser.py`
+- **Notes**: Tests parser handles 7-decimal-place quote prices and 3-decimal-place sizes.
+
+### coinbase_error_not_found.json
+- **Contains**: Coinbase error response for invalid product_id (HTTP 404).
+- **Source**: Live capture from Coinbase public API during notebook exploration
+- **Date captured**: 2026-02-14
+- **Used by**: `tests/unit/test_connectors/test_coinbase/test_client.py`
+- **Notes**: Format: {"error": "NOT_FOUND", "error_details": "...", "message": "..."}
+
 ### Template
 
 ```

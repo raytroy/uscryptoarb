@@ -100,7 +100,7 @@ Databases (fees, withdrawal, accuracy)
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
 | `BidAskData[]` (Kraken) | `fetch_ticker()` | `connectors/kraken/` | 📋 Planned | Fetches ticker from Kraken. Notebook exploration complete. |
-| `BidAskData[]` (Coinbase) | `fetch_ticker()` | `connectors/coinbase/` | 📋 Planned | Fetches ticker from Coinbase. Notebook exploration complete (`02_coinbase_exploration.ipynb`). |
+| `BidAskData[]` (Coinbase) | `fetch_tickers()` | `connectors/coinbase/` | ✅ Ported | Async httpx client. Per-pair requests via `/market/product_book` (no public batch — LL-052). Parser converts to TopOfBook via `tob_from_raw()`. |
 | `BidAskData[]` (Gemini) | `fetch_ticker()` | `connectors/gemini/` | 📋 Planned | Fetches ticker from Gemini. Notebook not yet created. |
 | `OrderBookPerExchange[]` | `fetch_orderbook()` | `connectors/*/orderbook.py` | ⏳ Deferred | Full orderbook depth. Phase 1 uses top-of-book only. Needed for trade sizing in Phase 3+. |
 | `GetTradingBalances[]` | `fetch_balances()` | `connectors/*/balances.py` | ⏳ Deferred | Account balance retrieval. Requires authenticated API. Phase 3+. |

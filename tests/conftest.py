@@ -22,3 +22,21 @@ def kraken_orderbook_fixture() -> dict:
 def kraken_asset_pairs_fixture() -> dict:
     with open(FIXTURES_DIR / "kraken_asset_pairs_btcusd.json") as f:
         return json.load(f)
+
+
+@pytest.fixture
+def coinbase_product_book_btc_usd_fixture() -> dict:
+    with open(FIXTURES_DIR / "coinbase_product_book_btc_usd.json") as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def coinbase_product_book_ltc_btc_fixture() -> dict:
+    with open(FIXTURES_DIR / "coinbase_product_book_ltc_btc.json") as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def coinbase_product_book_sol_btc_fixture() -> dict:
+    with open(FIXTURES_DIR / "coinbase_product_book_sol_btc.json") as f:
+        return json.load(f)

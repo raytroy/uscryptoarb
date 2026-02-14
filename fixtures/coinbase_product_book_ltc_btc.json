@@ -1,0 +1,16 @@
+{
+  "pricebook": {
+    "product_id": "LTC-BTC",
+    "bids": [
+      {"price": "0.000811", "size": "5.42000000"}
+    ],
+    "asks": [
+      {"price": "0.000812", "size": "3.18000000"}
+    ],
+    "time": "2026-02-14T17:23:46.332100Z"
+  },
+  "last": "0.0008115",
+  "mid_market": "0.0008115",
+  "spread_bps": "1.23304562",
+  "spread_absolute": "0.000001"
+}
