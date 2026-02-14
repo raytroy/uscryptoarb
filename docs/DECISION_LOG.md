@@ -174,6 +174,7 @@
 | Date | Entry | Description |
 |------|-------|-------------|
 | 2026-02-13 | DEC-001 through DEC-010 | Initial creation with decisions extracted from project history |
+| 2026-02-14 | DEC-011 | Raw httpx for Coinbase connector (partially supersedes DEC-005) |
 
 
 ### DEC-011: Use raw httpx (not SDK) for Coinbase connector

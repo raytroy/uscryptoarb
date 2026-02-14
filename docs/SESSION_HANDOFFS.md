@@ -51,6 +51,44 @@
 
 ## Session Log
 
+## 2026-02-14 — Documentation cleanup post-Coinbase completion
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Fixed README.md Coinbase exchange status: 🔲 → ✅ Connector built (with all 8 pairs)
+- Fixed truncated Next Steps in SESSION_HANDOFFS.md Coinbase connector entry
+- Added DEC-011 to DECISION_LOG.md Document History table
+
+### In Progress
+- Nothing
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- Next major work stream: Calculation layer (fee math, return calcs) before Gemini connector
+- Rationale: Two exchanges (Kraken + Coinbase) are sufficient for end-to-end Type-2 arbitrage detection; proves the TopOfBook → calculation → strategy pipeline before adding a third connector
+
+### Files Modified
+- MODIFIED: `README.md` (Coinbase status updated)
+- MODIFIED: `docs/SESSION_HANDOFFS.md` (fixed truncated entry + this entry)
+- MODIFIED: `docs/DECISION_LOG.md` (Document History table updated)
+
+### Next Steps (Priority Order)
+1. Begin calculation layer — port `MarketBaseConvert[]`, `ReturnCalc[]`, fee math from Mathematica
+2. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+3. Gemini production connector (`connectors/gemini/`)
+
+### Notes for Next Session
+- Kraken and Coinbase connectors are DONE. Both produce `TopOfBook` via `tob_from_raw()`.
+- Calculation layer is the next logical step — see MATHEMATICA_MAP.md Sections 3, 6, 7 for functions to port.
+- When implementing Gemini connector later, check if `_parse_iso_timestamp_ms()` should be extracted to shared utility (Coding Rule 10.1 — will have 2 callers if Gemini uses ISO 8601).
+- DummyRateLimiter in test files: extract to shared conftest when Gemini tests make it 3 callers.
+
+---
+
 ## 2026-02-14 — Coinbase production connector implementation
 
 **Interface**: Claude Code
@@ -106,9 +144,9 @@
 - `docs/SESSION_HANDOFFS.md` (this entry)
 
 ### Next Steps (Priority Order)
-1. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
-2. Gemini production connector (`connectors/gemini/`)
-3. Calculation layer — fee math and return calcs
+1. Begin calculation layer — fee math and return calcs (porting `ReturnCalc[]`, `MarketBaseConvert[]`)
+2. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+3. Gemini production connector (`connectors/gemini/`)
 
 ### Notes for Next Session
 - Coinbase connector is DONE. Pattern is established for connector #3 (Gemini).
