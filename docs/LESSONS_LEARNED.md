@@ -175,3 +175,23 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Fix applied**: Production connector will use individual `/market/product_book` calls per pair (8 calls × ~36ms = ~300ms total, well within polling interval).
 - **Rule going forward**: When building connectors for public (unauthenticated) use, verify each endpoint exists in the "Public" section of the Coinbase API docs. Do not assume URL pattern `/market/{endpoint}` mirrors every authenticated `/{endpoint}`. When API keys are added (Phase 2+), switch to batch `/best_bid_ask` for efficiency.
 - **Affected files**: `notebooks/02_coinbase_exploration.ipynb`, future `connectors/coinbase/client.py`
+
+### LL-053: TradingAccuracy lives in calculation/types.py — must migrate if connectors need it
+- **Date**: 2026-02-14
+- **Category**: Architecture
+- **Severity**: Medium
+- **What happened**: During calculation layer review, noticed TradingAccuracy is defined in `calculation/types.py`. Per layering rules (Section 5.2), connectors can only import from Domain/Core. If connectors ever need to produce TradingAccuracy (e.g., from live fee/accuracy API responses), the type must move to `core/types.py`.
+- **Root cause**: TradingAccuracy was created as part of the calculation layer because that's where it's consumed. But it's fundamentally a domain type.
+- **Fix applied**: None yet — currently only test fixtures create TradingAccuracy, so no import violation exists.
+- **Rule going forward**: When building the config/fee loader or any connector that produces TradingAccuracy, move the type to `core/types.py` first. Same applies to TradingFeeRate and WithdrawalFee if connectors need to create them.
+- **Affected files**: `calculation/types.py` → future `core/types.py`
+
+### LL-054: TradingFeeRate.flat_fee must be applied in fee math even if currently zero
+- **Date**: 2026-02-14
+- **Category**: Correctness
+- **Severity**: Medium
+- **What happened**: Code review found that `calc_buy_leg()` and `calc_sell_leg()` only applied `fee_pct` but never `flat_fee`, even though the `TradingFeeRate` dataclass has a `flat_fee` field. All current exchanges use flat_fee=0, so no live bug existed.
+- **Root cause**: During initial implementation, flat_fee was set to 0 for all exchanges (matching Mathematica's pattern where flatTradingfee=0) and the calculation code only implemented the percentage path.
+- **Fix applied**: Added `flat_fee: Decimal = ZERO` parameter to both leg functions. Updated arb_calc.py to pass it through from FeeSchedule. Added tests for non-zero flat_fee.
+- **Rule going forward**: When a dataclass field exists, the math must use it — even if the current value is zero. Dormant code paths become live bugs when config changes.
+- **Affected files**: `calculation/fees.py`, `calculation/arb_calc.py`, `tests/unit/test_calculation/test_fees.py`

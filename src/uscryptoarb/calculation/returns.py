@@ -14,10 +14,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-# Internal precision for intermediate calculations.
-# Final amounts are quantized via floor_to_step() before order placement.
-CALC_CONTEXT_PREC = 12
-
 
 def calc_return_raw(buy_price: Decimal, sell_price: Decimal) -> Decimal:
     """Raw return before any fees.
