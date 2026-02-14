@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `fees.py`: calc_buy_leg, calc_sell_leg, effective_buy_cost, effective_sell_proceeds, total_buy_cost, net_sell_proceeds
   - `sizing.py`: calc_kelly_fraction, calc_kelly_amount, calc_position_size (Kelly Criterion)
   - `arb_calc.py`: calc_arb_opportunity, calc_all_opportunities, sort_opportunities, filter_profitable
+- **Strategy layer** (`src/uscryptoarb/strategy/`) — pure trade selection logic for Type-2 arbitrage detection
+  - `selection.py`: passes_threshold, select_trade — threshold checking and best-trade picking
+  - `scanner.py`: filter_valid_exchanges, find_trades_to_execute — top-level scan pipeline
+- **Strategy layer tests** (`tests/unit/test_strategy/`) — 20+ unit tests covering threshold boundaries, staleness filtering, multi-exchange selection, and golden value verification
+- Shared TopOfBook/FeeSchedule fixtures refactored to `tests/conftest.py` (available to all test packages)
+- Gemini BTC/USD test fixtures (TopOfBook + FeeSchedule) for 3-exchange strategy tests
 - **Fee schedules fixture** (`tests/fixtures/fee_schedules.json`) — hardcoded fee/accuracy data for Kraken, Coinbase, Gemini across all 8 pairs
 - **50 unit tests** for calculation layer with deterministic Decimal fixtures
 - `connectors/coinbase/`: Second exchange connector (Coinbase)

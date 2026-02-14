@@ -535,3 +535,55 @@
 - All 52 tests pass (50 original + 2 new flat_fee tests)
 - flat_fee is now wired through but all exchanges still use 0. If an exchange introduces flat trading fees, the math is ready.
 - TradingAccuracy migration to core/types.py is documented in LL-053. Trigger: when any connector needs to import it.
+
+---
+
+## 2026-02-14 — Strategy layer implementation
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Implemented `strategy/` package (3 source files): __init__.py, selection.py, scanner.py
+- Created `tests/unit/test_strategy/` (4 test files): __init__.py, conftest.py, test_selection.py, test_scanner.py
+- Refactored shared TopOfBook/FeeSchedule fixtures from test_calculation/conftest.py up to tests/conftest.py
+- Added Gemini BTC/USD fixtures (TopOfBook, FeeSchedule, TradingAccuracy) for 3-exchange tests
+- Added stale_tob fixture for staleness filtering tests
+- All new tests pass, all 50 existing calculation tests still pass
+- Updated MATHEMATICA_MAP.md (3 functions: 📋→✅/🔧), CHANGELOG.md, SESSION_HANDOFFS.md
+
+### In Progress
+- Nothing — strategy layer is complete
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- Threshold uses > (strictly greater) not >= — intentional improvement over Mathematica's >= (conservative: boundary values rejected)
+- Only return_net checked (not returnRaw AND returnGrs) — since return_net <= return_grs <= return_raw, checking return_net implies the others
+- Sort by return_net descending (not sellMarket size) — appropriate for Phase 1 detection; Phase 4 can add sizing-based selection
+- filter_valid_exchanges skips filtering when max_staleness_ms=None OR current_time_ms=None — safest default, never accidentally blocks a venue
+- fees_by_venue intersection with tobs_by_venue keys in find_trades_to_execute — defense-in-depth without adding validation to pure layer
+- Shared fixtures refactored to tests/conftest.py — DRY, both test_calculation and test_strategy use them
+
+### Files Created
+- `src/uscryptoarb/strategy/__init__.py`
+- `src/uscryptoarb/strategy/selection.py`
+- `src/uscryptoarb/strategy/scanner.py`
+- `tests/unit/test_strategy/__init__.py`
+- `tests/unit/test_strategy/conftest.py`
+- `tests/unit/test_strategy/test_selection.py`
+- `tests/unit/test_strategy/test_scanner.py`
+
+### Files Modified
+- `tests/conftest.py` (added shared TopOfBook/FeeSchedule/Gemini/stale fixtures)
+- `tests/unit/test_calculation/conftest.py` (removed fixtures, now in shared conftest)
+- `docs/MATHEMATICA_MAP.md` (3 functions updated in Sections 6, 10)
+- `CHANGELOG.md` (strategy layer entries)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+2. Gemini production connector (`connectors/gemini/`)
+3. Orchestration layer — wire up connectors + strategy into a polling loop
+4. Email notification for detected opportunities
