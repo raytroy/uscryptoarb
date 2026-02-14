@@ -21,7 +21,7 @@
 | 📋 Planned | Identified for next phase, not started |
 | ⏳ Deferred | Not needed until later phase |
 | ❌ Not Porting | Intentionally not porting (with reason) |
-| 🔀 Redesigned | Functionality exists but with different architecture |
+| 🔧 Improved | Functionality exists but with intentionally better approach than Mathematica |
 
 ---
 

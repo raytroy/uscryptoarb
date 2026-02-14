@@ -175,6 +175,7 @@
 |------|-------|-------------|
 | 2026-02-13 | DEC-001 through DEC-010 | Initial creation with decisions extracted from project history |
 | 2026-02-14 | DEC-011 | Raw httpx for Coinbase connector (partially supersedes DEC-005) |
+| 2026-02-14 | DEC-012 | Mathematica as reference not gospel — philosophical shift |
 
 
 ### DEC-011: Use raw httpx (not SDK) for Coinbase connector
@@ -188,3 +189,15 @@
 - **Rationale**: httpx provides async-native requests, full header control, and a consistent pattern across all connectors. The response structure is identical between SDK and raw httpx (same JSON shape, same keys), so there is zero loss of functionality.
 - **Consequences**: Coinbase connector mirrors Kraken connector structure: `client.py` uses `httpx.AsyncClient`, `parser.py` has pure parsing functions, `symbols.py` has the symbol map. DEC-005 remains valid for Kraken (`python-kraken-sdk`) and Gemini (custom).
 - **References**: `notebooks/02_coinbase_exploration.ipynb` Section 5, LL-052, Coding Rule 2.3
+
+### DEC-012: Mathematica as reference, not gospel
+- **Date**: 2026-02-14
+- **Status**: Accepted
+- **Context**: The project was originally framed as a "port" of the Mathematica system to Python. While the Mathematica system is proven (10,000+ trades) and provides invaluable reference patterns, treating it as gospel constrains the Python system unnecessarily. Mathematica's patterns were shaped by Mathematica's language constraints (lack of typed containers, expression-based evaluation, mutable associations), and Python has different strengths.
+- **Decision**: The Mathematica system is a validated reference and guide, not a specification. Where Python idioms, modern libraries, or better algorithms exist, prefer those. Where Mathematica's approach is clunky or constrained by its language, redesign freely. Where Mathematica's approach is elegant and proven, adopt it. Claude should proactively suggest improvements rather than defaulting to literal porting.
+- **Alternatives Considered**:
+  1. Continue literal porting — rejected because it imports Mathematica's language-specific limitations into Python unnecessarily.
+  2. Ignore Mathematica entirely and design from scratch — rejected because 10,000+ successful trades represent hard-won domain knowledge that shouldn't be discarded.
+- **Rationale**: The value of the Mathematica system is in its *domain logic* (fee models, return calculations, trade selection, limiting reactant pattern), not its *implementation patterns*. Python can preserve the domain logic while using better implementation patterns. Examples already exist: DEC-003 (boundary validation vs scattered MissingCheck) and DEC-011 (async httpx vs sync SDK) are cases where we already improved over Mathematica's approach.
+- **Consequences**: MATHEMATICA_MAP.md gains a `🔧 Improved` status for functions where the Python version intentionally diverges. Pre-implementation verification now includes "Improvements over Mathematica approach considered." Calculation Match metric allows documented divergence.
+- **References**: CLAUDE_INSTRUCTIONS.md "Relationship to Mathematica" section, DEC-003, DEC-011
