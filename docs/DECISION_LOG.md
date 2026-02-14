@@ -174,3 +174,16 @@
 | Date | Entry | Description |
 |------|-------|-------------|
 | 2026-02-13 | DEC-001 through DEC-010 | Initial creation with decisions extracted from project history |
+
+
+### DEC-011: Use raw httpx (not SDK) for Coinbase connector
+- **Date**: 2026-02-14
+- **Status**: Accepted (partially supersedes DEC-005 for Coinbase)
+- **Context**: DEC-005 selected `coinbase-advanced-py` SDK for Coinbase. Notebook exploration (02_coinbase_exploration.ipynb) revealed the SDK is synchronous-only (uses `requests`), violating Coding Rule 2.3 (all external I/O must be async/await).
+- **Decision**: Use raw `httpx.AsyncClient` for the Coinbase production connector, consistent with the Kraken connector pattern. The SDK remains useful for interactive exploration in notebooks.
+- **Alternatives Considered**:
+  1. Wrap SDK in `asyncio.to_thread()` — rejected because it adds thread pool overhead, loses header control (needed for cache-control), and creates an inconsistent pattern vs. Kraken connector.
+  2. Use SDK as-is (synchronous) — rejected because it violates Coding Rule 2.3 and would block the event loop.
+- **Rationale**: httpx provides async-native requests, full header control, and a consistent pattern across all connectors. The response structure is identical between SDK and raw httpx (same JSON shape, same keys), so there is zero loss of functionality.
+- **Consequences**: Coinbase connector mirrors Kraken connector structure: `client.py` uses `httpx.AsyncClient`, `parser.py` has pure parsing functions, `symbols.py` has the symbol map. DEC-005 remains valid for Kraken (`python-kraken-sdk`) and Gemini (custom).
+- **References**: `notebooks/02_coinbase_exploration.ipynb` Section 5, LL-052, Coding Rule 2.3

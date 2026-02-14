@@ -260,3 +260,62 @@
 - Rate limit is 10 req/sec by IP (more generous than Kraken). RateLimiter interval: 150ms.
 - Coinbase SDK is sync-only. Raw httpx is the likely choice for production (consistent with Kraken connector).
 - All 8 target pairs should be available on Coinbase, but verify when running the notebook.
+
+
+---
+
+## 2026-02-14 — Coinbase exploration notebook: complete run + API research
+
+**Interface**: Claude.ai WebUI
+**Duration**: ~2h
+**Branch**: main
+
+### Completed
+- Fixed asyncio.run() error in notebook with nest_asyncio.apply() + top-level await
+- Full notebook execution: all 20 cells, Sections 1–10 ran successfully
+- Reviewed all outputs: symbol mapping, BBO data, SDK vs httpx comparison, TopOfBook parsing, rate limits, error handling, product details
+- Researched batch BBO 404 root cause: confirmed no public `/market/best_bid_ask` endpoint exists (authenticated-only)
+- Documented 3 new lessons learned (LL-050, LL-051, LL-052)
+- Added DEC-011: raw httpx for Coinbase connector (partially supersedes DEC-005)
+
+### In Progress
+- Nothing — exploration phase is complete
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- DEC-011: Use raw httpx (not SDK) for Coinbase production connector
+- Production connector must use individual `/market/product_book` per pair (no batch endpoint available without auth)
+- 100ms rate limit interval is safe (15 rapid requests with zero 429s observed)
+
+### Key Findings (from notebook)
+- 8/8 target pairs available, all status: online
+- DEC-001 confirmed: USD ≠ USDC (distinct product_id, distinct quote_currency_id)
+- Symbol mapping trivial: canonical `BTC/USD` → Coinbase `BTC-USD` (replace / with -)
+- Response structure: `pricebook.bids[0].price` / `.size` as strings → clean for to_decimal()
+- Timestamps: ISO 8601 with microseconds (e.g., `2026-02-14T17:23:44.194522Z`)
+- Avg latency: 52ms (36ms after connection warmup)
+- Rate limits: 15 requests in ~0.8s with zero 429s (more generous than documented 10 req/s)
+- cache-control: no-cache does NOT bypass server-side 1s cache
+- Batch `/market/best_bid_ask` returns 404 (public endpoints are a subset of authenticated)
+- Error format: `{"error": "NOT_FOUND", "error_details": "...", "message": "..."}`
+- TopOfBook parsing via tob_from_raw() works for all 8 pairs
+- Product precision: most pairs have quote_increment=0.01, except LTC/BTC (0.000001) and SOL/BTC (0.0000001)
+- SOL/BTC has coarser base_increment (0.001) and larger base_min_size (0.001) vs other pairs (0.00000001)
+
+### Files Modified
+- `notebooks/02_coinbase_exploration.ipynb` (async fix committed by Ray)
+- `docs/LESSONS_LEARNED.md` (3 entries appended: LL-050, LL-051, LL-052)
+- `docs/DECISION_LOG.md` (1 entry appended: DEC-011)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+- `CHANGELOG.md` (1 line added under Unreleased)
+
+### Next Steps (Priority Order)
+1. Begin Coinbase production connector implementation (`connectors/coinbase/`)
+2. Structure: `symbols.py` → `parser.py` → `client.py`, mirroring Kraken connector
+3. After Coinbase connector: Gemini exploration notebook (`03_gemini_exploration.ipynb`)
+
+### Notes for Next Session
+- The notebook Section 10 summary cell still has placeholder text (e.g., "~Xms" latency). The cell outputs tell the real story, but the markdown could be updated for completeness in a future pass.
+- `nest_asyncio` is a notebook-only dependency. Do not add it to pyproject.toml runtime deps.
