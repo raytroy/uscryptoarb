@@ -66,9 +66,9 @@ Databases (fees, withdrawal, accuracy)
 | `withdrawalHeader` | — | `core/types.py` | 🔀 Redesigned | Defines column names. In Python, dataclass field names serve this purpose. |
 | `tradingFeesHeader` | — | `core/types.py` | 🔀 Redesigned | Same — replaced by dataclass fields. |
 | `tradingAccuracyHeader` | — | `core/types.py` | 🔀 Redesigned | Same — replaced by dataclass fields. |
-| `exchangeTradingFeesDatabase` | `trading_fees_db` | Passed as param | 📋 Planned | `List[TradingFees]` — loaded from config, passed to calculation functions |
-| `withdrawalDatabase` | `withdrawal_db` | Passed as param | 📋 Planned | `List[WithdrawalFee]` — loaded from config, passed to calculation functions |
-| `tradingInfoDatabase` | `trading_info_db` | Passed as param | 📋 Planned | `List[TradingAccuracy]` — loaded from config, passed to calculation functions |
+| `exchangeTradingFeesDatabase` | `fees_by_pair_venue` | `orchestration/config.py` | ✅ Ported | Built from config.yaml fee rates + fee_schedules.json. Loaded once at startup and passed as `fees_by_pair_venue`. |
+| `withdrawalDatabase` | `fees_by_pair_venue` | `orchestration/config.py` | ✅ Ported | Built from config.yaml fee rates + fee_schedules.json. Loaded once at startup and passed as `fees_by_pair_venue`. |
+| `tradingInfoDatabase` | `fees_by_pair_venue` | `orchestration/config.py` | ✅ Ported | Built from config.yaml fee rates + fee_schedules.json. Loaded once at startup and passed as `fees_by_pair_venue`. |
 
 ---
 
@@ -179,7 +179,7 @@ Databases (fees, withdrawal, accuracy)
 | `SelectTradeToExecute[]` | `select_trade()` | `strategy/selection.py` | 🔧 Improved | Picks best trade by return_net (not sellMarket size). Uses > not >= for threshold. Checks only return_net (implies return_grs and return_raw). |
 | `ExecuteTradesL2[]` | `execute_trade_l2()` | `execution/orders.py` | ⏳ Deferred | Mid-level execution: checks threshold, delegates to L3 if passes. Phase 4. |
 | `ExecuteTradesL3[]` | `execute_trades()` | `execution/orders.py` | ⏳ Deferred | Full execution: check existing orders → get orderbooks → get balances → calc amount → execute. Phase 4. |
-| `RunFinal[]` | `run_scan_cycle()` | `__main__.py` | 📋 Planned | Top-level orchestration: TradesToExecute → threshold check → ExecuteTradesL3. Phase 1 will detect + alert only. |
+| `RunFinal[]` | `run_scan_loop()` | `__main__.py` | ✅ Ported | Phase 1 implementation: polling loop with concurrent venue fetching, per-pair detection, email alerts. CLI: `python -m uscryptoarb`. |
 
 ---
 
@@ -198,7 +198,7 @@ Databases (fees, withdrawal, accuracy)
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
 | `SaveTradeData[]` | `save_trade_data()` | `execution/logging.py` | ⏳ Deferred | Saves trade data + response to file. Mathematica uses `.m` files. Python will use JSON or structured logging. Phase 4. |
-| `SendEmail[]` | `send_alert()` | `notification/email.py` | 📋 Planned | Email notification for detected opportunities. Phase 1. |
+| `SendEmail[]` | `send_alert()` | `notification/email.py` | ✅ Ported | Gmail STARTTLS on port 587. Async via `asyncio.to_thread()`. Subject includes pair, return_net, venues. Best-effort (never crashes scanner). |
 
 ---
 
@@ -221,9 +221,9 @@ Databases (fees, withdrawal, accuracy)
 
 | Status | Count |
 |--------|-------|
-| ✅ Ported | 26 |
+| ✅ Ported | 31 |
 | 🔄 In Progress | 0 |
-| 📋 Planned (Phase 1) | ~6 |
+| 📋 Planned (Phase 1) | ~2 |
 | ⏳ Deferred (Phase 2+) | ~15 |
 | ❌ Not Porting | 0 |
 | 🔀 Redesigned | ~12 |

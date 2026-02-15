@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Orchestration layer** (`src/uscryptoarb/orchestration/`) — imperative shell wiring pure pipeline to real I/O
+  - `config.py`: YAML + .env config loader with validation boundary, builds FeeSchedule objects for all (venue, pair) combinations
+  - `scanner.py`: Async polling loop with concurrent venue fetching, per-pair arbitrage detection, graceful shutdown
+- **Notification layer** (`src/uscryptoarb/notification/`) — email alerts for detected opportunities
+  - `email.py`: Gmail STARTTLS email sender, async via `to_thread()`, best-effort (never crashes scanner)
+- **CLI entry point** (`src/uscryptoarb/__main__.py`) — `python -m uscryptoarb` with `--dry-run`, `--trace-pair`, `--log-level`
+- **Package resources** (`src/uscryptoarb/resources/fee_schedules.json`) — production fee data (copy of test fixtures)
+- `config.yaml`: Default configuration file with per-pair trade amounts, per-venue connector settings
+- `.env.example`: Template for sensitive environment variables (SMTP credentials, future API keys)
+- `tests/helpers.py`: Shared test utilities (DummyRateLimiter extracted per Coding Rule 10.1)
+- `pyyaml>=6.0` and `python-dotenv>=1.0` added as runtime dependencies
 - **Calculation layer** (`src/uscryptoarb/calculation/`) — pure math layer for Type-2 arbitrage detection
   - `types.py`: TradingFeeRate, WithdrawalFee, TradingAccuracy, FeeSchedule, ArbLeg, ArbOpportunity dataclasses
   - `returns.py`: calc_return_raw, calc_return_grs, calc_return_net, calc_profit_base
@@ -51,6 +62,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `httpx>=0.27` added as runtime dependency
 - `notebooks/02_coinbase_exploration.ipynb`: Complete Coinbase API exploration — symbol mapping, BBO data, SDK vs httpx comparison, TopOfBook parsing, rate limits, error handling, product details
 
+### Changed
+- `tests/unit/test_connectors/test_kraken/test_client.py`: DummyRateLimiter extracted to tests/helpers.py
+- `tests/unit/test_connectors/test_coinbase/test_client.py`: DummyRateLimiter extracted to tests/helpers.py
+
 ### Fixed
 - `calculation/fees.py`: `calc_buy_leg()` and `calc_sell_leg()` now apply `flat_fee` from `TradingFeeRate` (was silently ignored; all exchanges currently use 0)
 - `calculation/arb_calc.py`: `calc_arb_opportunity()` now passes `flat_fee` through to leg calculations
@@ -73,6 +88,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2025-01-04
 
 ### Added
+- **Orchestration layer** (`src/uscryptoarb/orchestration/`) — imperative shell wiring pure pipeline to real I/O
+  - `config.py`: YAML + .env config loader with validation boundary, builds FeeSchedule objects for all (venue, pair) combinations
+  - `scanner.py`: Async polling loop with concurrent venue fetching, per-pair arbitrage detection, graceful shutdown
+- **Notification layer** (`src/uscryptoarb/notification/`) — email alerts for detected opportunities
+  - `email.py`: Gmail STARTTLS email sender, async via `to_thread()`, best-effort (never crashes scanner)
+- **CLI entry point** (`src/uscryptoarb/__main__.py`) — `python -m uscryptoarb` with `--dry-run`, `--trace-pair`, `--log-level`
+- **Package resources** (`src/uscryptoarb/resources/fee_schedules.json`) — production fee data (copy of test fixtures)
+- `config.yaml`: Default configuration file with per-pair trade amounts, per-venue connector settings
+- `.env.example`: Template for sensitive environment variables (SMTP credentials, future API keys)
+- `tests/helpers.py`: Shared test utilities (DummyRateLimiter extracted per Coding Rule 10.1)
+- `pyyaml>=6.0` and `python-dotenv>=1.0` added as runtime dependencies
 - `notebooks/02_coinbase_exploration.ipynb`: Coinbase Advanced Trade API exploration notebook covering product discovery, symbol mapping, BBO fetching (SDK and raw httpx), TopOfBook parsing, rate limit testing, and SDK vs httpx comparison
 - Initial project structure
 - `misc/decimals.py`: `to_decimal()`, `floor_to_step()`, `ceil_to_step()`

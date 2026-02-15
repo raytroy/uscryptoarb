@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -70,13 +70,15 @@ def test_parse_bid_less_than_ask() -> None:
 
 def test_parse_iso_timestamp_ms() -> None:
     ts = _parse_iso_timestamp_ms("2026-02-14T17:23:44.194522Z")
-    expected = int(datetime(2026, 2, 14, 17, 23, 44, 194522, tzinfo=UTC).timestamp() * 1000)
+    expected = int(
+        datetime(2026, 2, 14, 17, 23, 44, 194522, tzinfo=timezone.utc).timestamp() * 1000
+    )
     assert ts == expected
 
 
 def test_parse_iso_timestamp_ms_no_microseconds() -> None:
     ts = _parse_iso_timestamp_ms("2026-02-14T17:23:44Z")
-    expected = int(datetime(2026, 2, 14, 17, 23, 44, tzinfo=UTC).timestamp() * 1000)
+    expected = int(datetime(2026, 2, 14, 17, 23, 44, tzinfo=timezone.utc).timestamp() * 1000)
     assert ts == expected
 
 

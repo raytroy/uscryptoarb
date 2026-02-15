@@ -205,3 +205,23 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Fix applied**: Actually replaced Section 12 with a pointer. Updated CLAUDE_INSTRUCTIONS.md Key Functions to match real function names. Added verification step to review workflow.
 - **Rule going forward**: When a CHANGELOG entry claims a documentation change, verify the target file actually reflects the change before committing. "Trust but verify" applies to our own documentation, not just external data.
 - **Affected files**: `PROJECT_INSTRUCTIONS.md`, `CLAUDE_INSTRUCTIONS.md`, `CHANGELOG.md`
+
+### LL-056: Package resources must avoid gitignored directories
+- **Date**: 2026-02-15
+- **Category**: Tooling
+- **Severity**: Medium
+- **What happened**: Plan initially proposed `src/uscryptoarb/data/` for package resources, but `.gitignore` contains `data/` which would exclude it from version control.
+- **Root cause**: `.gitignore` patterns like `data/` match at any directory level.
+- **Fix applied**: Used `src/uscryptoarb/resources/` instead.
+- **Rule going forward**: Before creating new directories, check `.gitignore` for conflicts. Use descriptive names that won't collide with common gitignore patterns.
+- **Affected files**: `src/uscryptoarb/resources/`
+
+### LL-057: Frozen dataclasses with mutable default fields need tuples, not lists
+- **Date**: 2026-02-15
+- **Category**: Type System
+- **Severity**: Medium
+- **What happened**: Config dataclasses use `frozen=True` but contain list fields. Lists are mutable, which undermines the frozen guarantee.
+- **Root cause**: `@dataclass(frozen=True)` prevents reassignment of fields but doesn't prevent mutation of mutable field values like lists.
+- **Fix applied**: All sequence fields in config dataclasses use `tuple[str, ...]` instead of `list[str]`.
+- **Rule going forward**: Frozen dataclasses should only contain immutable field types: Decimal, str, int, bool, tuple, frozenset, None, or other frozen dataclasses. Never list, dict (use tuple, frozenset, or MappingProxyType).
+- **Affected files**: `orchestration/config.py`

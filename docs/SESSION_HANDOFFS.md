@@ -636,3 +636,74 @@
 - Key orchestration design questions: how to handle partial failures (1 of 2 connectors fails for a pair), how to structure the config loader (config.yaml → FeeSchedule objects), and how to wire email notifications to detected opportunities.
 - CLAUDE_INSTRUCTIONS.md was updated — Ray must copy the complete file into the Claude.ai project instructions UI.
 - All existing tests (52 calculation + strategy) continue to pass after the scanner.py change.
+
+---
+
+## 2026-02-15 — Orchestration layer implementation
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Orchestration layer: config loader, async polling loop, connector wiring
+- Notification layer: Gmail email alerts with STARTTLS
+- CLI entry point: `python -m uscryptoarb` with --dry-run, --trace-pair, --log-level
+- Package resources: fee_schedules.json for production use
+- Config files: config.yaml, .env.example
+- DummyRateLimiter extracted to tests/helpers.py (Coding Rule 10.1 — 3rd caller)
+- ~41 new unit tests across orchestration and notification
+- All operational docs updated (CHANGELOG, MATHEMATICA_MAP, SESSION_HANDOFFS, README)
+
+### In Progress
+- Nothing — orchestration layer is complete
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- Per-pair trade amounts (configurable in config.yaml, not global)
+- STARTTLS on port 587 (not SSL on 465 — current Gmail recommendation)
+- Email credentials in .env via python-dotenv (not hardcoded)
+- Package resources in src/uscryptoarb/resources/ (not data/ — gitignored)
+- Config loader in orchestration/ (not config/ — orchestration can import everything per layer rules)
+- DummyRateLimiter in tests/helpers.py (not conftest.py — it's a class, not a fixture)
+
+### Files Created
+- `src/uscryptoarb/orchestration/__init__.py`
+- `src/uscryptoarb/orchestration/config.py`
+- `src/uscryptoarb/orchestration/scanner.py`
+- `src/uscryptoarb/notification/__init__.py`
+- `src/uscryptoarb/notification/email.py`
+- `src/uscryptoarb/__main__.py`
+- `src/uscryptoarb/resources/__init__.py`
+- `src/uscryptoarb/resources/fee_schedules.json`
+- `config.yaml`
+- `.env.example`
+- `tests/helpers.py`
+- `tests/unit/test_orchestration/__init__.py`
+- `tests/unit/test_orchestration/test_config.py`
+- `tests/unit/test_orchestration/test_scanner.py`
+- `tests/unit/test_notification/__init__.py`
+- `tests/unit/test_notification/test_email.py`
+
+### Files Modified
+- `pyproject.toml` (added pyyaml, python-dotenv, package-data, mypy overrides)
+- `tests/unit/test_connectors/test_kraken/test_client.py` (DummyRateLimiter → tests.helpers)
+- `tests/unit/test_connectors/test_coinbase/test_client.py` (DummyRateLimiter → tests.helpers)
+- `README.md` (exchange status, Usage section)
+- `CHANGELOG.md` (orchestration + notification entries)
+- `docs/MATHEMATICA_MAP.md` (RunFinal ✅, SendEmail ✅, databases ✅)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. End-to-end integration test with real exchange APIs (manual, not CI)
+2. Gemini exploration notebook (notebooks/03_gemini_exploration.ipynb)
+3. Gemini production connector (connectors/gemini/)
+4. WebSocket integration for real-time data (Phase 2)
+
+### Notes for Next Session
+- The complete Phase 1 detection pipeline is now wired end-to-end: connectors → calculation → strategy → email alerts.
+- Run `python -m uscryptoarb --dry-run` to verify with real market data.
+- Email alerts require .env with SMTP_FROM_ADDR and SMTP_PASSWORD set.
+- config.yaml `venues.primary` currently has [kraken, coinbase]. Add gemini after connector is built.
+- Per-pair trade amounts are in config.yaml under arbitrage.trade_amounts. Adjust as needed.

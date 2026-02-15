@@ -11,6 +11,7 @@ if importlib.util.find_spec("httpx") is None:
 
 import httpx
 
+from tests.helpers import DummyRateLimiter
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
 from uscryptoarb.connectors.coinbase.symbols import COINBASE_SYMBOL_MAP
 from uscryptoarb.http.backoff import BackoffPolicy
@@ -34,14 +35,6 @@ COINBASE_ERROR_RESPONSE = {
     "error_details": "valid product_id is required",
     "message": "valid product_id is required",
 }
-
-
-class DummyRateLimiter:
-    def __init__(self) -> None:
-        self.calls = 0
-
-    async def acquire(self) -> None:
-        self.calls += 1
 
 
 def make_client(

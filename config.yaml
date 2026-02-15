@@ -1,0 +1,79 @@
+# USCryptoArb Configuration — Phase 1 Detection
+# Sensitive values (passwords, API keys) belong in .env, NOT here.
+
+# === Venues ===
+venues:
+  primary: [kraken, coinbase]
+  # secondary: [gemini]  # uncomment when Gemini connector is ready
+
+# === Pairs ===
+pairs:
+  - BTC/USD
+  - BTC/USDC
+  - LTC/USD
+  - LTC/USDC
+  - LTC/BTC
+  - SOL/USD
+  - SOL/USDC
+  - SOL/BTC
+
+# === Arbitrage ===
+arbitrage:
+  threshold: "0.0055"          # 0.55% minimum return_net to trigger alert
+  min_bankroll_limit: "0.10"   # max 10% of balance per trade (Phase 3+)
+  max_staleness_ms: 5000       # reject market data older than 5s
+  trade_amounts:               # per-pair reference amounts in market currency
+    BTC/USD: "0.01"
+    BTC/USDC: "0.01"
+    LTC/USD: "1.0"
+    LTC/USDC: "1.0"
+    LTC/BTC: "1.0"
+    SOL/USD: "1.0"
+    SOL/USDC: "1.0"
+    SOL/BTC: "1.0"
+
+# === Polling ===
+polling:
+  interval_seconds: 5
+  max_concurrent_requests: 10
+
+# === Per-Venue Connector Settings ===
+venue_configs:
+  kraken:
+    rate_limit_ms: 500         # LL-003: Kraken counter decreases 1 per 3s
+    timeout_s: 10.0
+    max_retries: 3
+  coinbase:
+    rate_limit_ms: 150         # LL-052: 10 req/s limit, 150ms with headroom
+    timeout_s: 10.0
+    max_retries: 3
+  gemini:
+    rate_limit_ms: 200
+    timeout_s: 10.0
+    max_retries: 3
+
+# === Fee Rates (taker rates, DEC-013) ===
+fees:
+  kraken:
+    buy: "0.0026"
+    sell: "0.0026"
+  coinbase:
+    buy: "0.006"
+    sell: "0.006"
+  gemini:
+    buy: "0.004"
+    sell: "0.004"
+
+# === Notifications ===
+notifications:
+  email:
+    enabled: false             # set true + configure .env to enable
+    smtp_host: smtp.gmail.com
+    smtp_port: 587             # Gmail STARTTLS
+    recipients: []             # list of email addresses
+
+# === Debug ===
+debug:
+  enabled: false
+  trace_pairs: []              # e.g. ["BTC/USD"] for DEBUG logging on that pair
+  log_level: INFO

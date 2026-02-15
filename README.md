@@ -34,6 +34,30 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
+
+## Usage
+
+### Quick Start
+
+```bash
+# Copy and configure environment
+cp .env.example .env
+# Edit .env with your SMTP credentials (optional for email alerts)
+
+# Run the scanner
+python -m uscryptoarb
+
+# Dry run (single scan, no email)
+python -m uscryptoarb --dry-run
+
+# Debug a specific pair
+python -m uscryptoarb --trace-pair BTC/USD --log-level DEBUG
+```
+
+### Configuration
+
+See `config.yaml` for all settings. Sensitive values (passwords, API keys) go in `.env`.
+
 ## Tests
 
 ```bash
