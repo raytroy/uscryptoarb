@@ -587,3 +587,52 @@
 2. Gemini production connector (`connectors/gemini/`)
 3. Orchestration layer — wire up connectors + strategy into a polling loop
 4. Email notification for detected opportunities
+
+---
+
+## 2026-02-14 — Post-strategy review: documentation sync + strategic pivot
+
+**Interface**: Claude.ai WebUI → Claude Code
+**Branch**: main
+
+### Completed
+- Systematic review of all documentation against implemented code
+- Fixed `strategy/scanner.py`: removed redundant `sort_opportunities()` call in `find_trades_to_execute()` pipeline (Coding Rule 10.1 — `select_trade()` already sorts internally)
+- Fixed `PROJECT_INSTRUCTIONS.md` Section 12: replaced stale inline table with pointer to MATHEMATICA_MAP.md (completing DEC-010, which was claimed done but hadn't actually been applied)
+- Fixed `CLAUDE_INSTRUCTIONS.md`: updated stale function names in Key Functions (`calc_return()` → `calc_return_raw/grs/net()`, `calc_arb_final()` → `calc_arb_opportunity()`, added `find_trades_to_execute()`)
+- Added DEC-016: orchestration before Gemini connector (strategic pivot)
+- Added LL-055: CHANGELOG claims must be verified against actual file state
+- Updated CHANGELOG.md with Fixed entries and Changed entry for DEC-016
+- Confirmed README.md Coinbase status already correct (✅ Connector built)
+
+### In Progress
+- Nothing — review and fixes complete
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- DEC-016: Build orchestration layer with 2 exchanges (Kraken + Coinbase) before adding Gemini as third connector. Rationale: proves end-to-end pipeline, surfaces integration bugs early, delivers working Phase 1 sooner, makes Gemini low-risk incremental add.
+
+### Files Modified
+- MODIFIED: `src/uscryptoarb/strategy/scanner.py` (removed redundant sort, updated docstring pipeline description)
+- MODIFIED: `PROJECT_INSTRUCTIONS.md` (Section 12 → pointer to MATHEMATICA_MAP.md, Document History updated)
+- MODIFIED: `CLAUDE_INSTRUCTIONS.md` (Key Functions updated with correct names + MATHEMATICA_MAP.md reference)
+- MODIFIED: `CHANGELOG.md` (3 new Fixed entries, 1 Changed entry)
+- MODIFIED: `docs/DECISION_LOG.md` (added DEC-016, Document History updated)
+- MODIFIED: `docs/LESSONS_LEARNED.md` (added LL-055)
+- MODIFIED: `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. Orchestration layer — config loader, polling loop, wire Kraken + Coinbase connectors to strategy pipeline
+2. Email notification module for detected arbitrage opportunities
+3. End-to-end integration test with mocked exchange responses
+4. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+5. Gemini production connector (`connectors/gemini/`)
+
+### Notes for Next Session
+- The complete detection pipeline is proven in unit tests: TopOfBook → calculation → strategy → best opportunity. Orchestration needs to wire real connectors into this pipeline with a polling loop.
+- `find_trades_to_execute()` operates on a single pair at a time. Orchestration will need to loop over all 8 configured pairs, running the pipeline for each. Plan the data flow: `dict[str, dict[str, TopOfBook]]` keyed by pair then venue.
+- Key orchestration design questions: how to handle partial failures (1 of 2 connectors fails for a pair), how to structure the config loader (config.yaml → FeeSchedule objects), and how to wire email notifications to detected opportunities.
+- CLAUDE_INSTRUCTIONS.md was updated — Ray must copy the complete file into the Claude.ai project instructions UI.
+- All existing tests (52 calculation + strategy) continue to pass after the scanner.py change.

@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from uscryptoarb.calculation.arb_calc import calc_all_opportunities, sort_opportunities
+from uscryptoarb.calculation.arb_calc import calc_all_opportunities
 from uscryptoarb.calculation.types import ArbOpportunity, FeeSchedule
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.strategy.selection import select_trade
@@ -79,7 +79,7 @@ def find_trades_to_execute(
     ts_calculated_ms: int,
     max_staleness_ms: int | None = None,
 ) -> ArbOpportunity | None:
-    """Top-level pipeline: filter -> calc_all -> sort -> select.
+    """Top-level pipeline: filter -> calc_all -> select.
 
     This is the Mathematica TradesToExecute[] equivalent.
     Composes existing calculation layer functions into a single
@@ -89,8 +89,7 @@ def find_trades_to_execute(
         1. filter_valid_exchanges() — remove stale data
         2. Intersect with fees_by_venue keys — only venues we have fee data for
         3. calc_all_opportunities() — N*(N-1) directional opportunities
-        4. sort_opportunities() — rank by return_net descending
-        5. select_trade() — pick the best above threshold, or None
+        4. select_trade() — filter by threshold, sort, pick best (or None)
 
     Preconditions (enforced by orchestration, trusted here per DEC-003):
         - All TopOfBook objects are already validated (non-crossed, positive prices)
@@ -132,8 +131,6 @@ def find_trades_to_execute(
         ts_calculated_ms=ts_calculated_ms,
     )
 
-    # Step 4: Sort opportunities by return_net descending
-    ranked_opps = sort_opportunities(all_opps, by="return_net", descending=True)
-
-    # Step 5: Select best above threshold
-    return select_trade(ranked_opps, threshold)
+    # Step 4: Select best above threshold
+    # select_trade() handles its own sorting internally
+    return select_trade(all_opps, threshold)

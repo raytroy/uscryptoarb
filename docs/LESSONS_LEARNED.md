@@ -195,3 +195,13 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Fix applied**: Added `flat_fee: Decimal = ZERO` parameter to both leg functions. Updated arb_calc.py to pass it through from FeeSchedule. Added tests for non-zero flat_fee.
 - **Rule going forward**: When a dataclass field exists, the math must use it — even if the current value is zero. Dormant code paths become live bugs when config changes.
 - **Affected files**: `calculation/fees.py`, `calculation/arb_calc.py`, `tests/unit/test_calculation/test_fees.py`
+
+### LL-055: CHANGELOG claims must be verified against actual file state
+- **Date**: 2026-02-14
+- **Category**: Documentation
+- **Severity**: Low
+- **What happened**: CHANGELOG.md stated "replaced Section 12 inline table with pointer to MATHEMATICA_MAP.md" but the actual PROJECT_INSTRUCTIONS.md Section 12 still contained the full inline table with stale function names (`calc_return()` instead of `calc_return_raw()`, `calc_arb_final()` instead of `calc_arb_opportunity()`). The CLAUDE_INSTRUCTIONS.md mirrored the same stale names. This went undetected across multiple sessions.
+- **Root cause**: The CHANGELOG entry was written during the session that *created* MATHEMATICA_MAP.md and *intended* to replace Section 12, but the actual replacement was not performed or was lost. Subsequent sessions trusted the CHANGELOG without verifying the file.
+- **Fix applied**: Actually replaced Section 12 with a pointer. Updated CLAUDE_INSTRUCTIONS.md Key Functions to match real function names. Added verification step to review workflow.
+- **Rule going forward**: When a CHANGELOG entry claims a documentation change, verify the target file actually reflects the change before committing. "Trust but verify" applies to our own documentation, not just external data.
+- **Affected files**: `PROJECT_INSTRUCTIONS.md`, `CLAUDE_INSTRUCTIONS.md`, `CHANGELOG.md`
