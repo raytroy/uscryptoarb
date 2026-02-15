@@ -712,24 +712,9 @@ Types: feat, fix, refactor, test, docs, chore
 
 ## 12. Mathematica Function Mapping
 
-> **Full mapping**: See `docs/MATHEMATICA_MAP.md` for comprehensive function inventory with status, behavioral notes, and sub-functions.
+See [`docs/MATHEMATICA_MAP.md`](docs/MATHEMATICA_MAP.md) for the complete, authoritative mapping of all ~58 Mathematica functions to their Python equivalents, including implementation status, module paths, and behavioral differences.
 
-Quick reference (top-level pipeline):
-
-| Mathematica | Python | Status |
-|-------------|--------|--------|
-| `MissingCheck[]` | `validation.guards.is_missing()` + `require_*()` | ✅ Ported |
-| `MarketBaseConvert[]` | `core.pair_utils.market_base_convert()` | 📋 Planned |
-| `PairTranslator[]` | `core.pair_utils.pair_translator()` | 📋 Planned |
-| `ReturnCalc[]` | `calculation.returns.calc_return_raw()` / `calc_return_grs()` / `calc_return_net()` | ✅ Ported |
-| `ArbCalcFinal[]` | `calculation.arb_calc.calc_arb_opportunity()` | ✅ Ported |
-| `CalcKellyAmount[]` | `calculation.sizing.calc_kelly_amount()` | ✅ Ported |
-| `TradesToExecute[]` | `strategy.scanner.find_trades_to_execute()` | 📋 Planned |
-| `SelectTradeToExecute[]` | `strategy.selection.select_trade()` | 📋 Planned |
-| `ExecuteTradesL3[]` | `execution.orders.execute_trades()` | ⏳ Phase 4 |
-| `RunFinal[]` | `__main__.run_scan_cycle()` | 📋 Planned |
-
-For sub-function details, porting status, and behavioral differences, consult `docs/MATHEMATICA_MAP.md`.
+Per DEC-010, MATHEMATICA_MAP.md is the single source of truth for porting status. Do not add function mappings here — update MATHEMATICA_MAP.md instead.
 
 ---
 
@@ -802,3 +787,4 @@ The `docs/` directory contains living documents that support project continuity 
 |------|---------|---------|
 | 2026-01-04 | 1.0.0 | Initial comprehensive instructions |
 | 2026-02-13 | 1.1.0 | Added operational docs (docs/ directory), Section 14, updated Sections 2, 7.2-7.4, 10.3, 12, 13 |
+| 2026-02-14 | 1.1.1 | Section 12: replaced inline table with pointer to MATHEMATICA_MAP.md (completing DEC-010) |

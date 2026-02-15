@@ -58,6 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation sync: PROJECT_INSTRUCTIONS.md Sections 5.3, 12, 13 updated to match implemented calculation layer
 - Documentation sync: MATHEMATICA_MAP.md Sections 1, 5 updated with correct statuses and module paths
 - Documentation sync: SESSION_HANDOFFS.md calculation layer entry — restored truncated Next Steps
+- `strategy/scanner.py`: Removed redundant `sort_opportunities()` call in `find_trades_to_execute()` — `select_trade()` already sorts internally (Coding Rule 10.1)
+- `PROJECT_INSTRUCTIONS.md` Section 12: Actually replaced inline table with pointer to MATHEMATICA_MAP.md (per DEC-010; previous CHANGELOG entry was premature — the table had remained with stale function names like `calc_return()` and `calc_arb_final()`)
+- `CLAUDE_INSTRUCTIONS.md`: Updated stale function names in Key Functions section to match actual implementations (`calc_return_raw/grs/net()`, `calc_arb_opportunity()`, added `find_trades_to_execute()`)
 
 ### Changed
 - PROJECT_INSTRUCTIONS.md: Added operational docs to Source Documents (Section 2), Workflow (7.2), Propagation Rule (7.3), Deliverable Format (7.4), PR Checklist (10.3), Pre-Implementation and Propagation Checklists (13); replaced Section 12 inline table with pointer to MATHEMATICA_MAP.md
@@ -65,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README.md: Added Documentation section with links to all project docs
 - Documented "Data Trust Boundaries" pattern (validate at boundaries, trust downstream) across PROJECT_INSTRUCTIONS.md (Section 6.2), CLAUDE_INSTRUCTIONS.md, and `validation/guards.py` module docstring
 - `pyproject.toml`: Added httpx to runtime dependencies
+- Development priority resequenced: orchestration layer before Gemini connector (DEC-016)
 
 ## [0.0.1] - 2025-01-04
 

@@ -198,6 +198,20 @@
 - **Consequences**: Requires maintaining a withdrawal fee database (tests/fixtures/fee_schedules.json). Fees are dynamic on Kraken so estimates may drift. Will need refresh mechanism in Phase 2+.
 
 
+### DEC-016: Build orchestration layer before Gemini connector
+
+- **Date**: 2026-02-14
+- **Status**: Accepted
+- **Context**: The pure detection pipeline is complete (connectors → calculation → strategy). Next steps listed Gemini exploration first, then orchestration. However, Kraken + Coinbase already provide 2 exchanges — sufficient for Type-2 arbitrage detection.
+- **Decision**: Build the orchestration layer (config loader, polling loop, wiring connectors to strategy, email notification) with 2 exchanges before adding Gemini as a third connector.
+- **Alternatives Considered**:
+  1. Gemini first, then orchestration — rejected because the third connector can't be tested in an end-to-end pipeline until orchestration exists. Building it first adds a connector that sits unused until the pipeline is wired up.
+  2. Build both in parallel — rejected because orchestration may surface integration issues that affect connector design (e.g., error handling patterns, partial failure modes). Better to learn from 2 connectors before building the third.
+- **Rationale**: Proves the end-to-end pipeline with real data. Surfaces integration bugs early — the kind that only appear when wiring real connectors to real strategy functions. Delivers a working Phase 1 system sooner (detection + email alerts with 2 exchanges). Makes Gemini a low-risk incremental add afterward — just plug in another connector to an already-proven pipeline.
+- **Consequences**: SESSION_HANDOFFS next steps reordered. Gemini becomes priority 3-4 instead of priority 1. Phase 1 completion defined as: 2-exchange detection with email alerts, Gemini added incrementally.
+- **References**: SESSION_HANDOFFS.md 2026-02-14 strategy layer entry, Coding Rule 7.1 (reliability over cleverness)
+
+
 ## Document History
 
 | Date | Entry | Description |
@@ -206,6 +220,7 @@
 | 2026-02-14 | DEC-011 | Raw httpx for Coinbase connector (partially supersedes DEC-005) |
 | 2026-02-14 | DEC-012 | Mathematica as reference not gospel — philosophical shift |
 | 2026-02-14 | Added DEC-013 (flat fee model), DEC-014 (Kelly defaults), DEC-015 (withdrawal fees in Phase 1) |
+| 2026-02-14 | DEC-016 | Orchestration before Gemini connector (strategic pivot) |
 
 
 ### DEC-011: Use raw httpx (not SDK) for Coinbase connector
