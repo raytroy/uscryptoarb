@@ -1,0 +1,116 @@
+from __future__ import annotations
+
+from decimal import Decimal
+
+import pytest
+
+from uscryptoarb.orchestration.config import _DEFAULT_VENUE_CONFIG, load_config
+
+BASIC_CFG = """
+venues:
+  primary: [kraken]
+pairs: [BTC/USD]
+arbitrage:
+  threshold: '0.1'
+  trade_amounts:
+    BTC/USD: '1'
+fees:
+  kraken:
+    buy: '0.1'
+    sell: '0.1'
+"""
+
+
+def _write_config(tmp_path, text: str):
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text(text)
+    return cfg
+
+
+def test_load_config_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SMTP_FROM_ADDR", "bot@example.com")
+    monkeypatch.setenv("SMTP_PASSWORD", "secret")
+    cfg = load_config("config.yaml")
+    assert cfg.venues == ("kraken", "coinbase")
+    assert "BTC/USD" in cfg.pairs
+    assert cfg.arbitrage.threshold == Decimal("0.0055")
+    assert cfg.email.from_addr == "bot@example.com"
+
+
+def test_load_config_missing_yaml_raises() -> None:
+    with pytest.raises(FileNotFoundError):
+        load_config("/tmp/does_not_exist.yaml")
+
+
+def test_load_config_empty_venues_raises(tmp_path) -> None:
+    text = """
+venues:
+  primary: []
+pairs: [BTC/USD]
+arbitrage:
+  threshold: '0.1'
+  trade_amounts:
+    BTC/USD: '1'
+"""
+    path = _write_config(tmp_path, text)
+    with pytest.raises(ValueError):
+        load_config(str(path))
+
+
+def test_load_config_missing_trade_amount_for_pair_raises(tmp_path) -> None:
+    path = _write_config(
+        tmp_path,
+        BASIC_CFG.replace("BTC/USD: '1'", ""),
+    )
+    with pytest.raises(ValueError):
+        load_config(str(path))
+
+
+def test_load_config_invalid_pair_format_raises(tmp_path) -> None:
+    path = _write_config(
+        tmp_path,
+        BASIC_CFG.replace("BTC/USD", "BTCUSD"),
+    )
+    with pytest.raises(ValueError):
+        load_config(str(path))
+
+
+def test_load_config_unknown_venue_raises(tmp_path) -> None:
+    path = _write_config(tmp_path, BASIC_CFG.replace("kraken", "bitfinex"))
+    with pytest.raises(ValueError):
+        load_config(str(path))
+
+
+def test_decimal_types() -> None:
+    cfg = load_config("config.yaml")
+    assert isinstance(cfg.arbitrage.threshold, Decimal)
+    assert all(isinstance(v, Decimal) for v in cfg.arbitrage.trade_amounts.values())
+
+
+def test_build_fee_schedules_withdrawal_currencies() -> None:
+    cfg = load_config("config.yaml")
+    fs = cfg.fees_by_pair_venue["BTC/USD"]["kraken"]
+    assert fs.buy_withdrawal is not None
+    assert fs.sell_withdrawal is not None
+    assert fs.buy_withdrawal.currency == "BTC"
+    assert fs.sell_withdrawal.currency == "USD"
+
+
+def test_email_config_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SMTP_FROM_ADDR", raising=False)
+    monkeypatch.delenv("SMTP_PASSWORD", raising=False)
+    cfg = load_config("config.yaml")
+    assert cfg.email.from_addr == ""
+    assert cfg.email.password == ""
+
+
+def test_debug_config_defaults() -> None:
+    cfg = load_config("config.yaml")
+    assert cfg.debug.trace_pairs == ()
+    assert cfg.debug.log_level == "INFO"
+
+
+def test_venue_config_defaults(tmp_path) -> None:
+    path = _write_config(tmp_path, BASIC_CFG)
+    cfg = load_config(str(path))
+    assert cfg.venue_configs["kraken"] == _DEFAULT_VENUE_CONFIG

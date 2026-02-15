@@ -1,0 +1,71 @@
+{
+  "_comment": "Phase 1 hardcoded fee schedules (DEC-013). Trading fees are taker rates from config.yaml. Withdrawal fees are conservative estimates from exchange documentation as of 2025.",
+  "_sources": {
+    "kraken_trading": "https://www.kraken.com/features/fee-schedule — taker rate at $0-$50k tier",
+    "coinbase_trading": "https://help.coinbase.com/en/exchange/trading-and-funding/exchange-fees — taker rate at base tier",
+    "kraken_withdrawal": "https://support.kraken.com/articles/360000767986 — dynamic, estimates used",
+    "coinbase_withdrawal": "https://help.coinbase.com/en/coinbase/getting-started/fees-and-commissions — dynamic, estimates used"
+  },
+
+  "trading_fees": {
+    "kraken": {
+      "pct_fee": "0.0026",
+      "flat_fee": "0"
+    },
+    "coinbase": {
+      "pct_fee": "0.006",
+      "flat_fee": "0"
+    },
+    "gemini": {
+      "pct_fee": "0.004",
+      "flat_fee": "0"
+    }
+  },
+
+  "withdrawal_fees": {
+    "kraken": {
+      "BTC": {"flat_fee": "0.00005", "pct_fee": "0"},
+      "LTC": {"flat_fee": "0.001", "pct_fee": "0"},
+      "SOL": {"flat_fee": "0.02", "pct_fee": "0"},
+      "USD": {"flat_fee": "5.00", "pct_fee": "0"},
+      "USDC": {"flat_fee": "0.60", "pct_fee": "0"}
+    },
+    "coinbase": {
+      "BTC": {"flat_fee": "0.0", "pct_fee": "0"},
+      "LTC": {"flat_fee": "0.0", "pct_fee": "0"},
+      "SOL": {"flat_fee": "0.0", "pct_fee": "0"},
+      "USD": {"flat_fee": "0.0", "pct_fee": "0"},
+      "USDC": {"flat_fee": "0.0", "pct_fee": "0"}
+    },
+    "gemini": {
+      "BTC": {"flat_fee": "0.0", "pct_fee": "0"},
+      "LTC": {"flat_fee": "0.0", "pct_fee": "0"},
+      "SOL": {"flat_fee": "0.0", "pct_fee": "0"},
+      "USD": {"flat_fee": "0.0", "pct_fee": "0"},
+      "USDC": {"flat_fee": "0.0", "pct_fee": "0"}
+    }
+  },
+
+  "trading_accuracy": {
+    "kraken": {
+      "BTC/USD": {"price_decimals": 1, "lot_decimals": 8, "min_order_size": "0.00005", "max_order_size": null, "tick_size": "0.1", "lot_step": "0.00000001"},
+      "BTC/USDC": {"price_decimals": 1, "lot_decimals": 8, "min_order_size": "0.00005", "max_order_size": null, "tick_size": "0.1", "lot_step": "0.00000001"},
+      "LTC/USD": {"price_decimals": 2, "lot_decimals": 8, "min_order_size": "0.05", "max_order_size": null, "tick_size": "0.01", "lot_step": "0.00000001"},
+      "LTC/USDC": {"price_decimals": 2, "lot_decimals": 8, "min_order_size": "0.05", "max_order_size": null, "tick_size": "0.01", "lot_step": "0.00000001"},
+      "LTC/BTC": {"price_decimals": 6, "lot_decimals": 8, "min_order_size": "0.05", "max_order_size": null, "tick_size": "0.000001", "lot_step": "0.00000001"},
+      "SOL/USD": {"price_decimals": 3, "lot_decimals": 8, "min_order_size": "0.05", "max_order_size": null, "tick_size": "0.001", "lot_step": "0.00000001"},
+      "SOL/USDC": {"price_decimals": 3, "lot_decimals": 8, "min_order_size": "0.05", "max_order_size": null, "tick_size": "0.001", "lot_step": "0.00000001"},
+      "SOL/BTC": {"price_decimals": 7, "lot_decimals": 8, "min_order_size": "0.05", "max_order_size": null, "tick_size": "0.0000001", "lot_step": "0.00000001"}
+    },
+    "coinbase": {
+      "BTC/USD": {"price_decimals": 2, "lot_decimals": 8, "min_order_size": "0.00000001", "max_order_size": "3500", "tick_size": "0.01", "lot_step": "0.00000001"},
+      "BTC/USDC": {"price_decimals": 2, "lot_decimals": 8, "min_order_size": "0.00000001", "max_order_size": "3500", "tick_size": "0.01", "lot_step": "0.00000001"},
+      "LTC/USD": {"price_decimals": 2, "lot_decimals": 8, "min_order_size": "0.00000001", "max_order_size": "20000", "tick_size": "0.01", "lot_step": "0.00000001"},
+      "LTC/USDC": {"price_decimals": 2, "lot_decimals": 8, "min_order_size": "0.00000001", "max_order_size": "20000", "tick_size": "0.01", "lot_step": "0.00000001"},
+      "LTC/BTC": {"price_decimals": 6, "lot_decimals": 8, "min_order_size": "0.00000001", "max_order_size": "20000", "tick_size": "0.000001", "lot_step": "0.00000001"},
+      "SOL/USD": {"price_decimals": 2, "lot_decimals": 8, "min_order_size": "0.00000001", "max_order_size": "500000", "tick_size": "0.01", "lot_step": "0.00000001"},
+      "SOL/USDC": {"price_decimals": 2, "lot_decimals": 8, "min_order_size": "0.00000001", "max_order_size": "500000", "tick_size": "0.01", "lot_step": "0.00000001"},
+      "SOL/BTC": {"price_decimals": 7, "lot_decimals": 3, "min_order_size": "0.001", "max_order_size": "500000", "tick_size": "0.0000001", "lot_step": "0.001"}
+    }
+  }
+}

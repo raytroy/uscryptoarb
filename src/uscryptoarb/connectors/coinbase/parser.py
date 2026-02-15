@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from uscryptoarb.marketdata.topofbook import TopOfBook, tob_from_raw
@@ -14,11 +14,12 @@ def _parse_iso_timestamp_ms(iso_str: str) -> int:
     """Convert ISO 8601 timestamp to milliseconds since epoch.
 
     Handles Coinbase format: "2026-02-14T17:23:44.194522Z"
-    Requires Python >= 3.11 for trailing-Z support in fromisoformat().
+    Works on Python 3.10+ by normalizing trailing Z to +00:00.
     """
-    dt = datetime.fromisoformat(iso_str)
+    normalized = iso_str.replace("Z", "+00:00") if iso_str.endswith("Z") else iso_str
+    dt = datetime.fromisoformat(normalized)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC)
+        dt = dt.replace(tzinfo=timezone.utc)
     return int(dt.timestamp() * 1000)
 
 

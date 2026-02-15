@@ -9,6 +9,7 @@ if importlib.util.find_spec("httpx") is None:
 
 import httpx
 
+from tests.helpers import DummyRateLimiter
 from uscryptoarb.connectors.kraken.client import KrakenClient
 from uscryptoarb.connectors.kraken.symbols import KRAKEN_SYMBOL_MAP
 from uscryptoarb.http.backoff import BackoffPolicy
@@ -17,14 +18,6 @@ from uscryptoarb.http.rate_limiter import RateLimiter
 
 def make_kraken_response(result: dict, errors: list | None = None) -> dict:
     return {"error": errors or [], "result": result}
-
-
-class DummyRateLimiter:
-    def __init__(self) -> None:
-        self.calls = 0
-
-    async def acquire(self) -> None:
-        self.calls += 1
 
 
 def make_client(handler):
