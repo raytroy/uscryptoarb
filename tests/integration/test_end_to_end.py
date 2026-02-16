@@ -281,7 +281,7 @@ class TestNoOpportunitySimilarPrices:
         )
 
         async def run() -> None:
-            opportunities = await run_scan_cycle(connectors, config, run_id="integ-noarb")
+            opportunities, _errors = await run_scan_cycle(connectors, config, run_id="integ-noarb")
             assert opportunities == [], (
                 f"Expected no opportunities but got {len(opportunities)}: "
                 f"{[(o.buy_venue, o.sell_venue, float(o.return_net)) for o in opportunities]}"
@@ -337,7 +337,7 @@ class TestOpportunityDetectedEmailSent:
 
         async def run() -> None:
             # --- Pipeline detection ---
-            opportunities = await run_scan_cycle(connectors, config, run_id="integ-arb")
+            opportunities, _errors = await run_scan_cycle(connectors, config, run_id="integ-arb")
 
             assert len(opportunities) == 1, f"Expected 1 opportunity, got {len(opportunities)}"
             opp = opportunities[0]
@@ -430,7 +430,7 @@ class TestPartialFailureGracefulDegradation:
         )
 
         async def run() -> None:
-            opportunities = await run_scan_cycle(connectors, config, run_id="integ-partial")
+            opportunities, _errors = await run_scan_cycle(connectors, config, run_id="integ-partial")
 
             # Should find opportunity between kraken and gemini
             assert len(opportunities) == 1, (
@@ -484,7 +484,7 @@ class TestTimeoutInsufficientVenues:
 
         async def run() -> None:
             # Must not raise — graceful degradation
-            opportunities = await run_scan_cycle(connectors, config, run_id="integ-timeout")
+            opportunities, _errors = await run_scan_cycle(connectors, config, run_id="integ-timeout")
             assert opportunities == [], (
                 f"Expected no opportunities with only 1 venue, got {len(opportunities)}"
             )
