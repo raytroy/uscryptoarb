@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from contextlib import AsyncExitStack
 from dataclasses import replace
 from decimal import Decimal
+
+import pytest
 
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.orchestration.config import load_config
@@ -129,3 +132,68 @@ def test_run_scan_loop_single_cycle_and_shutdown() -> None:
         await stopper
 
     asyncio.run(run())
+
+
+class TestLogPairSpreads:
+    """Tests for _log_pair_spreads diagnostic logging."""
+
+    def test_logs_spread_for_two_venues(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Verify spread logging outputs pair, venues, and spread percentage."""
+        from uscryptoarb.orchestration.scanner import _log_pair_spreads
+
+        tobs = {
+            "kraken": _tob("kraken", "BTC/USD", "97100", "97200"),
+            "coinbase": _tob("coinbase", "BTC/USD", "97300", "97400"),
+        }
+        with caplog.at_level(logging.INFO):
+            _log_pair_spreads("BTC/USD", tobs, Decimal("0.0055"), "test1")
+
+        assert len(caplog.records) == 1
+        msg = caplog.records[0].message
+        assert "BTC/USD" in msg
+        assert "kraken" in msg
+        assert "coinbase" in msg
+        assert "best_spread=" in msg
+        assert "threshold=0.550%" in msg
+
+    def test_spread_sign_positive_when_arb_exists(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Positive spread when sell bid > buy ask (arb direction)."""
+        from uscryptoarb.orchestration.scanner import _log_pair_spreads
+
+        tobs = {
+            "kraken": _tob("kraken", "BTC/USD", "97100", "97200"),
+            "coinbase": _tob("coinbase", "BTC/USD", "97300", "97400"),
+        }
+        with caplog.at_level(logging.INFO):
+            _log_pair_spreads("BTC/USD", tobs, Decimal("0.0055"), "test2")
+
+        assert "+0.103%" in caplog.records[0].message
+
+    def test_spread_sign_negative_when_no_arb(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Negative spread when best bid < best ask (no arb)."""
+        from uscryptoarb.orchestration.scanner import _log_pair_spreads
+
+        tobs = {
+            "kraken": _tob("kraken", "BTC/USD", "97100", "97200"),
+            "coinbase": _tob("coinbase", "BTC/USD", "97100", "97200"),
+        }
+        with caplog.at_level(logging.INFO):
+            _log_pair_spreads("BTC/USD", tobs, Decimal("0.0055"), "test3")
+
+        assert "best_spread=-" in caplog.records[0].message
+
+    def test_venues_sorted_alphabetically(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Venue order in log is alphabetical for deterministic output."""
+        from uscryptoarb.orchestration.scanner import _log_pair_spreads
+
+        tobs = {
+            "zebra_exchange": _tob("zebra_exchange", "BTC/USD", "97100", "97200"),
+            "alpha_exchange": _tob("alpha_exchange", "BTC/USD", "97100", "97200"),
+        }
+        with caplog.at_level(logging.INFO):
+            _log_pair_spreads("BTC/USD", tobs, Decimal("0.0055"), "test4")
+
+        msg = caplog.records[0].message
+        alpha_pos = msg.index("alpha_exchange")
+        zebra_pos = msg.index("zebra_exchange")
+        assert alpha_pos < zebra_pos
