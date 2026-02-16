@@ -28,25 +28,23 @@ Intentional improvements over Mathematica (DEC-012):
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import cast
+from typing import Literal, cast
 
 from uscryptoarb.calculation.calc_types import ArbOpportunity
+
+ReturnMetric = Literal["return_raw", "return_grs", "return_net"]
 
 
 def passes_threshold(
     opportunity: ArbOpportunity,
     threshold: Decimal,
-    metric: str = "return_net",
+    metric: ReturnMetric = "return_net",
 ) -> bool:
     """Check if an opportunity exceeds the minimum return threshold.
 
     Uses strictly-greater-than (not >=) for conservative filtering.
     An opportunity exactly at threshold is rejected — it could easily
     slip below due to timing or slippage.
-
-    Related to calculation.arb_calc.filter_profitable(), which applies
-    the same > logic across a list. This function is a single-item
-    convenience for readability in select_trade().
 
     Args:
         opportunity: The arb opportunity to evaluate.

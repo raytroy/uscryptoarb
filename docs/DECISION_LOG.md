@@ -34,7 +34,7 @@
 
 ### DEC-001: USD and USDC are distinct currencies — no implicit conversion
 - **Date**: 2026-01-04
-- **Status**: Accepted
+- **Status**: Superseded by DEC-011, DEC-018
 - **Context**: USDC is pegged to USD at ~$1.00 but they are not identical. Treating them as interchangeable would create false arbitrage signals and incorrect P&L calculations.
 - **Decision**: USD and USDC are always treated as separate currencies. No implicit conversion, no peg assumptions. `BTC/USD` and `BTC/USDC` are different trading pairs.
 - **Alternatives Considered**:
@@ -87,7 +87,7 @@
 
 ### DEC-005: Exchange SDK choices
 - **Date**: 2026-01-04
-- **Status**: Accepted
+- **Status**: Superseded by DEC-011 and DEC-018
 - **Context**: Each exchange needs a client library. Options include official SDKs, third-party wrappers, and custom REST/WebSocket clients.
 - **Decision**:
   - Kraken: `python-kraken-sdk` (well-maintained, good async support)
@@ -287,7 +287,7 @@
   1. Wrap SDK in `asyncio.to_thread()` — rejected because it adds thread pool overhead, loses header control (needed for cache-control), and creates an inconsistent pattern vs. Kraken connector.
   2. Use SDK as-is (synchronous) — rejected because it violates Coding Rule 2.3 and would block the event loop.
 - **Rationale**: httpx provides async-native requests, full header control, and a consistent pattern across all connectors. The response structure is identical between SDK and raw httpx (same JSON shape, same keys), so there is zero loss of functionality.
-- **Consequences**: Coinbase connector mirrors Kraken connector structure: `client.py` uses `httpx.AsyncClient`, `parser.py` has pure parsing functions, `symbols.py` has the symbol map. DEC-005 remains valid for Kraken (`python-kraken-sdk`) and Gemini (custom).
+- **Consequences**: Coinbase connector mirrors Kraken connector structure: `client.py` uses `httpx.AsyncClient`, `parser.py` has pure parsing functions, `symbols.py` has the symbol map. All three connectors now use custom httpx per DEC-018. DEC-005 is fully superseded.
 - **References**: `notebooks/02_coinbase_exploration.ipynb` Section 5, LL-052, Coding Rule 2.3
 
 ### DEC-012: Mathematica as reference, not gospel

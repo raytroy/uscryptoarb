@@ -6,6 +6,8 @@ Naming: test_<function>_<scenario>_<expected>.
 
 from decimal import Decimal
 
+import pytest
+
 from uscryptoarb.calculation.returns import (
     calc_profit_base,
     calc_return_grs,
@@ -99,3 +101,19 @@ class TestCalcProfitBase:
     def test_breakeven(self) -> None:
         result = calc_profit_base(Decimal("6930.00"), Decimal("6930.00"))
         assert result == Decimal("0")
+
+
+class TestDivisionByZeroAssertions:
+    """Verify programmer invariant assertions fire on zero denominators."""
+
+    def test_calc_return_raw_zero_buy_price(self) -> None:
+        with pytest.raises(AssertionError, match="buy_price"):
+            calc_return_raw(Decimal("0"), Decimal("100"))
+
+    def test_calc_return_grs_zero_buy_cost(self) -> None:
+        with pytest.raises(AssertionError, match="buy_cost_base"):
+            calc_return_grs(Decimal("0"), Decimal("100"))
+
+    def test_calc_return_net_zero_buy_total(self) -> None:
+        with pytest.raises(AssertionError, match="buy_total_cost"):
+            calc_return_net(Decimal("0"), Decimal("100"))

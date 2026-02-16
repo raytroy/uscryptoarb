@@ -11,7 +11,8 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import Protocol
+from collections.abc import Awaitable, Callable
+from typing import Any, Protocol
 
 import httpx
 
@@ -22,6 +23,7 @@ from uscryptoarb.http.backoff import (
 )
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
+from uscryptoarb.misc.time_utils import now_ms
 from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 logger = logging.getLogger(__name__)
@@ -153,6 +155,64 @@ class BaseAsyncConnector(ABC):
                 await asyncio.sleep(delay_ms / 1000)
 
         raise RuntimeError("unreachable")  # pragma: no cover
+
+    async def _fetch_tickers_per_pair(
+        self,
+        pairs: list[str],
+        fetch_one: Callable[[str], Awaitable[dict[str, Any]]],
+        parse_one: Callable[[dict[str, Any], str, int], TopOfBook],
+    ) -> dict[str, TopOfBook]:
+        """Template method for per-pair ticker fetching.
+
+        Shared by connectors without batch endpoints (Coinbase, Gemini).
+        Handles symbol translation, error logging, and partial failure.
+
+        Args:
+            pairs: Canonical pair strings (e.g. ["BTC/USD", "LTC/BTC"]).
+            fetch_one: Async function that fetches raw data for one venue symbol.
+            parse_one: Function that parses raw data into TopOfBook.
+
+        Returns:
+            Dict of canonical_pair → TopOfBook for successfully fetched pairs.
+        """
+        if not pairs:
+            return {}
+
+        results: dict[str, TopOfBook] = {}
+        for canonical in pairs:
+            try:
+                venue_symbol = self._symbols.to_venue_symbol(canonical)
+            except KeyError:
+                logger.warning(
+                    "Skipping unsupported canonical pair for %s: %s",
+                    self.venue,
+                    canonical,
+                )
+                continue
+
+            try:
+                raw = await fetch_one(venue_symbol)
+                ts_local_ms = now_ms()
+                tob = parse_one(raw, canonical, ts_local_ms)
+                results[canonical] = tob
+            except (KeyError, ValueError, TypeError, IndexError) as exc:
+                logger.warning(
+                    "Failed to fetch %s ticker for %s (%s): %s",
+                    self.venue,
+                    canonical,
+                    venue_symbol,
+                    exc,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Unexpected error fetching %s ticker for %s (%s): %s",
+                    self.venue,
+                    canonical,
+                    venue_symbol,
+                    exc,
+                )
+
+        return results
 
     @abstractmethod
     async def fetch_tickers(self, pairs: list[str]) -> dict[str, TopOfBook]:

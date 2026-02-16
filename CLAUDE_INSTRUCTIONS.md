@@ -72,11 +72,12 @@ Imports flow DOWN only. Circular imports = hard failure.
 
 ## File Structure (Post-Rename)
 src/uscryptoarb/
-main.py              # CLI entry point (python -m uscryptoarb)
+__main__.py           # CLI entry point (python -m uscryptoarb)
 config/
 app_config.py          # Legacy AppConfig (superseded by orchestration/config.py)
 misc/
 decimals.py            # to_decimal, floor_to_step, ceil_to_step
+time_utils.py          # now_ms
 markets/
 pairs.py               # CanonicalPair, parse_pair
 venues/
@@ -92,9 +93,9 @@ rate_limiter.py        # RateLimiter for exchange API rate limiting
 calculation/
 calc_types.py          # TradingFeeRate, WithdrawalFee, TradingAccuracy, FeeSchedule, ArbLeg, ArbOpportunity
 returns.py             # calc_return_raw, calc_return_grs, calc_return_net, calc_profit_base
-fees.py                # calc_buy_leg, calc_sell_leg, effective_buy_cost, effective_sell_proceeds
+fees.py                # calc_buy_leg, calc_sell_leg, effective_buy_cost, effective_sell_proceeds, total_buy_cost, net_sell_proceeds
 sizing.py              # calc_kelly_fraction, calc_kelly_amount, calc_position_size
-arb_calc.py            # calc_arb_opportunity, calc_all_opportunities, sort_opportunities, filter_profitable
+arb_calc.py            # calc_arb_opportunity, calc_all_opportunities
 strategy/
 selection.py           # select_trade, passes_threshold
 trade_finder.py        # find_trades_to_execute, filter_valid_exchanges

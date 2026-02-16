@@ -11,8 +11,6 @@ import pytest
 from uscryptoarb.calculation.arb_calc import (
     calc_all_opportunities,
     calc_arb_opportunity,
-    filter_profitable,
-    sort_opportunities,
 )
 from uscryptoarb.calculation.calc_types import FeeSchedule
 from uscryptoarb.marketdata.topofbook import TopOfBook
@@ -163,77 +161,31 @@ class TestCalcAllOpportunities:
         assert opps == []
 
 
-class TestSortOpportunities:
-    def test_sort_by_return_net_descending(
+class TestPairConsistency:
+    """Verify cross-pair arbitrage is rejected."""
+
+    def test_mismatched_pairs_raises(
         self,
         kraken_btc_usd_tob: TopOfBook,
-        coinbase_btc_usd_tob: TopOfBook,
         kraken_btc_usd_fees: FeeSchedule,
-        coinbase_btc_usd_fees: FeeSchedule,
     ) -> None:
-        opps = calc_all_opportunities(
-            tobs_by_venue={
-                "kraken": kraken_btc_usd_tob,
-                "coinbase": coinbase_btc_usd_tob,
-            },
-            fees_by_venue={
-                "kraken": kraken_btc_usd_fees,
-                "coinbase": coinbase_btc_usd_fees,
-            },
-            trade_amount=Decimal("0.01"),
-            ts_calculated_ms=1707900000000,
+        """Cannot compare BTC/USD vs LTC/USD."""
+        wrong_pair_tob = TopOfBook(
+            venue="coinbase",
+            pair="LTC/USD",
+            ts_local_ms=1707900000000,
+            ts_exchange_ms=None,
+            bid_px=Decimal("105"),
+            bid_sz=Decimal("10"),
+            ask_px=Decimal("106"),
+            ask_sz=Decimal("10"),
         )
-
-        sorted_opps = sort_opportunities(opps, by="return_net")
-        assert sorted_opps[0].return_net >= sorted_opps[1].return_net
-
-    def test_sort_does_not_mutate(
-        self,
-        kraken_btc_usd_tob: TopOfBook,
-        coinbase_btc_usd_tob: TopOfBook,
-        kraken_btc_usd_fees: FeeSchedule,
-        coinbase_btc_usd_fees: FeeSchedule,
-    ) -> None:
-        opps = calc_all_opportunities(
-            tobs_by_venue={
-                "kraken": kraken_btc_usd_tob,
-                "coinbase": coinbase_btc_usd_tob,
-            },
-            fees_by_venue={
-                "kraken": kraken_btc_usd_fees,
-                "coinbase": coinbase_btc_usd_fees,
-            },
-            trade_amount=Decimal("0.01"),
-            ts_calculated_ms=1707900000000,
-        )
-        original_order = [o.buy_venue for o in opps]
-        sort_opportunities(opps, by="return_raw")
-        assert [o.buy_venue for o in opps] == original_order
-
-
-class TestFilterProfitable:
-    def test_filters_below_threshold(
-        self,
-        kraken_btc_usd_tob: TopOfBook,
-        coinbase_btc_usd_tob: TopOfBook,
-        kraken_btc_usd_fees: FeeSchedule,
-        coinbase_btc_usd_fees: FeeSchedule,
-    ) -> None:
-        opps = calc_all_opportunities(
-            tobs_by_venue={
-                "kraken": kraken_btc_usd_tob,
-                "coinbase": coinbase_btc_usd_tob,
-            },
-            fees_by_venue={
-                "kraken": kraken_btc_usd_fees,
-                "coinbase": coinbase_btc_usd_fees,
-            },
-            trade_amount=Decimal("0.01"),
-            ts_calculated_ms=1707900000000,
-        )
-
-        filtered = filter_profitable(opps, threshold=Decimal("0.10"))
-        assert len(filtered) == 0
-
-        filtered = filter_profitable(opps, threshold=Decimal("-1.0"))
-        assert len(filtered) == len(opps)
+        with pytest.raises(AssertionError, match="cross-pair"):
+            calc_arb_opportunity(
+                buy_tob=kraken_btc_usd_tob,
+                sell_tob=wrong_pair_tob,
+                buy_fees=kraken_btc_usd_fees,
+                sell_fees=kraken_btc_usd_fees,
+                trade_amount=Decimal("0.01"),
+                ts_calculated_ms=1707900000000,
+            )

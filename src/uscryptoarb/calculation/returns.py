@@ -30,6 +30,7 @@ def calc_return_raw(buy_price: Decimal, sell_price: Decimal) -> Decimal:
     Returns:
         Decimal return as a fraction (e.g. 0.008 = 0.8%).
     """
+    assert buy_price > 0, "invariant: buy_price validated at boundary"
     return (sell_price - buy_price) / buy_price
 
 
@@ -51,6 +52,7 @@ def calc_return_grs(
     Returns:
         Decimal return as a fraction.
     """
+    assert buy_cost_base > 0, "invariant: buy_cost_base derived from validated prices"
     return (sell_proceeds_base - buy_cost_base) / buy_cost_base
 
 
@@ -72,6 +74,7 @@ def calc_return_net(
     Returns:
         Decimal return as a fraction.
     """
+    assert buy_total_cost > 0, "invariant: buy_total_cost derived from validated prices"
     return (sell_net_proceeds - buy_total_cost) / buy_total_cost
 
 

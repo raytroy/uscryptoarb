@@ -19,6 +19,14 @@ class TopOfBook:
     ask_sz: Decimal
 
 
+    def __post_init__(self) -> None:
+        """Defense-in-depth: catch crossed books even if factory is bypassed."""
+        if self.bid_px > 0 and self.ask_px > 0 and self.bid_px >= self.ask_px:
+            raise ValueError(
+                f"Crossed book: bid {self.bid_px} >= ask {self.ask_px}"
+            )
+
+
 def validate_tob(t: TopOfBook) -> None:
     # basic presence
     if not t.venue:

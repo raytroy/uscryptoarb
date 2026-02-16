@@ -14,7 +14,6 @@ All monetary values use Decimal (DEC-007, LL-010).
 Mathematica equivalents:
     ArbCalcFinal[]  → calc_arb_opportunity
     ArbOppAll[]     → calc_all_opportunities
-    ArbReturns[]    → sort_opportunities
 """
 
 from __future__ import annotations
@@ -39,7 +38,6 @@ from uscryptoarb.calculation.returns import (
 )
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.markets.pairs import parse_pair
-from uscryptoarb.misc.decimals import ZERO
 
 
 def calc_arb_opportunity(
@@ -71,6 +69,10 @@ def calc_arb_opportunity(
     Returns:
         ArbOpportunity with full breakdown.
     """
+    assert buy_tob.pair == sell_tob.pair, (
+        f"cross-pair arb not supported: {buy_tob.pair} vs {sell_tob.pair}"
+    )
+
     buy_price = buy_tob.ask_px  # we buy at the ask
     sell_price = sell_tob.bid_px  # we sell at the bid
 
@@ -176,49 +178,3 @@ def calc_all_opportunities(
         opportunities.append(opp)
 
     return opportunities
-
-
-def sort_opportunities(
-    opps: list[ArbOpportunity],
-    *,
-    by: str = "return_net",
-    descending: bool = True,
-) -> list[ArbOpportunity]:
-    """Sort arbitrage opportunities by a return metric.
-
-    Mathematica equivalent: ArbReturns[] / ArbSort[].
-
-    Args:
-        opps: List of opportunities to sort.
-        by: Attribute name to sort by. One of:
-            "return_raw", "return_grs", "return_net",
-            "profit_grs_base", "profit_net_base".
-        descending: If True, highest return first (default).
-
-    Returns:
-        New sorted list (does not mutate input).
-    """
-    return sorted(
-        opps,
-        key=lambda o: getattr(o, by),
-        reverse=descending,
-    )
-
-
-def filter_profitable(
-    opps: list[ArbOpportunity],
-    *,
-    threshold: Decimal = ZERO,
-    metric: str = "return_net",
-) -> list[ArbOpportunity]:
-    """Filter opportunities that exceed a minimum return threshold.
-
-    Args:
-        opps: List of opportunities to filter.
-        threshold: Minimum return value (e.g. Decimal("0.0055")).
-        metric: Which return metric to check against threshold.
-
-    Returns:
-        New filtered list containing only opportunities above threshold.
-    """
-    return [o for o in opps if getattr(o, metric) > threshold]

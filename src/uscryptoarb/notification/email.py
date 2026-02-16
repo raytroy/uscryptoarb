@@ -52,7 +52,14 @@ def format_opportunity_email(opp: ArbOpportunity) -> tuple[str, str]:
 
 
 async def send_alert(opp: ArbOpportunity, config: EmailConfig) -> None:
-    if not config.enabled or not config.from_addr or not config.password or not config.recipients:
+    if not config.enabled:
+        logger.debug("Email alert skipped for %s: notifications disabled", opp.pair)
+        return
+    if not config.from_addr or not config.password:
+        logger.debug("Email alert skipped for %s: missing SMTP credentials", opp.pair)
+        return
+    if not config.recipients:
+        logger.debug("Email alert skipped for %s: no recipients configured", opp.pair)
         return
 
     subject, body = format_opportunity_email(opp)

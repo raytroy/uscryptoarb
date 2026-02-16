@@ -51,7 +51,7 @@ Databases (fees, withdrawal, accuracy)
 | `TradingFeesDataStructure[]` | `TradingFeeRate` | `calculation/calc_types.py` | ✅ Ported | Per-venue buy/sell fee rate with pct_fee and flat_fee. Flat fee currently 0 for all exchanges (Phase 1). |
 | `WithdrawalFeeDataStructure[]` | `WithdrawalFee` | `calculation/calc_types.py` | ✅ Ported | Per-venue, per-currency withdrawal fee with flat_fee and pct_fee. |
 | `TradingAccuracyDataStructure[]` | `TradingAccuracy` | `calculation/calc_types.py` | ✅ Ported | Per-venue, per-pair precision constraints (price_decimals, lot_decimals, min/max order size, tick/lot step). |
-| `OrderbookEachOrderDataStructure[]` | `OrderBookEntry` | `core/types.py` | 📋 Planned | Association with: price, volume. Used for individual orderbook levels. |
+| `OrderbookEachOrderDataStructure[]` | `OrderBookEntry` | `calculation/calc_types.py` | ⏳ Deferred | core/ directory was deleted. Path TBD when full orderbook depth is needed (Phase 3+). |
 | `OrderbookEachOrderDataStructureInverse[]` | — | — | 🔀 Redesigned | Handles inverse pairs (e.g., USD/BTC → BTC/USD). In Python, handled by `market_base_convert()` |
 | `ResponseDataStructure[]` | — | `connectors/*/parser.py` | 🔀 Redesigned | Generic JSON response parser. In Python, each connector has its own typed parser. |
 | `missingArbCalcStructure` | — | — | 🔀 Redesigned | Sentinel "empty" ArbCalc result. In Python, use `Optional` return or raise `ValueError`. |
@@ -63,9 +63,9 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `withdrawalHeader` | — | `core/types.py` | 🔀 Redesigned | Defines column names. In Python, dataclass field names serve this purpose. |
-| `tradingFeesHeader` | — | `core/types.py` | 🔀 Redesigned | Same — replaced by dataclass fields. |
-| `tradingAccuracyHeader` | — | `core/types.py` | 🔀 Redesigned | Same — replaced by dataclass fields. |
+| `withdrawalHeader` | — | `calculation/calc_types.py` | 🔀 Redesigned | Defines column names. In Python, dataclass field names serve this purpose. |
+| `tradingFeesHeader` | — | `calculation/calc_types.py` | 🔀 Redesigned | Same — replaced by dataclass fields. |
+| `tradingAccuracyHeader` | — | `calculation/calc_types.py` | 🔀 Redesigned | Same — replaced by dataclass fields. |
 | `exchangeTradingFeesDatabase` | `fees_by_pair_venue` | `orchestration/config.py` | ✅ Ported | Built from config.yaml fee rates + fee_schedules.json. Loaded once at startup and passed as `fees_by_pair_venue`. |
 | `withdrawalDatabase` | `fees_by_pair_venue` | `orchestration/config.py` | ✅ Ported | Built from config.yaml fee rates + fee_schedules.json. Loaded once at startup and passed as `fees_by_pair_venue`. |
 | `tradingInfoDatabase` | `fees_by_pair_venue` | `orchestration/config.py` | ✅ Ported | Built from config.yaml fee rates + fee_schedules.json. Loaded once at startup and passed as `fees_by_pair_venue`. |
@@ -87,9 +87,9 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `PairTranslator[]` | `pair_translator()` | `markets/pairs.py` | 📋 Planned | Converts canonical pair to exchange format. Mathematica uses string manipulation with flags (NoSpace, UnderScore, Hyphen). Python version should use SymbolTranslator lookup. |
-| `PairTranslatorReverse[]` | `pair_translator_reverse()` | `core/pair_utils.py` | 📋 Planned | Reverse of PairTranslator — exchange format → canonical. Mathematica handles both string and non-string pair inputs. |
-| `MarketBaseConvert[]` | `market_base_convert()` | `core/pair_utils.py` | 📋 Planned | Splits canonical pair into market and base currencies. E.g., `BTC/USD` → market=`BTC`, base=`USD`. **Note**: In Mathematica, handles both "forward" and "inverse" pairs for orderbook processing. |
+| `PairTranslator[]` | `pair_translator()` | `venues/symbol_translator.py` | 🔀 Redesigned | Redesigned as SymbolTranslator in venues/symbol_translator.py. Lookup-based, not string manipulation. |
+| `PairTranslatorReverse[]` | `pair_translator_reverse()` | `venues/symbol_translator.py` | 🔀 Redesigned | Implemented as SymbolTranslator.to_canonical() in venues/symbol_translator.py. |
+| `MarketBaseConvert[]` | `market_base_convert()` | `markets/pairs.py` | 🔀 Redesigned | Implemented as parse_pair() → CanonicalPair(base, quote) in markets/pairs.py. |
 | — | `CanonicalPair` | `markets/pairs.py` | ✅ Ported | Frozen dataclass with `base` and `quote` fields. `parse_pair()` factory. |
 | — | `SymbolTranslator` | `venues/symbol_translator.py` | ✅ Ported | Maps canonical pairs to venue-specific symbols. More structured than Mathematica's string manipulation approach. |
 
@@ -153,7 +153,7 @@ Databases (fees, withdrawal, accuracy)
 | `ArbOppAll[]` | `calc_all_opportunities()` | `calculation/arb_calc.py` | ✅ Ported | Generates all pairwise directional opportunities for a pair. |
 | `ArbCalcFinal[]` | `calc_arb_opportunity()` | `calculation/arb_calc.py` | ✅ Ported | Full directed opportunity calc with raw/gross/net returns and profits. |
 | `ReturnCalc[]` | `calc_return_raw()` / `calc_return_grs()` / `calc_return_net()` | `calculation/returns.py` | ✅ Ported | Split into explicit raw/gross/net return functions. |
-| `ReturnCalcAll[]` | `calc_return_all()` | `calculation/returns.py` | 📋 Planned | Computes returnRaw, returnGrs, returnNet, and profit metrics in one pass. Takes buy/sell prices and fee-adjusted amounts. |
+| `ReturnCalcAll[]` | `calc_return_all()` | `calculation/arb_calc.py` | 🔀 Redesigned | Implemented inside calc_arb_opportunity() in calculation/arb_calc.py — computes all three return levels (raw, grs, net) in one pass. |
 | `ArbSort[]` / `ArbReturns[]` | `sort_opportunities()` / `filter_profitable()` | `calculation/arb_calc.py` | ✅ Ported | Sorting + threshold filtering helpers. |
 
 
@@ -213,7 +213,7 @@ Databases (fees, withdrawal, accuracy)
 | — | `validate_tob()` | `marketdata/topofbook.py` | ✅ Ported | Validates TopOfBook invariants (not crossed, positive prices). |
 | — | `tob_from_raw()` | `marketdata/topofbook.py` | ✅ Ported | Factory function — primary validation boundary for market data. |
 | — | `ohio_eligible()` | `venues/registry.py` | ✅ Ported | Checks if an exchange is eligible for Ohio operation. |
-| — | `validate_config()` | `config/app_config.py` | ✅ Ported | Validates AppConfig at startup. Legacy module — production use superseded by `orchestration/config.py` `load_config()`. |
+| — | `validate_config()` | `config/app_config.py` | ✅ Ported | Validates AppConfig at startup. Legacy — superseded by orchestration/config.py load_config() for production use. |
 
 ---
 
