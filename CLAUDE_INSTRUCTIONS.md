@@ -1,205 +1,302 @@
-# USCryptoArb — Claude Project Instructions (Long Format)
+# USCryptoArb — Claude Instructions
 
-## 1) Mission
-Build a production-grade, fee-aware, executable cross-exchange crypto arbitrage detector for Ohio-eligible venues. The system prioritizes correctness and execution realism over optimistic theoretical returns.
+## Mission
+Cross-exchange crypto arbitrage for Ohio. Build a Python arbitrage system using the proven Mathematica system (10,000+ trades) as reference and guide — improving architecture, algorithms, and strategies where Python's ecosystem or modern practices offer advantages. Type-2 (same pair, different exchanges) primary.
 
-Primary scope:
-- Detect opportunities across USD and USDC pairs.
-- Model all known costs before labeling opportunities executable.
-- Preserve deterministic, auditable behavior from ingest to alert.
+## Relationship to Mathematica
+The Mathematica notebook is a **validated reference**, not gospel. It proves the arbitrage logic works and provides battle-tested patterns from 10,000+ real trades. However:
+- Where Python idioms, modern libraries, or better algorithms exist, **prefer those over literal porting**.
+- Where the Mathematica approach is clunky, over-engineered, or limited by Mathematica's language constraints, **redesign freely**.
+- Where the Mathematica approach is elegant and proven, **adopt it gratefully**.
+- When in doubt, **suggest the better approach** rather than defaulting to what Mathematica does.
 
-## 2) Relationship to Mathematica
-This repository is a structured Python reimplementation of the prior Mathematica research system. Mathematica remains a reference for strategy intent and function parity, not a strict behavioral authority when production constraints require stronger safety guarantees.
+## Exchanges
+Primary: Kraken (`python-kraken-sdk`), Coinbase (`coinbase-advanced-py`), Gemini (custom httpx)
+Secondary: Bitstamp, bitFlyer, OKCoin
 
-Principle:
-- Mathematica parity where practical.
-- Production safeguards (typing, validation gates, async I/O, observability) where necessary.
+**Symbol formats**: Kraken=`XBTUSD` (XBT for BTC) | Coinbase=`BTC-USD` | Gemini=`btcusd`
 
-## 3) Exchanges and Pairs
-### Supported venues
-- Kraken
-- Coinbase
-- Gemini
+All translation runs through `venues/symbol_translator.py` and connector-specific `symbols.py` modules.
 
-### Pair handling and symbol formats
-- Canonical internal pair format: `BASE/QUOTE` (example: `BTC/USD`, `ETH/USDC`).
-- Kraken external symbols: examples like `XXBTZUSD`.
-- Coinbase external symbols: examples like `BTC-USD`.
-- Gemini external symbols: examples like `btcusd`.
+## Pairs
+BTC/USD, BTC/USDC, LTC/USD, LTC/USDC, LTC/BTC, SOL/USD, SOL/USDC, SOL/BTC
+**USD ≠ USDC** (no implicit conversion)
 
-All translation runs through `src/uscryptoarb/venues/symbol_translator.py` and connector-specific `symbols.py` modules.
+## Key Mathematica Patterns (as reference, not mandate)
+- **MissingCheck**: `is_missing(v)` - validate at every boundary
+- **Limiting Reactant**: buyBalance, sellBalance, buyLiquidity, sellLiquidity
+- **Returns**: returnRaw → returnGrs → returnNet
+- **Fee Flow**: MktCurrAmt → BaseCurrAmt → MktCurrAmtGrs → BaseCurrAmtNet
+- Databases: tradingFeesDB, withdrawalDB, tradingInfoDB
 
-## 4) Key Mathematica Patterns (Condensed)
-- Convert raw venue payloads into validated domain types at boundaries.
-- Keep core math pure and deterministic.
-- Separate opportunity generation from selection and thresholding.
-- Treat data freshness and confidence as first-class filters.
+## Data Trust Boundaries
+**Principle**: Validate once at boundaries, trust downstream. No validation code in `calculation/` or `strategy/`.
 
-## 5) Data Trust Boundaries (Condensed)
-- **Untrusted**: all external API/network payloads.
-- **Trusted**: validated domain objects returned by factory/validation functions.
-- **Rule**: do not duplicate validation in pure downstream layers unless a new boundary is crossed.
+**Boundaries** (validation happens here):
+- Connector `parse_*/fetch_*` functions → call `require_*` guards
+- Factory functions: `tob_from_raw()`, not raw `TopOfBook()` constructor
+- Dataclass `__post_init__` → critical invariants (crossed book, etc.)
+- Config loaders → `require_present()` on required fields
 
-## 6) Key Function Mapping
-- `ReturnCalc[]` → `calculation/returns.py`
-- `ArbCalcFinal[]` → `calculation/arb_calc.py`
-- `TradesToExecute[]` → `strategy/trade_finder.py::find_trades_to_execute`
-- `SelectTradeToExecute[]` → `strategy/selection.py::select_trade`
-- `RunFinal[]` equivalent orchestration entry → `orchestration/scan_loop.py` and `__main__.py`
+**Trusted zones** (NO validation code):
+- `calculation/` — receives validated types, just does math
+- `strategy/` — receives validated types, just does logic
 
-Full mapping lives in `docs/MATHEMATICA_MAP.md`.
+**Guards** (`validation/guards.py`):
+- `is_missing(v)` — True for None, "", [], {}, NaN, Infinity
+- `require_present(v, name)` — raise if missing, return v
+- `require_positive(v, name)` — for prices/fees (must be > 0)
+- `require_non_negative(v, name)` — for balances (can be 0)
 
-## 7) Architecture (Condensed Diagram)
-```
-Domain/Core (pure)
-  -> Validation (pure)
-    -> Calculation (pure)
-      -> Strategy (pure)
-        -> Connectors/Adapters (imperative async I/O)
-          -> Notification (imperative)
-            -> Orchestration/App (imperative)
+**Pattern**: Factory + frozen dataclass = validated domain type
+```python
+# Boundary: connector calls factory
+tob = tob_from_raw(venue="kraken", pair="BTC/USD", bid_px=raw["bid"], ...)
+
+# Downstream: pure function trusts input
+spread = tob.ask_px - tob.bid_px  # No validation needed
 ```
 
-Dependency flow is one-way. Avoid circular imports and avoid placing business logic in connectors.
+## Key Functions (Mathematica → Python)
+`MarketBaseConvert[]`→`market_base_convert()`, `PairTranslator[]`→`pair_translator()`, `ReturnCalc[]`→`calc_return_raw()` / `calc_return_grs()` / `calc_return_net()`, `ArbCalcFinal[]`→`calc_arb_opportunity()`, `TradesToExecute[]`→`find_trades_to_execute()`, `SelectTradeToExecute[]`→`select_trade()`, `RunFinal[]`→`run_scan_loop()` in orchestration
 
-## 8) File Structure (Post-Rename, Current)
-```
-uscryptoarb/
-├── src/uscryptoarb/
-│   ├── __main__.py
-│   ├── calculation/
-│   │   ├── calc_types.py
-│   │   ├── returns.py
-│   │   ├── fees.py
-│   │   ├── sizing.py
-│   │   └── arb_calc.py
-│   ├── connectors/
-│   │   ├── connector_base.py
-│   │   ├── kraken/
-│   │   │   ├── client.py
-│   │   │   ├── parser.py
-│   │   │   └── symbols.py
-│   │   ├── coinbase/
-│   │   │   ├── client.py
-│   │   │   ├── parser.py
-│   │   │   └── symbols.py
-│   │   └── gemini/
-│   │       ├── client.py
-│   │       ├── parser.py
-│   │       └── symbols.py
-│   ├── marketdata/topofbook.py
-│   ├── markets/pairs.py
-│   ├── misc/decimals.py
-│   ├── notification/email.py
-│   ├── orchestration/
-│   │   ├── config.py
-│   │   └── scan_loop.py
-│   ├── strategy/
-│   │   ├── selection.py
-│   │   └── trade_finder.py
-│   ├── validation/guards.py
-│   └── venues/
-│       ├── registry.py
-│       └── symbol_translator.py
-├── tests/
-│   ├── unit/test_connectors/test_connector_base.py
-│   ├── unit/test_orchestration/test_scan_loop.py
-│   └── unit/test_strategy/test_trade_finder.py
-└── docs/
-    ├── LESSONS_LEARNED.md
-    ├── DECISION_LOG.md
-    ├── SESSION_HANDOFFS.md
-    └── MATHEMATICA_MAP.md
-```
+See `docs/MATHEMATICA_MAP.md` for the complete mapping of all ~58 functions (DEC-010).
 
-## 9) Coding Rules 0–16 (Complete, Condensed)
-0. Search `LESSONS_LEARNED.md` and `DECISION_LOG.md` before coding.
-1. Keep core/calculation/strategy/validation pure (no side effects).
-2. Keep I/O in connectors/notification/orchestration only.
-3. Use explicit typed interfaces; avoid hidden globals.
-4. Validate at trust boundaries; fail closed on critical missing data.
-5. Use `Decimal` for all monetary values; never use float for money.
-6. Preserve deterministic, reproducible behavior and UTC timestamps.
-7. External I/O must be async with timeout, retries, and rate limiting.
-8. Keep logs structured and traceable; avoid secret leakage.
-9. Enforce one-way layering; no circular imports.
-10. Propagation rule: update tests/docs/changelog in same session.
-10.1 Avoid duplicate logic paths for same business rule.
-10.2 Add or update tests for behavior changes and bug fixes.
-10.3 Keep naming explicit and domain-oriented.
-10.4 Keep function signatures stable unless intentionally refactored.
-10.5 Preserve compatibility for existing call sites or update all call sites atomically.
-10.6 Prefer reusable pure helpers after repeated patterns emerge.
-10.7 Update operational docs for decisions and lessons.
-10.8 **Unique module names** across `src/uscryptoarb/` (except `__init__.py` and connector internal `client.py`/`parser.py`/`symbols.py`).
-10.9 **Refactor checkpoint**: second pattern instance must be flagged in SESSION_HANDOFFS and either refactored next session or deferred with rationale in DECISION_LOG.
-11. Keep tests deterministic; no live network calls in tests.
-12. Respect strict typing (`mypy`) and linting (`ruff`) cleanliness.
-13. Keep changes minimal, reversible, and well-scoped.
-14. Prefer composition over inheritance in pure logic.
-15. Keep docs synchronized with implemented behavior.
-16. When uncertain, choose the safer, conservative execution path.
+## Architecture
+Orchestration (imperative) → Execution → Connectors
+↓
+Strategy (pure) → Calculation (pure) → Validation (pure) → Domain/Core (pure)
+↓
+Notification (imperative, best-effort)
+Imports flow DOWN only. Circular imports = hard failure.
 
-## 10) Pre-Implementation Verification Checklist
-- [ ] LESSONS_LEARNED searched
-- [ ] DECISION_LOG searched
-- [ ] MATHEMATICA_MAP checked (if porting)
-- [ ] Existing patterns reviewed
-- [ ] Imports verified to exist
-- [ ] Module name uniqueness verified (`find src/ -name "<proposed_name>.py"`)
-- [ ] Test strategy planned
-- [ ] Approval/decision path confirmed
-
-## 11) Deliverable Format Template
-When returning implementation updates:
-1. Summary of changed files and why.
-2. Validation commands executed and outcomes.
-3. Any operational follow-up required (docs sync, config updates).
-
-## 12) Debugging and Traceability (Brief)
-- Log ingest -> normalize -> evaluate -> validate -> emit path.
-- Include rejection reasons for filtered opportunities.
-- Keep enough context to replay a decision from logs and inputs.
-
-## 13) Debug Config (YAML + CLI)
-```yaml
-debug:
-  enabled: true
-  log_level: DEBUG
-  trace_pairs: [BTC/USD, ETH/USD]
-```
-
-CLI:
-```bash
-python -m uscryptoarb --debug --trace-pairs BTC/USD ETH/USD
-```
-
-## 14) Success Metrics
-| Metric | Target |
-|---|---|
-| Ruff | 0 violations |
-| mypy | 0 errors |
-| Tests | 100% pass |
-| Opportunity auditability | Reproducible from logs + snapshots |
-| Docs sync | PROJECT -> CLAUDE -> UI aligned |
-
-## 15) Config Keys (Brief)
-- `venues.primary`
-- `pairs`
-- `arbitrage.threshold`
-- `arbitrage.max_staleness_ms`
-- `polling.interval_seconds`
-- `fees.<venue>.buy/sell`
-- `notifications.email.*`
-- `debug.*`
-
-## 16) Reference Links
-- Canonical project policy: `PROJECT_INSTRUCTIONS.md`
-- Decision record: `docs/DECISION_LOG.md`
-- Lessons learned: `docs/LESSONS_LEARNED.md`
-- Mathematica parity map: `docs/MATHEMATICA_MAP.md`
-- Session continuity: `docs/SESSION_HANDOFFS.md`
+## File Structure (Post-Rename)
+src/uscryptoarb/
+main.py              # CLI entry point (python -m uscryptoarb)
+config/
+app_config.py          # Legacy AppConfig (superseded by orchestration/config.py)
+misc/
+decimals.py            # to_decimal, floor_to_step, ceil_to_step
+markets/
+pairs.py               # CanonicalPair, parse_pair
+venues/
+registry.py            # VenueInfo, ohio_eligible
+symbol_translator.py   # SymbolTranslator, to_canonical, create_translator
+marketdata/
+topofbook.py           # TopOfBook, validate_tob, tob_from_raw
+validation/
+guards.py              # is_missing, require_present, require_positive, require_non_negative
+http/
+backoff.py             # Bounded retry with async backoff
+rate_limiter.py        # RateLimiter for exchange API rate limiting
+calculation/
+calc_types.py          # TradingFeeRate, WithdrawalFee, TradingAccuracy, FeeSchedule, ArbLeg, ArbOpportunity
+returns.py             # calc_return_raw, calc_return_grs, calc_return_net, calc_profit_base
+fees.py                # calc_buy_leg, calc_sell_leg, effective_buy_cost, effective_sell_proceeds
+sizing.py              # calc_kelly_fraction, calc_kelly_amount, calc_position_size
+arb_calc.py            # calc_arb_opportunity, calc_all_opportunities, sort_opportunities, filter_profitable
+strategy/
+selection.py           # select_trade, passes_threshold
+trade_finder.py        # find_trades_to_execute, filter_valid_exchanges
+connectors/
+connector_base.py      # ExchangeConnector Protocol, BaseAsyncConnector ABC
+kraken/
+symbols.py           # Kraken symbol mapping (BTC/USD → XXBTZUSD)
+parser.py            # parse_kraken_ticker, parse_kraken_orderbook
+client.py            # KrakenClient (async httpx)
+coinbase/
+symbols.py           # Coinbase symbol mapping (BTC/USD → BTC-USD)
+parser.py            # parse_coinbase_bbo
+client.py            # CoinbaseClient (async httpx)
+gemini/
+symbols.py           # Gemini symbol mapping (BTC/USD → btcusd)
+parser.py            # parse_book_response
+client.py            # GeminiClient (async httpx)
+notification/
+email.py               # EmailConfig, send_alert, format_opportunity_email
+orchestration/
+config.py              # ScannerConfig, load_config, _build_fee_schedules
+scan_loop.py           # run_scan_loop, run_scan_cycle, create_connectors, fetch_all_venues
+resources/
+fee_schedules.json     # Production fee data (withdrawal fees, trading accuracy)
+tests/
+conftest.py              # Shared fixtures (TopOfBook, FeeSchedule, etc.)
+helpers.py               # Shared test utilities (DummyRateLimiter)
+unit/
+test_calculation/      # Fee math, return calcs, arb opportunity tests
+test_connectors/
+test_connector_base.py  # BaseAsyncConnector shared retry logic tests
+test_kraken/         # Kraken parser, client, symbols tests
+test_coinbase/       # Coinbase parser, client, symbols tests
+test_gemini/         # Gemini parser, client, symbols tests
+test_http/             # Rate limiter, backoff tests
+test_notification/     # Email formatting and sending tests
+test_orchestration/
+test_scan_loop.py    # Scan loop, connector creation tests
+test_strategy/
+test_trade_finder.py # Trade finding, filtering tests
+test_validation/       # Guard function tests
+fixtures/
+README.md              # Fixture provenance documentation
+fee_schedules.json     # Test fee data
+notebooks/                 # Exploration (01_kraken, 02_coinbase, 03_gemini)
+docs/                      # LESSONS_LEARNED, SESSION_HANDOFFS, DECISION_LOG, MATHEMATICA_MAP
 
 ---
+## CODING RULES
 
-Sync policy: edit `PROJECT_INSTRUCTIONS.md` first, regenerate this file second, then copy this file into the Claude.ai project instructions UI.
+### 0. Prime Directive
+Correct, testable, observable, cross-platform code. Reliability over cleverness. If uncertain, fail closed or ask.
+
+### 1. Source of Truth & Workflow
+**1.1** GitHub latest commit is single source of truth. Don't assume names/structure—verify.
+**1.2** Permissioned: Analyze (search LESSONS_LEARNED, DECISION_LOG, MATHEMATICA_MAP) → Plan → **(User Approval)** → Implement → Validate → Summarize (update ops docs).
+**1.3** Deliver copy-pasteable blocks: full file, full function, or exact block replacement. No unified diffs.
+
+### 2. Programming Model
+**2.1** Functional core, imperative shell. Pure functions for transforms/calcs, explicit I/O, composition over inheritance. Shell only for HTTP/WS/files/scheduling.
+**2.2** Immutability default. Use `@dataclass(frozen=True, slots=True)`. Return new objects, don't mutate.
+**2.3** All external I/O must be async/await. No blocking in event loop.
+**2.4** NO HACKS. Always identify root cause. If uncertain, ask.
+
+### 3. Correctness (Money & Markets)
+**3.1** NO FLOATS for money/probabilities. Use `Decimal` with consistent rounding.
+**3.2** Core computations must be deterministic from: input snapshots, config, fee model, code version.
+**3.3** Validate invariants at boundaries: orderbook sorted, bids ≤ asks, non-negative sizes, monotonic timestamps. Unknown inputs block opportunity or produce UNVERIFIED result.
+
+### 4. Data & Schema
+- UTC for all timestamps
+- Canonical schemas: OrderBookSnapshot, BestBidAsk, FeeModel, Opportunity, Leg
+- Every opportunity includes: prices used, fee inputs/outputs, legs, sizing, validation outcomes
+
+### 5. Observability
+**5.1** Use `logging` not print. UTF-8 safe, no secrets, structured enough to trace pipeline. Include market ID, venue, run_id, timestamp.
+**5.2** Debug logs for: orderbook sorting, fee calcs (in/out), validation failures. Explainable rejection over silent skip.
+
+### 6. Error Handling
+- Timeouts on all network calls
+- Bounded retries with exponential backoff
+- Rate limiting per exchange
+- Graceful degradation: stale detection, reconnect logic, cancellation-safe async
+- Idempotent ingestion where possible
+
+### 7. Testing
+**7.1** Required: fee math, BBO extraction, orderbook sorting, return calcs, validation gates. Bug fix = regression test.
+**7.2** Tests must be deterministic: no live network, use fixtures, stable rounding.
+
+### 8. Tooling
+Lint: Ruff | Types: mypy | Package: pip + requirements.txt
+CI: Ruff → mypy → pytest
+
+### 9. Security
+No secrets in code—use env vars/.env excluded from git. Never log credentials. Validate config at startup, fail fast.
+
+### 10. Duplication & Reuse
+**10.1** Single source of truth for logic used in 2+ places. Don't generalize until 2 real callers.
+**10.2** Centralize (ONE place): orderbook sorting, BBO extraction, fee calc, return calcs, rounding rules.
+**10.3** >15 lines copied → create helper. Helpers: pure, typed, tested.
+**10.4** Canonical dataclasses only—no near-duplicates. Venue extras go in venue_meta.
+**10.5** Refactor when: same logic in 2+ places, bug fixes need multiple edits, new features repeat patterns.
+**10.6** Preserve behavior unless explicitly changing. Add tests that lock behavior.
+**10.7** Config decisions (thresholds, fees) live in ONE config layer, referenced everywhere.
+**10.8** No bare generic filenames across packages. Every .py module name must be unique across the entire src/uscryptoarb/ tree (excluding __init__.py). If two modules would share a name, prefix with the domain context. Connector sub-packages are the one exception: client.py, parser.py, and symbols.py within connectors/<venue>/ are permitted as a deliberate internal pattern, but no other package may reuse those names. Before creating a new module, run `find src/ -name "<proposed_name>.py"` to check.
+
+### 10.9 Refactor Checkpoint
+When a session creates a 2nd instance of a pattern (2nd connector, 2nd config helper, 2nd fixture shape), flag it in SESSION_HANDOFFS under "Refactor Candidates" with the specific files and pattern. The NEXT session must either refactor or explicitly defer with rationale in DECISION_LOG.
+
+### 11. Layering (imports DOWN only)
+Domain/Core  → (nothing) - dataclasses, pure functions
+Validation   → Domain
+Calculation  → Domain, Validation
+Strategy     → Domain, Validation, Calculation
+Connectors   → Domain only (outputs canonical types)
+Notification → Domain/Core
+Execution    → All pure + Connectors
+Orchestration→ Everything
+**11.2** Circular imports = hard failure.
+**11.3** Connectors parse/normalize only. Cannot: compute arb, embed thresholds, decide validity.
+**11.4** Config loads once in orchestration, passed down. Core never reads env vars.
+**11.5** DI not globals. Strategies receive FeeModel, config, snapshots as params.
+
+### 12. Repo Integrity
+Discover repo before referencing. File not found → ASK. Conflicts → surface and propose minimal change.
+
+### 13. Pre-Implementation Verification (MANDATORY)
+LESSONS_LEARNED.md searched for gotchas:
+DECISION_LOG.md searched for settled decisions:
+MATHEMATICA_MAP.md status checked (if applicable):
+Mathematica reference function (if applicable):
+Improvements over Mathematica approach considered:
+Template/pattern file(s) used:
+Base classes verified (paths + signatures):
+Dataclass mutability (frozen?):
+Imports verified to exist:
+Module name uniqueness verified (find src/ -name "<name>.py"):
+2+ similar implementations reviewed:
+Test approach:
+Cannot verify → STOP and ask.
+
+### 14. Deliverable Format
+What Changed
+
+file.py: Added func()
+
+Why
+Brief rationale. Reference Mathematica function if applicable, note improvements if diverging.
+Propagation Checklist
+
+ Source - [x] Types - [x] Tests - [x] Docstrings - [x] README - [x] CHANGELOG
+ MATHEMATICA_MAP - [ ] DECISION_LOG - [ ] LESSONS_LEARNED
+ CLAUDE_INSTRUCTIONS.md regenerated (if PROJECT_INSTRUCTIONS.md changed)
+
+Validation
+pytest tests/unit/test_file.py -v
+New config keys
+key: default
+
+### 15. Debugging & Traceability
+- Every stage logs: input count, output count, filter reasons
+- Support `--trace-pair BTC/USD` for DEBUG on that pair
+- Snapshot replay from JSON
+- Every log includes correlation_id
+
+### 16. Debug Config
+```yaml
+debug:
+  enabled: bool
+  trace_pairs: list[str]
+  log_pipeline_stages: bool
+  snapshot_dir: str | null
+```
+CLI: `--trace-pair PAIR --dry-run --max-markets N --log-level LEVEL`
+
+---
+## Success Metrics
+| Metric | Target | Phase |
+|--------|--------|-------|
+| Calculation Match (vs Mathematica) | 100% where approach is shared; documented rationale where diverging | 1 |
+| Detection Latency | <500ms | 1 |
+| Pair Coverage | 100% | 1+ |
+| Alert Actionability | >95% | 1 |
+| Fee Model Accuracy | 100% | 1+ |
+| Detection Accuracy | >95% | 1+ |
+| Execution Rate (both legs fill) | >95% | 4 |
+| Net Profitability | >0 | 4 |
+
+Phases: 1=Detection/Alerts, 2=WebSocket, 3=Paper, 4=Live
+
+## Config Keys
+```yaml
+arbitrage:
+  threshold: "0.0055"          # 0.55% min return
+  min_bankroll_limit: "0.10"   # max 10% per trade
+polling:
+  interval_seconds: 5
+```
+
+## Reference
+Full: PROJECT_INSTRUCTIONS.md | Mathematica: CryptoArbitrage_V14.9.4_NoKeys.nb
+Ops docs: docs/ (LESSONS_LEARNED, SESSION_HANDOFFS, DECISION_LOG, MATHEMATICA_MAP)
+
+## Sync Policy
+Edit `PROJECT_INSTRUCTIONS.md` first → regenerate this file second → copy this file into Claude.ai project instructions UI. Never update CLAUDE_INSTRUCTIONS.md or the UI independently. Changes flow one direction from the canonical source.
