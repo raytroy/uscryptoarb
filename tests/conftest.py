@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from uscryptoarb.calculation.types import (
+from uscryptoarb.calculation.calc_types import (
     FeeSchedule,
     TradingAccuracy,
     TradingFeeRate,

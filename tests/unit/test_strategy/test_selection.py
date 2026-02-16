@@ -7,7 +7,7 @@ Uses shared fixtures from tests/conftest.py.
 from decimal import Decimal
 
 from uscryptoarb.calculation.arb_calc import calc_all_opportunities, calc_arb_opportunity
-from uscryptoarb.calculation.types import FeeSchedule
+from uscryptoarb.calculation.calc_types import FeeSchedule
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.strategy.selection import passes_threshold, select_trade
 

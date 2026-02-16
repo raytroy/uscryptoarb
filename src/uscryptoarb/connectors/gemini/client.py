@@ -7,13 +7,13 @@ from typing import Any
 # Re-export for type checking — httpx is used by callers constructing clients
 import httpx
 
-from uscryptoarb.connectors.base import BaseAsyncConnector
+from uscryptoarb.connectors.connector_base import BaseAsyncConnector
 from uscryptoarb.connectors.gemini.parser import parse_book_response
 from uscryptoarb.connectors.gemini.symbols import GEMINI_SYMBOLS
 from uscryptoarb.http.backoff import BackoffPolicy
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
-from uscryptoarb.venues.symbols import SymbolTranslator
+from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 logger = logging.getLogger(__name__)
 

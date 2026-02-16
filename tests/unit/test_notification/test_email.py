@@ -4,7 +4,7 @@ import asyncio
 from decimal import Decimal
 from unittest.mock import patch
 
-from uscryptoarb.calculation.types import ArbLeg, ArbOpportunity
+from uscryptoarb.calculation.calc_types import ArbLeg, ArbOpportunity
 from uscryptoarb.notification.email import EmailConfig, format_opportunity_email, send_alert
 
 

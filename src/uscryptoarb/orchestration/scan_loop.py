@@ -9,17 +9,17 @@ from decimal import Decimal
 
 import httpx
 
+from uscryptoarb.calculation.calc_types import ArbOpportunity
 from uscryptoarb.calculation.returns import calc_return_raw
-from uscryptoarb.calculation.types import ArbOpportunity
-from uscryptoarb.connectors.base import ExchangeConnector
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
+from uscryptoarb.connectors.connector_base import ExchangeConnector
 from uscryptoarb.connectors.gemini.client import GeminiClient
 from uscryptoarb.connectors.kraken.client import KrakenClient
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.notification.email import send_alert
 from uscryptoarb.orchestration.config import ScannerConfig
-from uscryptoarb.strategy.scanner import find_trades_to_execute
+from uscryptoarb.strategy.trade_finder import find_trades_to_execute
 
 logger = logging.getLogger(__name__)
 

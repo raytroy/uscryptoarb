@@ -26,7 +26,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from uscryptoarb.calculation.arb_calc import calc_all_opportunities
-from uscryptoarb.calculation.types import ArbOpportunity, FeeSchedule
+from uscryptoarb.calculation.calc_types import ArbOpportunity, FeeSchedule
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.strategy.selection import select_trade
 

@@ -5,7 +5,7 @@ from typing import Any
 
 from uscryptoarb.marketdata.topofbook import TopOfBook, tob_from_raw
 from uscryptoarb.validation.guards import require_present
-from uscryptoarb.venues.symbols import SymbolTranslator
+from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 logger = logging.getLogger(__name__)
 
