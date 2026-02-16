@@ -113,6 +113,10 @@ gemini/
 symbols.py           # Gemini symbol mapping (BTC/USD → btcusd)
 parser.py            # parse_book_response
 client.py            # GeminiClient (async httpx)
+okx/
+symbols.py           # OKX symbol mapping (BTC/USD → BTC-USD)
+parser.py            # parse_okx_ticker, parse_batch_tickers
+client.py            # OkxClient (async httpx)
 notification/
 email.py               # EmailConfig, send_alert, format_opportunity_email
 orchestration/
@@ -130,6 +134,7 @@ test_connector_base.py  # BaseAsyncConnector shared retry logic tests
 test_kraken/         # Kraken parser, client, symbols tests
 test_coinbase/       # Coinbase parser, client, symbols tests
 test_gemini/         # Gemini parser, client, symbols tests
+test_okx/            # OKX parser, client, symbols tests
 test_http/             # Rate limiter, backoff tests
 test_notification/     # Email formatting and sending tests
 test_orchestration/
@@ -307,3 +312,5 @@ Ops docs: docs/ (LESSONS_LEARNED, SESSION_HANDOFFS, DECISION_LOG, MATHEMATICA_MA
 
 ## Sync Policy
 Edit `PROJECT_INSTRUCTIONS.md` first → regenerate this file second → copy this file into Claude.ai project instructions UI. Never update CLAUDE_INSTRUCTIONS.md or the UI independently. Changes flow one direction from the canonical source.
+
+> Reminder for Ray: copy the updated CLAUDE_INSTRUCTIONS.md into the Claude.ai project instructions UI per Sync Policy.

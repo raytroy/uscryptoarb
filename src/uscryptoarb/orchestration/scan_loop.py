@@ -17,6 +17,7 @@ from uscryptoarb.connectors.coinbase.client import CoinbaseClient
 from uscryptoarb.connectors.connector_base import BaseAsyncConnector, ExchangeConnector
 from uscryptoarb.connectors.gemini.client import GeminiClient
 from uscryptoarb.connectors.kraken.client import KrakenClient
+from uscryptoarb.connectors.okx.client import OkxClient
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.misc.time_utils import now_ms
@@ -33,6 +34,7 @@ _CONNECTOR_REGISTRY: dict[str, type[BaseAsyncConnector]] = {
     "coinbase": CoinbaseClient,
     "gemini": GeminiClient,
     "bitstamp": BitstampClient,
+    "okx": OkxClient,
 }
 
 
@@ -57,7 +59,11 @@ async def create_connectors(
         limiter = RateLimiter(min_interval_ms=venue_cfg.rate_limit_ms)
 
         concrete_connector_cls = cast(
-            type[KrakenClient] | type[CoinbaseClient] | type[GeminiClient] | type[BitstampClient],
+            type[KrakenClient]
+            | type[CoinbaseClient]
+            | type[GeminiClient]
+            | type[BitstampClient]
+            | type[OkxClient],
             connector_cls,
         )
         connectors[venue] = concrete_connector_cls(

@@ -1486,3 +1486,73 @@
 - Fee schedule structural consistency test will verify bitstamp data matches between prod and test files.
 - Pre-existing test issue: check if `test_load_config_happy_path` threshold assertion is resolved.
 
+
+---
+
+## 2026-02-16 — OKX US Connector Implementation
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- 4 source files: connectors/okx/{__init__.py, symbols.py, parser.py, client.py}
+- 3 test fixtures: okx_ticker_btc_usd.json, okx_ticker_sol_btc.json, okx_error_invalid_instrument.json
+- 4 test files: test_okx/{__init__.py, test_symbols.py, test_parser.py, test_client.py}
+- Wiring: scan_loop.py (_CONNECTOR_REGISTRY + import + cast), config.yaml (venues, venue_configs, fees)
+- Fee data: okx added to both fee_schedules.json files (withdrawal_fees + accuracy, 7 pairs)
+- Test config: FULL_CFG in orchestration conftest.py updated with okx
+- Integration test: OKX response builder, connector factory, _patch_now_ms extended
+- Docs: LL-070/071/072, DEC-022, MATHEMATICA_MAP Section 5, CHANGELOG, fixtures README
+- PROJECT_INSTRUCTIONS.md + CLAUDE_INSTRUCTIONS.md file trees updated
+
+### In Progress
+- Nothing
+
+### Blocked / Needs Decision
+- OKX trading_accuracy values are inferred from notebook ticker data precision. Should be verified against OKX GET /api/v5/public/instruments?instType=SPOT endpoint for exact values. Low risk for Phase 1 detection-only.
+
+### Key Decisions Made
+- DEC-022: Batch ticker endpoint (like Kraken), not per-pair
+- 7/8 pairs only (LTC/BTC not listed on OKX US)
+- HTTP 200 error handling via code field validation (LL-070)
+
+### Refactor Candidates (Rule 10.9)
+- **create_connectors() cast union**: Now 5 types. All share BaseAsyncConnector constructor (DEC-018). Consider using `type[BaseAsyncConnector]` directly instead of the expanding union type. 3rd instance of noting this pattern.
+- **Batch ticker pattern**: 3 connectors (Kraken, Bitstamp hybrid per-pair, OKX batch) have bespoke fetch behavior. Response formats differ significantly — Kraken: `{"error": [], "result": {...}}`, OKX: `{"code": "0", "data": [...]}`. No shared helper warranted yet. Explicitly deferred.
+- **_patch_now_ms decorator**: Now patches 5 modules. If a 6th appears, extract to tests/helpers.py.
+
+### Files Created (11)
+- src/uscryptoarb/connectors/okx/__init__.py
+- src/uscryptoarb/connectors/okx/symbols.py
+- src/uscryptoarb/connectors/okx/parser.py
+- src/uscryptoarb/connectors/okx/client.py
+- tests/fixtures/okx_ticker_btc_usd.json
+- tests/fixtures/okx_ticker_sol_btc.json
+- tests/fixtures/okx_error_invalid_instrument.json
+- tests/unit/test_connectors/test_okx/__init__.py
+- tests/unit/test_connectors/test_okx/test_symbols.py
+- tests/unit/test_connectors/test_okx/test_parser.py
+- tests/unit/test_connectors/test_okx/test_client.py
+
+### Files Modified (12+)
+- src/uscryptoarb/orchestration/scan_loop.py (import + registry + cast)
+- src/uscryptoarb/resources/fee_schedules.json (okx withdrawal + accuracy)
+- config.yaml (venues + venue_configs + fees)
+- tests/fixtures/fee_schedules.json (okx withdrawal + accuracy)
+- tests/unit/test_orchestration/conftest.py (FULL_CFG)
+- tests/integration/test_end_to_end.py (response builder + factory + patch + test)
+- docs/LESSONS_LEARNED.md (LL-070, LL-071, LL-072)
+- docs/DECISION_LOG.md (DEC-022)
+- docs/MATHEMATICA_MAP.md (OKX row → ✅ Ported)
+- CHANGELOG.md (OKX connector entry)
+- tests/fixtures/README.md (3 fixture provenance entries)
+- PROJECT_INSTRUCTIONS.md (file tree)
+- CLAUDE_INSTRUCTIONS.md (file tree, remind Ray to copy to UI)
+- docs/SESSION_HANDOFFS.md (this entry)
+
+### Next Steps (Priority Order)
+1. Verify OKX trading_accuracy from GET /api/v5/public/instruments?instType=SPOT
+2. Run `python -m uscryptoarb --dry-run` with 4+ exchanges
+3. Run continuous mode for 2-3 cycles with 4+ exchanges, Ctrl+C
+4. Address Refactor Candidate: simplify create_connectors() cast to BaseAsyncConnector
+5. Consider next exchange connector backlog item

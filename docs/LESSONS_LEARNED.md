@@ -388,3 +388,26 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Rule going forward**: Prefer higher-precision timestamps when available. Document timestamp source and conversion in parser docstring.
 - **Affected files**: `connectors/bitstamp/parser.py`, `notebooks/04_bitstamp_exploration.ipynb`
 
+
+### LL-072: OKX V5 API returns HTTP 200 for application errors
+- **Date**: 2026-02-16
+- **Category**: Connectors / Error Handling
+- **What happened**: OKX API always returns HTTP 200 status. Errors are indicated by a non-zero `code` string field in the JSON response (e.g., `{"code": "51001", "msg": "Instrument ID does not exist", "data": []}`).
+- **Root cause**: OKX V5 API design choice — similar to Kraken's `{"error": [...]}` pattern but uses a string code instead of an array.
+- **Rule**: Always check the JSON `code` field after parsing OKX responses, not just HTTP status. Code `"0"` means success; anything else is an error.
+- **References**: notebooks/04_okx_exploration.ipynb Section 8, DEC-018
+
+### LL-073: OKX timestamps are already in milliseconds
+- **Date**: 2026-02-16
+- **Category**: Connectors / Data Parsing
+- **What happened**: OKX `ts` field contains 13-digit Unix milliseconds as a string (e.g., `"1771282524012"`). Unlike Kraken (seconds as float, multiply by 1000) or Gemini (seconds as integer string, multiply by 1000), OKX timestamps need only `int(ts)` — no multiplication.
+- **Root cause**: Each exchange chose a different timestamp convention.
+- **Rule**: For OKX timestamps: `int(data["ts"])`. Do NOT multiply by 1000.
+- **References**: notebooks/04_okx_exploration.ipynb Section 7
+
+### LL-074: OKCoin ceased operations — verify exchange status before building connectors
+- **Date**: 2026-02-16
+- **Category**: Process / Exchanges
+- **What happened**: OKCoin (previously listed as a secondary exchange in PROJECT_INSTRUCTIONS.md) ceased all trading operations on May 15, 2025, with no advance API deprecation notice. OKX US is the legal successor entity.
+- **Rule**: Before building any new connector, web-search `<exchange name> status` to verify the exchange is still operational. Don't assume exchanges listed in project docs are still active.
+- **References**: notebooks/04_okx_exploration.ipynb Section 1

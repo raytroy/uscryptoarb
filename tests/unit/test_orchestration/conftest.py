@@ -17,7 +17,7 @@ import pytest
 # ---------------------------------------------------------------------------
 FULL_CFG = """\
 venues:
-  primary: [kraken, coinbase, gemini, bitstamp]
+  primary: [kraken, coinbase, gemini, bitstamp, okx]
 
 pairs:
   - BTC/USD
@@ -53,6 +53,10 @@ venue_configs:
     rate_limit_ms: 150
     timeout_s: 10.0
     max_retries: 3
+  okx:
+    rate_limit_ms: 200
+    timeout_s: 10.0
+    max_retries: 3
 
 fees:
   kraken:
@@ -68,6 +72,9 @@ fees:
   bitstamp:
     buy: "0.004"
     sell: "0.004"
+  okx:
+    buy: "0.001"
+    sell: "0.001"
 
 notifications:
   email:
