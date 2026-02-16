@@ -1,27 +1,24 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 from typing import Any
 
-import httpx
-
+from uscryptoarb.connectors.base import BaseAsyncConnector
 from uscryptoarb.connectors.kraken.parser import parse_ticker_response
 from uscryptoarb.connectors.kraken.symbols import KRAKEN_SYMBOLS
-from uscryptoarb.http.backoff import (
-    DEFAULT_BACKOFF_POLICY,
-    BackoffPolicy,
-    compute_delay_ms,
-)
+from uscryptoarb.http.backoff import BackoffPolicy
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.venues.symbols import SymbolTranslator
 
 logger = logging.getLogger(__name__)
 
+# Re-export for type checking — httpx is used by callers constructing clients
+import httpx  # noqa: E402
 
-class KrakenClient:
+
+class KrakenClient(BaseAsyncConnector):
     """Async Kraken public API client."""
 
     BASE_URL: str = "https://api.kraken.com"
@@ -38,16 +35,15 @@ class KrakenClient:
         max_retries: int = 3,
         backoff: BackoffPolicy | None = None,
     ) -> None:
-        self._client = client
-        self._rate_limiter = rate_limiter
-        self._symbols = symbols or KRAKEN_SYMBOLS
-        self._timeout_s = timeout_s
-        self._max_retries = max_retries
-        self._backoff = backoff or DEFAULT_BACKOFF_POLICY
-
-    @property
-    def venue(self) -> str:
-        return "kraken"
+        super().__init__(
+            client=client,
+            rate_limiter=rate_limiter,
+            symbols=symbols or KRAKEN_SYMBOLS,
+            venue_name="kraken",
+            timeout_s=timeout_s,
+            max_retries=max_retries,
+            backoff=backoff,
+        )
 
     async def fetch_tickers(self, pairs: list[str]) -> dict[str, TopOfBook]:
         if not pairs:
@@ -87,38 +83,17 @@ class KrakenClient:
         path: str,
         params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        """Kraken API request: shared retry + Kraken-specific response validation."""
         url = f"{self.BASE_URL}{path}"
+        response = await self._fetch_with_retry(method, url, params=params)
 
-        for attempt in range(self._max_retries + 1):
-            try:
-                await self._rate_limiter.acquire()
-                response = await self._client.request(
-                    method,
-                    url,
-                    params=params,
-                    timeout=self._timeout_s,
-                )
-                if response.status_code >= 400:
-                    response.raise_for_status()
-
-                data = response.json()
-                if not isinstance(data, dict):
-                    raise ValueError("Kraken response must be a JSON object")
-                errors = data.get("error", [])
-                if errors:
-                    raise ValueError(f"Kraken API error(s): {errors}")
-                result = data.get("result")
-                if not isinstance(result, dict):
-                    raise ValueError("Kraken result must be a JSON object")
-                return result
-            except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as exc:
-                retryable = isinstance(exc, (httpx.TimeoutException, httpx.ConnectError))
-                if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code >= 500:
-                    retryable = True
-                if not retryable or attempt >= self._max_retries:
-                    raise
-
-                delay_ms = compute_delay_ms(attempt, self._backoff)
-                await asyncio.sleep(delay_ms / 1000)
-
-        raise RuntimeError("unreachable")
+        data = response.json()
+        if not isinstance(data, dict):
+            raise ValueError("Kraken response must be a JSON object")
+        errors = data.get("error", [])
+        if errors:
+            raise ValueError(f"Kraken API error(s): {errors}")
+        result = data.get("result")
+        if not isinstance(result, dict):
+            raise ValueError("Kraken result must be a JSON object")
+        return result

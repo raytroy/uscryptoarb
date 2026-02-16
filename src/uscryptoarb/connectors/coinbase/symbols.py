@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from uscryptoarb.venues.symbols import SymbolTranslator
+from uscryptoarb.venues.symbols import create_translator
 
 COINBASE_SYMBOL_MAP: dict[str, str] = {
     "BTC/USD": "BTC-USD",
@@ -13,10 +13,7 @@ COINBASE_SYMBOL_MAP: dict[str, str] = {
     "SOL/BTC": "SOL-BTC",
 }
 
-COINBASE_SYMBOLS = SymbolTranslator(
-    venue="coinbase",
-    canonical_to_venue=COINBASE_SYMBOL_MAP,
-)
+COINBASE_SYMBOLS = create_translator("coinbase", COINBASE_SYMBOL_MAP)
 
 
 def supported_pairs() -> list[str]:

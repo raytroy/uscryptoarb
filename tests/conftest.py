@@ -156,171 +156,155 @@ def stale_tob() -> TopOfBook:
 
 
 # ---------------------------------------------------------------------------
-# Fee fixtures
+# Fee fixtures — factory + named wrappers for backward compatibility
 # ---------------------------------------------------------------------------
 
 
 @pytest.fixture()
-def kraken_fee_rate() -> TradingFeeRate:
-    """Kraken taker fee: 0.26%."""
-    return TradingFeeRate(
-        venue="kraken",
-        action="buy",
-        pct_fee=Decimal("0.0026"),
-        flat_fee=Decimal("0"),
-    )
+def fee_schedule_factory():
+    """Factory for building FeeSchedule with explicit per-field control.
+
+    All string amounts are converted to Decimal for determinism (LL-010).
+    Named fixtures below are thin wrappers for backward compatibility.
+    """
+
+    def _make(
+        *,
+        venue: str,
+        pair: str = "BTC/USD",
+        buy_pct: str = "0.0026",
+        sell_pct: str = "0.0026",
+        buy_flat: str = "0",
+        sell_flat: str = "0",
+        buy_withdrawal_currency: str | None = None,
+        buy_withdrawal_flat: str = "0",
+        buy_withdrawal_pct: str = "0",
+        sell_withdrawal_currency: str | None = None,
+        sell_withdrawal_flat: str = "0",
+        sell_withdrawal_pct: str = "0",
+        price_decimals: int = 2,
+        lot_decimals: int = 8,
+        min_order_size: str = "0.00001",
+        max_order_size: str | None = None,
+        tick_size: str = "0.01",
+        lot_step: str = "0.00000001",
+    ) -> FeeSchedule:
+        buy_wd = (
+            WithdrawalFee(
+                venue=venue,
+                currency=buy_withdrawal_currency,
+                flat_fee=Decimal(buy_withdrawal_flat),
+                pct_fee=Decimal(buy_withdrawal_pct),
+            )
+            if buy_withdrawal_currency is not None
+            else None
+        )
+
+        sell_wd = (
+            WithdrawalFee(
+                venue=venue,
+                currency=sell_withdrawal_currency,
+                flat_fee=Decimal(sell_withdrawal_flat),
+                pct_fee=Decimal(sell_withdrawal_pct),
+            )
+            if sell_withdrawal_currency is not None
+            else None
+        )
+
+        return FeeSchedule(
+            buy_fee=TradingFeeRate(
+                venue=venue,
+                action="buy",
+                pct_fee=Decimal(buy_pct),
+                flat_fee=Decimal(buy_flat),
+            ),
+            sell_fee=TradingFeeRate(
+                venue=venue,
+                action="sell",
+                pct_fee=Decimal(sell_pct),
+                flat_fee=Decimal(sell_flat),
+            ),
+            buy_withdrawal=buy_wd,
+            sell_withdrawal=sell_wd,
+            accuracy=TradingAccuracy(
+                venue=venue,
+                pair=pair,
+                price_decimals=price_decimals,
+                lot_decimals=lot_decimals,
+                min_order_size=Decimal(min_order_size),
+                max_order_size=Decimal(max_order_size) if max_order_size is not None else None,
+                tick_size=Decimal(tick_size),
+                lot_step=Decimal(lot_step),
+            ),
+        )
+
+    return _make
 
 
 @pytest.fixture()
-def coinbase_fee_rate() -> TradingFeeRate:
-    """Coinbase taker fee: 0.60%."""
-    return TradingFeeRate(
-        venue="coinbase",
-        action="buy",
-        pct_fee=Decimal("0.006"),
-        flat_fee=Decimal("0"),
-    )
-
-
-@pytest.fixture()
-def kraken_btc_withdrawal() -> WithdrawalFee:
-    """Kraken BTC withdrawal: ~0.00005 BTC."""
-    return WithdrawalFee(
-        venue="kraken",
-        currency="BTC",
-        flat_fee=Decimal("0.00005"),
-        pct_fee=Decimal("0"),
-    )
-
-
-@pytest.fixture()
-def coinbase_usd_withdrawal() -> WithdrawalFee:
-    """Coinbase USD withdrawal: free."""
-    return WithdrawalFee(
-        venue="coinbase",
-        currency="USD",
-        flat_fee=Decimal("0"),
-        pct_fee=Decimal("0"),
-    )
-
-
-@pytest.fixture()
-def kraken_btc_usd_accuracy() -> TradingAccuracy:
-    """Kraken BTC/USD precision from AssetPairs API."""
-    return TradingAccuracy(
-        venue="kraken",
-        pair="BTC/USD",
-        price_decimals=1,
-        lot_decimals=8,
-        min_order_size=Decimal("0.00005"),
-        max_order_size=None,
-        tick_size=Decimal("0.1"),
-        lot_step=Decimal("0.00000001"),
-    )
-
-
-@pytest.fixture()
-def coinbase_btc_usd_accuracy() -> TradingAccuracy:
-    """Coinbase BTC/USD precision from Products API."""
-    return TradingAccuracy(
-        venue="coinbase",
-        pair="BTC/USD",
-        price_decimals=2,
-        lot_decimals=8,
-        min_order_size=Decimal("0.00000001"),
-        max_order_size=Decimal("3500"),
-        tick_size=Decimal("0.01"),
-        lot_step=Decimal("0.00000001"),
-    )
-
-
-@pytest.fixture()
-def gemini_btc_usd_accuracy() -> TradingAccuracy:
-    """Gemini BTC/USD precision (estimated from docs)."""
-    return TradingAccuracy(
-        venue="gemini",
-        pair="BTC/USD",
-        price_decimals=2,
-        lot_decimals=8,
-        min_order_size=Decimal("0.00001"),
-        max_order_size=None,
-        tick_size=Decimal("0.01"),
-        lot_step=Decimal("0.00000001"),
-    )
-
-
-@pytest.fixture()
-def kraken_btc_usd_fees(
-    kraken_fee_rate: TradingFeeRate,
-    kraken_btc_withdrawal: WithdrawalFee,
-    kraken_btc_usd_accuracy: TradingAccuracy,
-) -> FeeSchedule:
+def kraken_btc_usd_fees(fee_schedule_factory) -> FeeSchedule:
     """Full Kraken BTC/USD fee schedule.
 
     Buy withdrawal = BTC withdrawal (you might move BTC off Kraken).
     Sell withdrawal = None (you receive USD on Kraken, no withdrawal modeled).
     """
-    return FeeSchedule(
-        buy_fee=kraken_fee_rate,
-        sell_fee=TradingFeeRate(
-            venue="kraken",
-            action="sell",
-            pct_fee=Decimal("0.0026"),
-            flat_fee=Decimal("0"),
-        ),
-        buy_withdrawal=kraken_btc_withdrawal,
-        sell_withdrawal=None,
-        accuracy=kraken_btc_usd_accuracy,
+    return fee_schedule_factory(
+        venue="kraken",
+        pair="BTC/USD",
+        buy_pct="0.0026",
+        sell_pct="0.0026",
+        buy_withdrawal_currency="BTC",
+        buy_withdrawal_flat="0.00005",
+        buy_withdrawal_pct="0",
+        # sell_withdrawal = None (no currency -> None)
+        price_decimals=1,
+        lot_decimals=8,
+        min_order_size="0.00005",
+        tick_size="0.1",
+        lot_step="0.00000001",
     )
 
 
 @pytest.fixture()
-def coinbase_btc_usd_fees(
-    coinbase_fee_rate: TradingFeeRate,
-    coinbase_usd_withdrawal: WithdrawalFee,
-    coinbase_btc_usd_accuracy: TradingAccuracy,
-) -> FeeSchedule:
+def coinbase_btc_usd_fees(fee_schedule_factory) -> FeeSchedule:
     """Full Coinbase BTC/USD fee schedule.
 
     Buy withdrawal = None (no need to move BTC off Coinbase for arb).
     Sell withdrawal = USD withdrawal (free on Coinbase).
     """
-    return FeeSchedule(
-        buy_fee=coinbase_fee_rate,
-        sell_fee=TradingFeeRate(
-            venue="coinbase",
-            action="sell",
-            pct_fee=Decimal("0.006"),
-            flat_fee=Decimal("0"),
-        ),
-        buy_withdrawal=None,
-        sell_withdrawal=coinbase_usd_withdrawal,
-        accuracy=coinbase_btc_usd_accuracy,
+    return fee_schedule_factory(
+        venue="coinbase",
+        pair="BTC/USD",
+        buy_pct="0.006",
+        sell_pct="0.006",
+        # buy_withdrawal = None (no currency -> None)
+        sell_withdrawal_currency="USD",
+        sell_withdrawal_flat="0",
+        sell_withdrawal_pct="0",
+        price_decimals=2,
+        lot_decimals=8,
+        min_order_size="0.00000001",
+        max_order_size="3500",
+        tick_size="0.01",
+        lot_step="0.00000001",
     )
 
 
 @pytest.fixture()
-def gemini_btc_usd_fees(
-    gemini_btc_usd_accuracy: TradingAccuracy,
-) -> FeeSchedule:
+def gemini_btc_usd_fees(fee_schedule_factory) -> FeeSchedule:
     """Full Gemini BTC/USD fee schedule.
 
     Gemini taker: 0.40%. Free withdrawals for both sides.
     """
-    return FeeSchedule(
-        buy_fee=TradingFeeRate(
-            venue="gemini",
-            action="buy",
-            pct_fee=Decimal("0.004"),
-            flat_fee=Decimal("0"),
-        ),
-        sell_fee=TradingFeeRate(
-            venue="gemini",
-            action="sell",
-            pct_fee=Decimal("0.004"),
-            flat_fee=Decimal("0"),
-        ),
-        buy_withdrawal=None,
-        sell_withdrawal=None,
-        accuracy=gemini_btc_usd_accuracy,
+    return fee_schedule_factory(
+        venue="gemini",
+        pair="BTC/USD",
+        buy_pct="0.004",
+        sell_pct="0.004",
+        # buy_withdrawal = None, sell_withdrawal = None
+        price_decimals=2,
+        lot_decimals=8,
+        min_order_size="0.00001",
+        tick_size="0.01",
+        lot_step="0.00000001",
     )

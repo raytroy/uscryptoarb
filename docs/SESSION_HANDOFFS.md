@@ -55,6 +55,66 @@
 
 ## Session Log
 
+## 2026-02-15 — DRY violation fixes: Items 1.1–1.5
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Item 1.4: Generic config validation helper — `_required_type()` replaces `_required_decimal()` and `_required_int()` in orchestration/config.py (13 call sites)
+- Item 1.2: Symbol mapping factory — `create_translator()` in venues/symbols.py, used by both Kraken and Coinbase symbol modules
+- Item 1.3: Fee schedule fixture factory — `fee_schedule_factory` in tests/conftest.py, 3 named fixtures refactored as thin wrappers
+- Item 1.1: BaseAsyncConnector ABC — shared constructor, venue property, and `_fetch_with_retry()` in connectors/base.py. KrakenClient and CoinbaseClient inherit from it. 13 new tests.
+- Item 1.5: Deferred timestamp extraction with TODO comment per Coding Rule 10.1
+- Documented: DEC-018, LL-059, CHANGELOG, SESSION_HANDOFFS
+
+### In Progress
+- Nothing
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- DEC-018: BaseAsyncConnector returns raw httpx.Response from _fetch_with_retry(); subclasses handle parsing
+- Unified 429 retry handling across both connectors (Kraken previously did not retry on 429)
+- Pre-existing dead code in Coinbase client (LL-059) eliminated by design, not explicitly fixed
+
+### Behavioral Changes
+- Kraken connector now retries on HTTP 429 (previously did not). No test covered this case. Pure improvement.
+- Both connectors now log retries at DEBUG level with venue name. Observable improvement.
+
+### Files Created
+- `tests/unit/test_connectors/test_base_connector.py` (13 tests)
+
+### Files Modified
+- `src/uscryptoarb/orchestration/config.py` (generic _required_type helper)
+- `src/uscryptoarb/venues/symbols.py` (create_translator factory)
+- `src/uscryptoarb/connectors/kraken/symbols.py` (use factory)
+- `src/uscryptoarb/connectors/coinbase/symbols.py` (use factory)
+- `src/uscryptoarb/connectors/base.py` (BaseAsyncConnector ABC + Protocol)
+- `src/uscryptoarb/connectors/kraken/client.py` (inherit ABC, delegate retry)
+- `src/uscryptoarb/connectors/coinbase/client.py` (inherit ABC, delegate retry)
+- `src/uscryptoarb/connectors/coinbase/parser.py` (TODO comment for Item 1.5)
+- `tests/conftest.py` (fee_schedule_factory + refactored wrappers)
+- `tests/test_pairs_and_symbols.py` (2 new create_translator tests)
+- `CHANGELOG.md`
+- `docs/DECISION_LOG.md` (DEC-018)
+- `docs/LESSONS_LEARNED.md` (LL-059)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. Run `python -m uscryptoarb --dry-run` to verify spread output with real market data
+2. Run continuous mode for a few cycles, verify Ctrl+C shutdown
+3. End-to-end integration test with mocked exchange responses
+4. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+5. Gemini production connector (`connectors/gemini/`) — will use BaseAsyncConnector + create_translator
+
+### Notes for Next Session
+- Pre-existing test failure: `test_load_config_happy_path` expects threshold `0.0055` but config.yaml has `0.001`. Fix either the test or config.yaml to match.
+- BaseAsyncConnector is ready for Gemini: inherit, implement fetch_tickers(), done.
+- The fee_schedule_factory makes it easy to add fixtures for new pairs/venues — just call with different params.
+- The `import httpx  # noqa: E402` in client files is needed because callers construct httpx.AsyncClient and pass it to the connector. The import ensures httpx is re-exported for type checking purposes.
+
 ## 2026-02-14 — Documentation cleanup post-Coinbase completion
 
 **Interface**: Claude Code

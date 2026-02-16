@@ -237,7 +237,19 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Rule going forward**: When creating a config dataclass, ask: "Which layer consumes this type?" Define the type in that layer, not in the layer that happens to build/populate it. Builders import from consumers, not vice versa. See also LL-053 for the same pattern with calculation types.
 - **Affected files**: `notification/email.py`, `orchestration/config.py`, `tests/unit/test_notification/test_email.py`
 
-### LL-059: Second instance of a pattern = mandatory refactor flag
+
+### LL-059: Coinbase _fetch_product_book dead code — ValueError caught by own except
+- **Date**: 2026-02-15
+- **Category**: Code Quality
+- **Severity**: Low
+- **What happened**: In `connectors/coinbase/client.py` (pre-refactor), lines 99-109 of `_fetch_product_book()` contained dead code. When HTTP status >= 400, the code tried to extract a Coinbase error message and raise ValueError, but the ValueError was immediately caught by the surrounding `except (ValueError, KeyError, TypeError): pass` block. The `raise_for_status()` on the next line always ran instead.
+- **Root cause**: The `except` clause was intended to catch JSON parsing errors (ValueError from `.json()`, KeyError from missing keys), but it also caught the intentionally raised ValueError from the error message extraction.
+- **Fix applied**: Not fixed in this session per Coding Rule 10.6 (preserve behavior unless explicitly changing). The BaseAsyncConnector refactor moves HTTP error handling to `_fetch_with_retry()` which calls `raise_for_status()` directly, so the dead code path is eliminated naturally. The Coinbase-specific `_fetch_product_book()` now only handles API errors in HTTP 200 responses.
+- **Rule going forward**: When raising exceptions inside try/except blocks, ensure the except clause doesn't catch the intentionally raised exception. Use more specific exception types or restructure the try/except scope.
+- **Affected files**: `connectors/coinbase/client.py` (historical), `connectors/base.py` (fixed by design)
+
+
+### LL-060: Second instance of a pattern = mandatory refactor flag
 - **Date**: 2026-02-15
 - **Category**: Process
 - **Severity**: High

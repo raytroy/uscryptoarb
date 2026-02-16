@@ -4,10 +4,11 @@ import importlib.resources
 import json
 import logging
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 import yaml
 from dotenv import load_dotenv
@@ -24,6 +25,8 @@ from uscryptoarb.validation import require_present
 from uscryptoarb.venues.registry import ohio_eligible
 
 logger = logging.getLogger(__name__)
+
+_T = TypeVar("_T")
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,14 +73,13 @@ class ScannerConfig:
 _DEFAULT_VENUE_CONFIG = VenueConnectorConfig(rate_limit_ms=500, timeout_s=10.0, max_retries=3)
 
 
-def _required_decimal(value: Any, name: str) -> Decimal:
-    """Validate presence and convert to Decimal. Raises ValueError if missing."""
-    return to_decimal(require_present(value, name))
+def _required_type(value: Any, name: str, converter: Callable[[Any], _T]) -> _T:
+    """Validate presence and convert to target type.
 
-
-def _required_int(value: Any, name: str) -> int:
-    """Validate presence and convert to int. Raises ValueError if missing."""
-    return int(require_present(value, name))
+    Replaces the previous _required_decimal() and _required_int() helpers
+    with a single generic. Raises ValueError if value is missing.
+    """
+    return converter(require_present(value, name))
 
 
 def load_config(path: str = "config.yaml") -> ScannerConfig:
@@ -131,12 +133,13 @@ def load_config(path: str = "config.yaml") -> ScannerConfig:
         trade_amounts[pair] = to_decimal(raw_amt)
 
     arbitrage_cfg = ArbitrageConfig(
-        threshold=_required_decimal(threshold_raw, "arbitrage.threshold"),
+        threshold=_required_type(threshold_raw, "arbitrage.threshold", to_decimal),
         trade_amounts=trade_amounts,
         max_staleness_ms=int(arbitrage_raw.get("max_staleness_ms", 5000)),
-        min_bankroll_limit=_required_decimal(
+        min_bankroll_limit=_required_type(
             arbitrage_raw.get("min_bankroll_limit", "0.10"),
             "arbitrage.min_bankroll_limit",
+            to_decimal,
         ),
     )
 
@@ -283,44 +286,58 @@ def _build_fee_schedules(
                 buy_fee=TradingFeeRate(
                     venue=venue,
                     action="buy",
-                    pct_fee=_required_decimal(buy_rate_raw, f"fees.{venue}.buy"),
+                    pct_fee=_required_type(buy_rate_raw, f"fees.{venue}.buy", to_decimal),
                     flat_fee=Decimal("0"),
                 ),
                 sell_fee=TradingFeeRate(
                     venue=venue,
                     action="sell",
-                    pct_fee=_required_decimal(sell_rate_raw, f"fees.{venue}.sell"),
+                    pct_fee=_required_type(sell_rate_raw, f"fees.{venue}.sell", to_decimal),
                     flat_fee=Decimal("0"),
                 ),
                 buy_withdrawal=WithdrawalFee(
                     venue=venue,
                     currency=market_currency,
-                    flat_fee=_required_decimal(buy_withdrawal_raw.get("flat_fee"), "flat_fee"),
-                    pct_fee=_required_decimal(buy_withdrawal_raw.get("pct_fee"), "pct_fee"),
+                    flat_fee=_required_type(
+                        buy_withdrawal_raw.get("flat_fee"), "flat_fee", to_decimal
+                    ),
+                    pct_fee=_required_type(
+                        buy_withdrawal_raw.get("pct_fee"), "pct_fee", to_decimal
+                    ),
                 ),
                 sell_withdrawal=WithdrawalFee(
                     venue=venue,
                     currency=base_currency,
-                    flat_fee=_required_decimal(sell_withdrawal_raw.get("flat_fee"), "flat_fee"),
-                    pct_fee=_required_decimal(sell_withdrawal_raw.get("pct_fee"), "pct_fee"),
+                    flat_fee=_required_type(
+                        sell_withdrawal_raw.get("flat_fee"), "flat_fee", to_decimal
+                    ),
+                    pct_fee=_required_type(
+                        sell_withdrawal_raw.get("pct_fee"), "pct_fee", to_decimal
+                    ),
                 ),
                 accuracy=TradingAccuracy(
                     venue=venue,
                     pair=pair,
-                    price_decimals=_required_int(
-                        accuracy_raw.get("price_decimals"), "price_decimals"
+                    price_decimals=_required_type(
+                        accuracy_raw.get("price_decimals"), "price_decimals", int
                     ),
-                    lot_decimals=_required_int(accuracy_raw.get("lot_decimals"), "lot_decimals"),
-                    min_order_size=_required_decimal(
-                        accuracy_raw.get("min_order_size"), "min_order_size"
+                    lot_decimals=_required_type(
+                        accuracy_raw.get("lot_decimals"), "lot_decimals", int
+                    ),
+                    min_order_size=_required_type(
+                        accuracy_raw.get("min_order_size"), "min_order_size", to_decimal
                     ),
                     max_order_size=(
                         to_decimal(accuracy_raw["max_order_size"])
                         if accuracy_raw.get("max_order_size") is not None
                         else None
                     ),
-                    tick_size=_required_decimal(accuracy_raw.get("tick_size"), "tick_size"),
-                    lot_step=_required_decimal(accuracy_raw.get("lot_step"), "lot_step"),
+                    tick_size=_required_type(
+                        accuracy_raw.get("tick_size"), "tick_size", to_decimal
+                    ),
+                    lot_step=_required_type(
+                        accuracy_raw.get("lot_step"), "lot_step", to_decimal
+                    ),
                 ),
             )
 

@@ -226,6 +226,20 @@
 - **Consequences**: `notification/email.py` now defines EmailConfig. `orchestration/config.py` imports it from notification. Import direction: orchestration → notification (allowed). No circular dependency.
 
 
+
+### DEC-018: BaseAsyncConnector ABC design — shared retry, subclass parsing
+- **Date**: 2026-02-15
+- **Status**: Accepted
+- **Context**: Code review identified the retry-with-backoff loop as duplicated across KrakenClient._request() and CoinbaseClient._fetch_product_book(). Both have identical constructor signatures, rate limiting, backoff sleep, and retry classification logic, but different response formats and error extraction.
+- **Decision**: Extract a `BaseAsyncConnector` ABC in `connectors/base.py` that provides shared constructor, venue property, and `_fetch_with_retry()` returning raw `httpx.Response`. Subclasses handle venue-specific JSON parsing and error extraction. The `ExchangeConnector` Protocol stays as the structural typing interface.
+- **Alternatives Considered**:
+  1. ABC with abstract hooks for `_is_retryable()` and `_parse_response()` — rejected because it forces artificial abstraction over fundamentally different response formats, and the hooks would be complex to accommodate Kraken's error-in-200 pattern.
+  2. Standalone retry utility function (not a class) — rejected because the retry logic shares state with the connector (rate limiter, timeout, backoff policy, venue name for logging). Passing all these as parameters defeats the purpose.
+  3. Keep duplication — rejected because Gemini connector will be the 3rd instance, and the retry loop is ~30 lines of identical logic per connector.
+- **Rationale**: Approach A (return raw Response) deduplicates the actual repeated code (retry/rate-limit/backoff loop) without creating false abstractions. Each subclass retains full control over its response parsing. The ABC also unifies 429 retry handling — Kraken previously did not retry on 429, which was an oversight since Kraken can return 429 for rate limiting.
+- **Consequences**: KrakenClient and CoinbaseClient inherit from BaseAsyncConnector. Constructor signature unchanged (same positional/keyword args). ExchangeConnector Protocol unaffected. Future Gemini connector inherits from BaseAsyncConnector and only needs to implement fetch_tickers().
+- **References**: Coding Rule 10.1 (don't generalize until 2 real callers — now 2, soon 3), LL-052 (Coinbase per-pair requests)
+
 ## Document History
 
 | Date | Entry | Description |
@@ -236,6 +250,7 @@
 | 2026-02-14 | Added DEC-013 (flat fee model), DEC-014 (Kelly defaults), DEC-015 (withdrawal fees in Phase 1) |
 | 2026-02-14 | DEC-016 | Orchestration before Gemini connector (strategic pivot) |
 | 2026-02-15 | DEC-017 | EmailConfig moved from orchestration to notification layer |
+| 2026-02-15 | DEC-018 | BaseAsyncConnector ABC design — shared retry, subclass parsing |
 
 
 ### DEC-011: Use raw httpx (not SDK) for Coinbase connector
