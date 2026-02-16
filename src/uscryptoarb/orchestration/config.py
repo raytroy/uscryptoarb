@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import importlib.resources
 import json
 import logging
@@ -11,7 +12,7 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 import yaml
-from dotenv import load_dotenv
+
 from uscryptoarb.calculation.calc_types import (
     FeeSchedule,
     TradingAccuracy,
@@ -83,7 +84,7 @@ def _required_type(value: Any, name: str, converter: Callable[[Any], _T]) -> _T:
 
 
 def load_config(path: str = "config.yaml") -> ScannerConfig:
-    load_dotenv()
+    _load_dotenv_if_available()
 
     config_path = Path(path)
     if not config_path.exists():
@@ -219,6 +220,36 @@ def load_config(path: str = "config.yaml") -> ScannerConfig:
         debug=debug_cfg,
         fees_by_pair_venue=fees_by_pair_venue,
     )
+
+
+def _load_dotenv_if_available() -> None:
+    """Load .env values when python-dotenv is available.
+
+    Some environments provide a namespace-only ``dotenv`` module that lacks
+    ``load_dotenv``. Fall back to ``dotenv.main`` when available and continue
+    without raising if neither entry point exists.
+    """
+    try:
+        dotenv_mod = importlib.import_module("dotenv")
+    except ModuleNotFoundError:
+        logger.debug("python-dotenv not installed; skipping .env loading")
+        return
+    load_dotenv = getattr(dotenv_mod, "load_dotenv", None)
+    if callable(load_dotenv):
+        load_dotenv()
+        return
+
+    try:
+        dotenv_main_mod = importlib.import_module("dotenv.main")
+    except ModuleNotFoundError:
+        logger.debug("python-dotenv not installed; skipping .env loading")
+        return
+
+    load_dotenv_from_main = getattr(dotenv_main_mod, "load_dotenv", None)
+    if callable(load_dotenv_from_main):
+        load_dotenv_from_main()
+    else:
+        logger.warning("dotenv.main exists but load_dotenv() is unavailable")
 
 
 def _build_fee_schedules(

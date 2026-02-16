@@ -4,7 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from uscryptoarb.orchestration.config import _DEFAULT_VENUE_CONFIG, load_config
+from uscryptoarb.orchestration.config import (
+    _DEFAULT_VENUE_CONFIG,
+    _load_dotenv_if_available,
+    load_config,
+)
 
 BASIC_CFG = """
 venues:
@@ -136,3 +140,31 @@ def test_venue_config_defaults(tmp_path) -> None:
     path = _write_config(tmp_path, BASIC_CFG)
     cfg = load_config(str(path))
     assert cfg.venue_configs["kraken"] == _DEFAULT_VENUE_CONFIG
+
+
+def test_load_dotenv_falls_back_to_dotenv_main(monkeypatch: pytest.MonkeyPatch) -> None:
+    called = False
+
+    class DotenvNamespaceModule:
+        pass
+
+    class DotenvMainModule:
+        @staticmethod
+        def load_dotenv() -> None:
+            nonlocal called
+            called = True
+
+    def fake_import_module(name: str):
+        if name == "dotenv":
+            return DotenvNamespaceModule()
+        if name == "dotenv.main":
+            return DotenvMainModule()
+        raise ModuleNotFoundError(name)
+
+    monkeypatch.setattr(
+        "uscryptoarb.orchestration.config.importlib.import_module",
+        fake_import_module,
+    )
+
+    _load_dotenv_if_available()
+    assert called
