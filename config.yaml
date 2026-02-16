@@ -19,7 +19,7 @@ pairs:
 
 # === Arbitrage ===
 arbitrage:
-  threshold: "0.0055"          # 0.55% minimum return_net to trigger alert
+  threshold: "0.001"          # 0.55% minimum return_net to trigger alert
   min_bankroll_limit: "0.10"   # max 10% of balance per trade (Phase 3+)
   max_staleness_ms: 5000       # reject market data older than 5s
   trade_amounts:               # per-pair reference amounts in market currency

@@ -11,6 +11,7 @@ from uscryptoarb.calculation.types import ArbOpportunity
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass(frozen=True, slots=True)
 class EmailConfig:
     """Email notification configuration.
