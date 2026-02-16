@@ -60,8 +60,8 @@ def parse_book_response(
         pair=canonical_pair,
         ts_local_ms=ts_local_ms,
         ts_exchange_ms=ts_exchange_ms,
-        bid_px=best_bid[0],   # Index 0 = price (LL-070)
-        bid_sz=best_bid[1],   # Index 1 = amount
+        bid_px=best_bid[0],  # Index 0 = price (LL-070)
+        bid_sz=best_bid[1],  # Index 1 = amount
         ask_px=best_ask[0],
         ask_sz=best_ask[1],
     )
