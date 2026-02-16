@@ -3,7 +3,7 @@
 
 # === Venues ===
 venues:
-  primary: [kraken, coinbase, gemini, bitstamp]
+  primary: [kraken, coinbase, gemini, bitstamp, okx]
 
 # === Pairs ===
 pairs:
@@ -56,10 +56,16 @@ venue_configs:
     timeout_s: 10.0
     max_retries: 3
 
+  okx:
+    rate_limit_ms: 200         # Notebook Section 6: 50ms sustained with 0 errors, 200ms conservative
+    timeout_s: 10.0
+    max_retries: 3
+
 # === Fee Rates (taker rates at lowest volume tier, DEC-013) ===
 # Kraken: 0.40% taker at $0-$10K tier (kraken.com/features/fee-schedule, Dec 2025)
 # Coinbase: 1.20% taker at Intro 1 tier (help.coinbase.com advanced-trade-fees, Feb 2026)
 # Gemini: 0.40% taker at $0 tier (gemini.com/fees/activetrader-fee-schedule, Jan 2026)
+# OKX: 0.10% taker at lowest tier (okx.com/fees, Feb 2026)
 fees:
   kraken:
     buy: "0.0040"
@@ -74,6 +80,10 @@ fees:
   bitstamp:
     buy: "0.004"
     sell: "0.004"
+
+  okx:
+    buy: "0.001"
+    sell: "0.001"
 
 # === Notifications ===
 notifications:

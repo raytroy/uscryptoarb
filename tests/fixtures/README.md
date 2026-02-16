@@ -67,3 +67,24 @@ response data** rather than fixture files. This is intentional:
 - Keeping response data inline makes the price arithmetic visible next to the assertions.
 
 No fixture JSON files were created for integration tests.
+
+### okx_ticker_btc_usd.json
+- **Contains**: OKX /api/v5/market/ticker response for BTC-USD (full envelope with code/msg/data). Standard USD pair.
+- **Source**: Live capture from OKX US V5 public API during notebook exploration (Section 11)
+- **Date captured**: 2026-02-16
+- **Used by**: `tests/unit/test_connectors/test_okx/test_parser.py`
+- **Notes**: All prices/sizes are strings. Timestamp (`ts`) is Unix milliseconds as string — NOT seconds (LL-071). Response includes full OKX envelope with `code`, `msg`, `data` fields. `data` is a single-element array.
+
+### okx_ticker_sol_btc.json
+- **Contains**: OKX ticker response for SOL-BTC. Crypto-cross pair with 7-decimal-place prices.
+- **Source**: Constructed from live data captured in notebook exploration (Section 3)
+- **Date captured**: 2026-02-16
+- **Used by**: `tests/unit/test_connectors/test_okx/test_parser.py`
+- **Notes**: Tests parser handles high-precision BTC-quoted prices correctly (bidPx=0.0012513, askPx=0.0012516).
+
+### okx_error_invalid_instrument.json
+- **Contains**: OKX error response for invalid instrument query. HTTP 200 with non-zero code (LL-070).
+- **Source**: Live capture from OKX US V5 API with `instId=FAKE-PAIR` (notebook Section 11)
+- **Date captured**: 2026-02-16
+- **Used by**: `tests/unit/test_connectors/test_okx/test_parser.py`
+- **Notes**: Demonstrates OKX's HTTP-200-for-errors pattern. `code: "51001"`, empty `data` array.

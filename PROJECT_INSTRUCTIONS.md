@@ -178,11 +178,16 @@ uscryptoarb/
 │   │   │   ├── symbols.py         # Coinbase symbol mapping (BTC/USD → BTC-USD)
 │   │   │   ├── parser.py          # parse_product_book_response
 │   │   │   └── client.py          # CoinbaseClient (async httpx)
-│   │   └── gemini/
+│   │   ├── gemini/
+│   │   │   ├── __init__.py
+│   │   │   ├── symbols.py         # Gemini symbol mapping (BTC/USD → btcusd)
+│   │   │   ├── parser.py          # parse_book_response
+│   │   │   └── client.py          # GeminiClient (async httpx)
+│   │   └── okx/
 │   │       ├── __init__.py
-│   │       ├── symbols.py         # Gemini symbol mapping (BTC/USD → btcusd)
-│   │       ├── parser.py          # parse_book_response
-│   │       └── client.py          # GeminiClient (async httpx)
+│   │       ├── symbols.py         # OKX symbol mapping (BTC/USD → BTC-USD)
+│   │       ├── parser.py          # parse_okx_ticker, parse_batch_tickers
+│   │       └── client.py          # OkxClient (async httpx)
 │   ├── notification/
 │   │   ├── __init__.py
 │   │   └── email.py               # EmailConfig, send_alert, format_opportunity_email
@@ -207,7 +212,8 @@ uscryptoarb/
 │   │   ├── test_connectors/
 │   │   │   ├── test_kraken/
 │   │   │   ├── test_coinbase/
-│   │   │   └── test_gemini/
+│   │   │   ├── test_gemini/
+│   │   │   └── test_okx/
 │   │   ├── test_http/
 │   │   ├── test_notification/
 │   │   ├── test_orchestration/

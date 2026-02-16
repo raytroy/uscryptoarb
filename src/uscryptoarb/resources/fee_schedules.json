@@ -7,7 +7,10 @@
     "kraken_withdrawal": "https://support.kraken.com/articles/360000767986 \u2014 dynamic fees, estimates from cefirates.com Feb 2026",
     "coinbase_withdrawal": "https://help.coinbase.com/en/coinbase/trading-and-funding/pricing-and-fees/fees \u2014 network fees only, no Coinbase surcharge",
     "gemini_withdrawal": "https://www.gemini.com/fees/transfer-fee-schedule \u2014 dynamic fees, Jan 2026",
-    "gemini_trading_accuracy": "https://api.gemini.com/v1/symbols/details/{symbol} \u2014 captured 2026-02-16"
+    "gemini_trading_accuracy": "https://api.gemini.com/v1/symbols/details/{symbol} \u2014 captured 2026-02-16",
+    "okx_trading": "https://www.okx.com/fees \u2014 taker rate at lowest tier, verified 2026-02-16",
+    "okx_withdrawal": "https://www.okx.com/fees/crypto \u2014 estimates from notebook, Feb 2026",
+    "okx_trading_accuracy": "https://www.okx.com/api/v5/public/instruments?instType=SPOT \u2014 inferred from notebook ticker data 2026-02-16"
   },
   "withdrawal_fees": {
     "kraken": {
@@ -95,6 +98,28 @@
       },
       "USDC": {
         "flat_fee": "1.0",
+        "pct_fee": "0"
+      }
+    },
+    "okx": {
+      "BTC": {
+        "flat_fee": "0.0001",
+        "pct_fee": "0"
+      },
+      "LTC": {
+        "flat_fee": "0.001",
+        "pct_fee": "0"
+      },
+      "SOL": {
+        "flat_fee": "0.01",
+        "pct_fee": "0"
+      },
+      "USD": {
+        "flat_fee": "0",
+        "pct_fee": "0"
+      },
+      "USDC": {
+        "flat_fee": "0",
         "pct_fee": "0"
       }
     }
@@ -346,6 +371,64 @@
         "max_order_size": null,
         "tick_size": "0.001",
         "lot_step": "0.00001"
+      }
+    },
+    "okx": {
+      "BTC/USD": {
+        "price_decimals": 1,
+        "lot_decimals": 8,
+        "min_order_size": "0.00001",
+        "max_order_size": null,
+        "tick_size": "0.1",
+        "lot_step": "0.00000001"
+      },
+      "BTC/USDC": {
+        "price_decimals": 1,
+        "lot_decimals": 8,
+        "min_order_size": "0.00001",
+        "max_order_size": null,
+        "tick_size": "0.1",
+        "lot_step": "0.00000001"
+      },
+      "LTC/USD": {
+        "price_decimals": 2,
+        "lot_decimals": 6,
+        "min_order_size": "0.01",
+        "max_order_size": null,
+        "tick_size": "0.01",
+        "lot_step": "0.000001"
+      },
+      "LTC/USDC": {
+        "price_decimals": 2,
+        "lot_decimals": 5,
+        "min_order_size": "0.01",
+        "max_order_size": null,
+        "tick_size": "0.01",
+        "lot_step": "0.00001"
+      },
+      "SOL/USD": {
+        "price_decimals": 2,
+        "lot_decimals": 6,
+        "min_order_size": "0.01",
+        "max_order_size": null,
+        "tick_size": "0.01",
+        "lot_step": "0.000001"
+      },
+      "SOL/USDC": {
+        "price_decimals": 2,
+        "lot_decimals": 5,
+        "min_order_size": "0.01",
+        "max_order_size": null,
+        "tick_size": "0.01",
+        "lot_step": "0.00001"
+      },
+      "SOL/BTC": {
+        "price_decimals": 7,
+        "lot_decimals": 4,
+        "min_order_size": "0.001",
+        "max_order_size": null,
+        "tick_size": "0.0000001",
+        "lot_step": "0.0001"
       }
     }
   }

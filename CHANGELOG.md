@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- OKX US connector (`src/uscryptoarb/connectors/okx/`) — async httpx client using batch `/api/v5/market/tickers?instType=SPOT` endpoint. Single API call for all pairs, client-side filtering. 7/8 pairs (LTC/BTC not listed on OKX US).
+  - `symbols.py`: OKX_SYMBOL_MAP with 7 target pairs (dash-separated uppercase format)
+  - `parser.py`: parse_okx_ticker() and parse_batch_tickers() with HTTP-200 error code validation (LL-072) and millisecond timestamps (LL-073)
+  - `client.py`: OkxClient(BaseAsyncConnector) with batch ticker pattern (like Kraken)
+- OKX wired into orchestration: _CONNECTOR_REGISTRY, config.yaml, fee_schedules.json
+- Test fixtures: okx_ticker_btc_usd.json, okx_ticker_sol_btc.json, okx_error_invalid_instrument.json
+- Tests: test_symbols.py (~8), test_parser.py (~15), test_client.py (~13)
+- Integration test updated with OKX response builder and connector factory
+- LESSONS_LEARNED: LL-072 (OKX HTTP 200 errors), LL-073 (OKX ms timestamps), LL-074 (OKCoin shutdown)
+- DECISION_LOG: DEC-024 (OKX batch ticker choice)
 - Bitstamp connector (`src/uscryptoarb/connectors/bitstamp/`) — async httpx client using `/api/v2/order_book/{symbol}/` endpoint (tickers lack bid/ask sizes per LL-060). Per-pair requests with 150ms rate limiting. Inherits BaseAsyncConnector (DEC-018).
   - `symbols.py`: BITSTAMP_SYMBOL_MAP with 6/8 target pairs (missing LTC/USDC, SOL/BTC)
   - `parser.py`: parse_book_response() with arrays-of-arrays index-based parsing (LL-070) and microsecond timestamp conversion (LL-071)

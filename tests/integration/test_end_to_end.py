@@ -37,6 +37,7 @@ from uscryptoarb.connectors.bitstamp.client import BitstampClient
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
 from uscryptoarb.connectors.gemini.client import GeminiClient
 from uscryptoarb.connectors.kraken.client import KrakenClient
+from uscryptoarb.connectors.okx.client import OkxClient
 from uscryptoarb.http.backoff import BackoffPolicy
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.notification.email import EmailConfig, format_opportunity_email, send_alert
@@ -146,6 +147,34 @@ def _gemini_book_response(bid: str, ask: str) -> dict:
     }
 
 
+def _okx_ticker_response(bid: str, ask: str) -> dict:
+    """Build a minimal valid OKX batch tickers response for BTC-USD."""
+    return {
+        "code": "0",
+        "msg": "",
+        "data": [
+            {
+                "instId": "BTC-USD",
+                "bidPx": bid,
+                "bidSz": "1.0",
+                "askPx": ask,
+                "askSz": "1.0",
+                "ts": "1707900000000",
+                "instType": "SPOT",
+                "last": bid,
+                "lastSz": "0.0001",
+                "high24h": ask,
+                "low24h": bid,
+                "open24h": bid,
+                "vol24h": "100",
+                "volCcy24h": "6800000",
+                "sodUtc0": bid,
+                "sodUtc8": bid,
+            }
+        ],
+    }
+
+
 def _bitstamp_book_response(bid: str, ask: str) -> dict:
     """Build a minimal valid Bitstamp /api/v2/order_book response for btcusd."""
     return {
@@ -194,6 +223,17 @@ def _make_gemini(handler, max_retries: int = 1) -> GeminiClient:
     )
 
 
+def _make_okx(handler, max_retries: int = 1) -> OkxClient:
+    transport = httpx.MockTransport(handler)
+    client = httpx.AsyncClient(transport=transport)
+    return OkxClient(
+        client=client,
+        rate_limiter=RateLimiter(0),
+        max_retries=max_retries,
+        backoff=FAST_BACKOFF,
+    )
+
+
 def _make_bitstamp(handler, max_retries: int = 1) -> BitstampClient:
     transport = httpx.MockTransport(handler)
     client = httpx.AsyncClient(transport=transport)
@@ -235,10 +275,11 @@ def _write_config(tmp_path: Path, venues: list[str], email_enabled: bool = False
 def _patch_now_ms(func):
     """Patch now_ms() in all modules that import it.
 
-    Three modules import now_ms directly:
+    Four modules import now_ms directly:
       - uscryptoarb.orchestration.scan_loop (staleness timestamp)
       - uscryptoarb.connectors.connector_base (_fetch_tickers_per_pair ts_local_ms)
       - uscryptoarb.connectors.kraken.client (fetch_tickers ts_local_ms)
+      - uscryptoarb.connectors.okx.client (fetch_tickers ts_local_ms)
     """
 
     @wraps(func)
@@ -246,7 +287,11 @@ def _patch_now_ms(func):
         with patch("uscryptoarb.orchestration.scan_loop.now_ms", return_value=FIXED_TS_MS):
             with patch("uscryptoarb.connectors.connector_base.now_ms", return_value=FIXED_TS_MS):
                 with patch("uscryptoarb.connectors.kraken.client.now_ms", return_value=FIXED_TS_MS):
-                    return func(*args, **kwargs)
+                    with patch(
+                        "uscryptoarb.connectors.okx.client.now_ms",
+                        return_value=FIXED_TS_MS,
+                    ):
+                        return func(*args, **kwargs)
 
     return wrapper
 
@@ -419,6 +464,52 @@ class TestOpportunityDetectedEmailSent:
 # ===========================================================================
 # Test 3: Partial failure — one exchange HTTP 500, remaining 2 still work
 # ===========================================================================
+
+
+class TestNoOpportunityWithOkx:
+    """4+ venues including OKX, similar prices -> no opportunity."""
+
+    @_patch_now_ms
+    def test_no_opportunity_with_okx(self, tmp_path: Path) -> None:
+        def kraken_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_kraken_ticker_response("99500.0", "99600.0"))
+
+        def coinbase_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_coinbase_book_response("99480.0", "99580.0"))
+
+        def gemini_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_gemini_book_response("99490.0", "99590.0"))
+
+        def bitstamp_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_bitstamp_book_response("99495.0", "99595.0"))
+
+        def okx_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_okx_ticker_response("99485.0", "99585.0"))
+
+        connectors = {
+            "kraken": _make_kraken(kraken_handler),
+            "coinbase": _make_coinbase(coinbase_handler),
+            "gemini": _make_gemini(gemini_handler),
+            "bitstamp": _make_bitstamp(bitstamp_handler),
+            "okx": _make_okx(okx_handler),
+        }
+
+        cfg_path = _write_config(tmp_path, ["kraken", "coinbase", "gemini", "bitstamp", "okx"])
+        config = load_config(cfg_path)
+        config = replace(
+            config,
+            arbitrage=replace(config.arbitrage, max_staleness_ms=10_000_000_000_000),
+        )
+
+        async def run() -> None:
+            opportunities, _errors = await run_scan_cycle(
+                connectors,
+                config,
+                run_id="integ-noarb-okx",
+            )
+            assert opportunities == []
+
+        asyncio.run(run())
 
 
 class TestPartialFailureGracefulDegradation:

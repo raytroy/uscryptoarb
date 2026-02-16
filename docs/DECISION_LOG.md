@@ -337,3 +337,13 @@
 - **Rationale**: Strict DEC-013 compliance. If we later demonstrate consistent volume exceeding $10K/month, this can be revisited with a new DEC entry.
 - **Consequences**: Combined Coinbase buy+sell cost is ~2.40%. Very few cross-exchange spreads will exceed this plus the 0.55% threshold. Coinbase effectively becomes a high-cost exchange in our model. This is conservative — any opportunity that passes is highly likely to be real.
 - **References**: DEC-013, fee audit 2026-02-16
+
+### DEC-024: OKX connector uses batch ticker endpoint (like Kraken)
+- **Date**: 2026-02-16
+- **Status**: Accepted
+- **Context**: OKX offers both per-pair ticker (`/api/v5/market/ticker?instId=BTC-USD`) and batch ticker (`/api/v5/market/tickers?instType=SPOT`). Notebook testing showed batch is 13.2x faster (207ms vs 2738ms for 7 pairs).
+- **Decision**: Use batch endpoint. Single API call per scan cycle, client-side filtering to 7 target pairs.
+- **Alternatives Considered**: Per-pair requests (slower, unnecessary since batch endpoint exists and provides all TopOfBook fields).
+- **Rationale**: Batch approach matches Kraken pattern, minimizes API calls, well under rate limits.
+- **Consequences**: OKX fetch_tickers() overrides the abstract method directly (like KrakenClient) instead of using _fetch_tickers_per_pair() template (used by Coinbase/Gemini).
+- **References**: notebooks/04_okx_exploration.ipynb Section 4, DEC-018
