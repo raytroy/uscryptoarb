@@ -67,6 +67,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/unit/test_connectors/test_coinbase/test_client.py`: DummyRateLimiter extracted to tests/helpers.py
 
 ### Fixed
+- `notification/email.py`: Fixed layering violation — `EmailConfig` moved from `orchestration/config.py` to `notification/email.py` (DEC-017). Notification layer no longer imports from orchestration.
+- `notification/email.py`: Fixed SMTP connection leak — `_send_smtp()` now uses context manager (`with smtplib.SMTP(...)`) to ensure socket cleanup on auth or send failures.
+- `orchestration/config.py`: Removed dead code — unreachable `if raw is None` checks in `_required_decimal()` and `_required_int()` after `require_present()` already validates.
+- `docs/MATHEMATICA_MAP.md`: Fixed stale module paths in Section 13 (`core/decimal_utils.py` → `misc/decimals.py`, `core/pair_utils.py` → `markets/pairs.py`)
+- `PROJECT_INSTRUCTIONS.md`: Updated Section 5.3 file structure to match actual module layout (added orchestration/, notification/, resources/, http/, __main__.py; corrected module paths)
 - `calculation/fees.py`: `calc_buy_leg()` and `calc_sell_leg()` now apply `flat_fee` from `TradingFeeRate` (was silently ignored; all exchanges currently use 0)
 - `calculation/arb_calc.py`: `calc_arb_opportunity()` now passes `flat_fee` through to leg calculations
 - `calculation/returns.py`: Removed unused `CALC_CONTEXT_PREC` constant

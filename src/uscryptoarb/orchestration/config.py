@@ -19,6 +19,7 @@ from uscryptoarb.calculation.types import (
 )
 from uscryptoarb.markets.pairs import parse_pair
 from uscryptoarb.misc.decimals import to_decimal
+from uscryptoarb.notification.email import EmailConfig
 from uscryptoarb.validation import require_present
 from uscryptoarb.venues.registry import ohio_eligible
 
@@ -47,16 +48,6 @@ class VenueConnectorConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class EmailConfig:
-    enabled: bool
-    smtp_host: str
-    smtp_port: int
-    from_addr: str
-    recipients: tuple[str, ...]
-    password: str
-
-
-@dataclass(frozen=True, slots=True)
 class DebugConfig:
     enabled: bool
     trace_pairs: tuple[str, ...]
@@ -80,17 +71,13 @@ _DEFAULT_VENUE_CONFIG = VenueConnectorConfig(rate_limit_ms=500, timeout_s=10.0, 
 
 
 def _required_decimal(value: Any, name: str) -> Decimal:
-    raw = require_present(value, name)
-    if raw is None:
-        raise ValueError(f"Required value '{name}' is missing")
-    return to_decimal(raw)
+    """Validate presence and convert to Decimal. Raises ValueError if missing."""
+    return to_decimal(require_present(value, name))
 
 
 def _required_int(value: Any, name: str) -> int:
-    raw = require_present(value, name)
-    if raw is None:
-        raise ValueError(f"Required value '{name}' is missing")
-    return int(raw)
+    """Validate presence and convert to int. Raises ValueError if missing."""
+    return int(require_present(value, name))
 
 
 def load_config(path: str = "config.yaml") -> ScannerConfig:

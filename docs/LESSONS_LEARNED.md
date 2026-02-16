@@ -225,3 +225,14 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Fix applied**: All sequence fields in config dataclasses use `tuple[str, ...]` instead of `list[str]`.
 - **Rule going forward**: Frozen dataclasses should only contain immutable field types: Decimal, str, int, bool, tuple, frozenset, None, or other frozen dataclasses. Never list, dict (use tuple, frozenset, or MappingProxyType).
 - **Affected files**: `orchestration/config.py`
+
+
+### LL-058: Config dataclasses must be defined in the layer that owns their contract
+- **Date**: 2026-02-15
+- **Category**: Architecture
+- **Severity**: Medium
+- **What happened**: `EmailConfig` was defined in `orchestration/config.py` but imported by `notification/email.py`, creating an upward import from notification → orchestration. This violated Section 5.2 import rules.
+- **Root cause**: During orchestration implementation, all config dataclasses were co-located in one file for convenience. The layering implication was missed because EmailConfig was created alongside other orchestration config types.
+- **Fix applied**: Moved `EmailConfig` to `notification/email.py`. Orchestration imports it from there (allowed: orchestration can import everything).
+- **Rule going forward**: When creating a config dataclass, ask: "Which layer consumes this type?" Define the type in that layer, not in the layer that happens to build/populate it. Builders import from consumers, not vice versa. See also LL-053 for the same pattern with calculation types.
+- **Affected files**: `notification/email.py`, `orchestration/config.py`, `tests/unit/test_notification/test_email.py`

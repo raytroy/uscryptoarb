@@ -3,13 +3,28 @@ from __future__ import annotations
 import asyncio
 import logging
 import smtplib
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.message import EmailMessage
 
 from uscryptoarb.calculation.types import ArbOpportunity
-from uscryptoarb.orchestration.config import EmailConfig
 
 logger = logging.getLogger(__name__)
+
+@dataclass(frozen=True, slots=True)
+class EmailConfig:
+    """Email notification configuration.
+
+    Populated from config.yaml notifications.email section + .env credentials.
+    Owned by the notification layer per Section 5.2 import rules.
+    """
+
+    enabled: bool
+    smtp_host: str
+    smtp_port: int
+    from_addr: str
+    recipients: tuple[str, ...]
+    password: str
 
 
 def format_opportunity_email(opp: ArbOpportunity) -> tuple[str, str]:
@@ -70,8 +85,7 @@ def _send_smtp(
     msg["To"] = ", ".join(recipients)
     msg.set_content(body)
 
-    server = smtplib.SMTP(host, port)
-    server.starttls()
-    server.login(from_addr, password)
-    server.send_message(msg)
-    server.quit()
+    with smtplib.SMTP(host, port) as server:
+        server.starttls()
+        server.login(from_addr, password)
+        server.send_message(msg)

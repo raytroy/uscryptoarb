@@ -212,6 +212,20 @@
 - **References**: SESSION_HANDOFFS.md 2026-02-14 strategy layer entry, Coding Rule 7.1 (reliability over cleverness)
 
 
+### DEC-017: EmailConfig owned by notification layer, not orchestration
+
+- **Date**: 2026-02-15
+- **Status**: Accepted
+- **Context**: `notification/email.py` imported `EmailConfig` from `orchestration/config.py`, violating the Section 5.2 import rule `Notification → Domain/Core` (notification should not import from orchestration, the top layer).
+- **Decision**: Move `EmailConfig` dataclass definition to `notification/email.py`. Orchestration imports it from there when building the config.
+- **Alternatives Considered**:
+  1. Move to `core/types.py` — rejected because EmailConfig is notification-specific, not a domain type about markets/prices/pairs.
+  2. Have `send_alert` accept primitive parameters — rejected because it scatters 6 parameters across every call site and loses grouping.
+  3. Create shared `config/types.py` — rejected as premature; only one type needs moving. Revisit when a second config type needs cross-layer sharing (Coding Rule 10.1).
+- **Rationale**: Types belong in the layer that defines their contract. EmailConfig is consumed only by the notification layer. The orchestration layer creates and passes it, but doesn't need to own the definition. This follows the same principle as LL-053 (calculation types eventually moving to core).
+- **Consequences**: `notification/email.py` now defines EmailConfig. `orchestration/config.py` imports it from notification. Import direction: orchestration → notification (allowed). No circular dependency.
+
+
 ## Document History
 
 | Date | Entry | Description |
@@ -221,6 +235,7 @@
 | 2026-02-14 | DEC-012 | Mathematica as reference not gospel — philosophical shift |
 | 2026-02-14 | Added DEC-013 (flat fee model), DEC-014 (Kelly defaults), DEC-015 (withdrawal fees in Phase 1) |
 | 2026-02-14 | DEC-016 | Orchestration before Gemini connector (strategic pivot) |
+| 2026-02-15 | DEC-017 | EmailConfig moved from orchestration to notification layer |
 
 
 ### DEC-011: Use raw httpx (not SDK) for Coinbase connector
