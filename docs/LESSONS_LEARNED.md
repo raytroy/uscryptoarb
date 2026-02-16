@@ -366,3 +366,25 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Category**: Testing / Connectors
 - **What happened**: Kraken mock responses must include the full `{"error": [], "result": {...}}` envelope because `KrakenClient._request()` validates and unwraps it before passing to the parser.
 - **Rule**: Always match the full response envelope when mocking exchange APIs, not just the inner payload. Review the client's response validation code before writing mock responses.
+
+
+### LL-070: Bitstamp order book entries are arrays-of-arrays, not arrays-of-objects
+- **Date**: 2026-02-16
+- **Category**: Exchange-Specific
+- **Severity**: High
+- **What happened**: Bitstamp `/api/v2/order_book/{symbol}/` returns bids/asks as `[["price", "amount"], ...]` — arrays of two-element arrays. Gemini and Coinbase use arrays of objects with named keys.
+- **Root cause**: Exchange API design choice. No standard format across exchanges.
+- **Fix applied**: Parser uses index-based access `entry[0]` for price, `entry[1]` for amount. Verified in notebook Section 4 before building production parser.
+- **Rule going forward**: Never assume order book entry format. Always verify response shape in exploration notebook before building parser. Document format in parser docstring.
+- **Affected files**: `connectors/bitstamp/parser.py`, `notebooks/04_bitstamp_exploration.ipynb`
+
+### LL-071: Bitstamp microtimestamp provides microsecond precision
+- **Date**: 2026-02-16
+- **Category**: Exchange-Specific
+- **Severity**: Medium
+- **What happened**: Bitstamp order book responses include both `timestamp` (Unix seconds as string) and `microtimestamp` (Unix microseconds as string, e.g., `"1771281528771691"`). Using `timestamp` loses sub-second precision.
+- **Root cause**: Bitstamp provides two timestamp fields at different precisions.
+- **Fix applied**: Parser prefers `microtimestamp` with `int(micro_ts) // 1000` for milliseconds. Falls back to `int(timestamp) * 1000` if microtimestamp is missing.
+- **Rule going forward**: Prefer higher-precision timestamps when available. Document timestamp source and conversion in parser docstring.
+- **Affected files**: `connectors/bitstamp/parser.py`, `notebooks/04_bitstamp_exploration.ipynb`
+

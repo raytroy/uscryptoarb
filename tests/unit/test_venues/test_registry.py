@@ -6,8 +6,8 @@ from uscryptoarb.venues.registry import ohio_eligible
 
 
 def test_ohio_eligible_ok() -> None:
-    result = ohio_eligible(["kraken", "coinbase", "gemini"])
-    assert list(result) == ["kraken", "coinbase", "gemini"]
+    result = ohio_eligible(["kraken", "coinbase", "gemini", "bitstamp"])
+    assert list(result) == ["kraken", "coinbase", "gemini", "bitstamp"]
 
 
 def test_ohio_eligible_unknown_rejected() -> None:

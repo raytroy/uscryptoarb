@@ -34,6 +34,27 @@ This directory stores deterministic fixture data used by tests.
 - **Used by**: `tests/unit/test_connectors/test_gemini/test_parser.py`
 - **Notes**: Tests parser handles 7-decimal-place prices for SOL/BTC (bid=0.0012499, ask=0.0012506).
 
+### bitstamp_book_btc_usd.json
+- **Contains**: Bitstamp order book response for BTC/USD. Arrays-of-arrays format (LL-070), integer prices, microtimestamp precision (LL-071).
+- **Source**: Live capture from Bitstamp public API during notebook exploration (Section 11)
+- **Date captured**: 2026-02-16
+- **Used by**: `tests/unit/test_connectors/test_bitstamp/test_parser.py`
+- **Notes**: BTC/USD has counter_decimals=0 (integer prices). Tests parser handles arrays-of-arrays format correctly.
+
+### bitstamp_book_ltc_btc.json
+- **Contains**: Bitstamp order book response for LTC/BTC. BTC-quoted pair with 8-decimal-place prices.
+- **Source**: Live capture from Bitstamp public API during notebook exploration (Section 11)
+- **Date captured**: 2026-02-16
+- **Used by**: `tests/unit/test_connectors/test_bitstamp/test_parser.py`
+- **Notes**: Tests parser handles high-precision BTC-quoted prices (0.00080295).
+
+### bitstamp_book_btc_usdc.json
+- **Contains**: Bitstamp order book response for BTC/USDC. Verifies USD ≠ USDC (DEC-001).
+- **Source**: Live capture from Bitstamp public API during notebook exploration (Section 11)
+- **Date captured**: 2026-02-16
+- **Used by**: `tests/unit/test_connectors/test_bitstamp/test_parser.py`
+- **Notes**: Tests parser handles USDC-quoted pair distinctly from USD pair.
+
 ## Integration Test Data
 
 The integration tests in `tests/integration/test_end_to_end.py` use **inline synthetic

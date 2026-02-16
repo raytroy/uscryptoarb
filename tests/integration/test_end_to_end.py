@@ -33,6 +33,7 @@ from unittest.mock import patch
 import httpx
 
 from uscryptoarb.calculation.calc_types import ArbOpportunity
+from uscryptoarb.connectors.bitstamp.client import BitstampClient
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
 from uscryptoarb.connectors.gemini.client import GeminiClient
 from uscryptoarb.connectors.kraken.client import KrakenClient
@@ -145,6 +146,16 @@ def _gemini_book_response(bid: str, ask: str) -> dict:
     }
 
 
+def _bitstamp_book_response(bid: str, ask: str) -> dict:
+    """Build a minimal valid Bitstamp /api/v2/order_book response for btcusd."""
+    return {
+        "timestamp": "1707900000",
+        "microtimestamp": "1707900000000000",
+        "bids": [[bid, "1.0"]],
+        "asks": [[ask, "1.0"]],
+    }
+
+
 # ---------------------------------------------------------------------------
 # Connector Factory Helpers
 # ---------------------------------------------------------------------------
@@ -176,6 +187,17 @@ def _make_gemini(handler, max_retries: int = 1) -> GeminiClient:
     transport = httpx.MockTransport(handler)
     client = httpx.AsyncClient(transport=transport)
     return GeminiClient(
+        client=client,
+        rate_limiter=RateLimiter(0),
+        max_retries=max_retries,
+        backoff=FAST_BACKOFF,
+    )
+
+
+def _make_bitstamp(handler, max_retries: int = 1) -> BitstampClient:
+    transport = httpx.MockTransport(handler)
+    client = httpx.AsyncClient(transport=transport)
+    return BitstampClient(
         client=client,
         rate_limiter=RateLimiter(0),
         max_retries=max_retries,
@@ -266,13 +288,20 @@ class TestNoOpportunitySimilarPrices:
                 json=_gemini_book_response("99490.0", "99590.0"),
             )
 
+        def bitstamp_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json=_bitstamp_book_response("99495.0", "99595.0"),
+            )
+
         connectors = {
             "kraken": _make_kraken(kraken_handler),
             "coinbase": _make_coinbase(coinbase_handler),
             "gemini": _make_gemini(gemini_handler),
+            "bitstamp": _make_bitstamp(bitstamp_handler),
         }
 
-        cfg_path = _write_config(tmp_path, ["kraken", "coinbase", "gemini"])
+        cfg_path = _write_config(tmp_path, ["kraken", "coinbase", "gemini", "bitstamp"])
         config = load_config(cfg_path)
         # Relax staleness to match our huge max_staleness_ms
         config = replace(
@@ -416,13 +445,20 @@ class TestPartialFailureGracefulDegradation:
                 json=_gemini_book_response("101500.0", "101600.0"),
             )
 
+        def bitstamp_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json=_bitstamp_book_response("100500.0", "100600.0"),
+            )
+
         connectors = {
             "kraken": _make_kraken(kraken_handler),
             "coinbase": _make_coinbase(coinbase_500_handler, max_retries=1),
             "gemini": _make_gemini(gemini_handler),
+            "bitstamp": _make_bitstamp(bitstamp_handler),
         }
 
-        cfg_path = _write_config(tmp_path, ["kraken", "coinbase", "gemini"])
+        cfg_path = _write_config(tmp_path, ["kraken", "coinbase", "gemini", "bitstamp"])
         config = load_config(cfg_path)
         config = replace(
             config,

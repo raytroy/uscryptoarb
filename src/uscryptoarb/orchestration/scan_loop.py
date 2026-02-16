@@ -12,6 +12,7 @@ import httpx
 
 from uscryptoarb.calculation.calc_types import ArbOpportunity
 from uscryptoarb.calculation.returns import calc_return_raw
+from uscryptoarb.connectors.bitstamp.client import BitstampClient
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
 from uscryptoarb.connectors.connector_base import BaseAsyncConnector, ExchangeConnector
 from uscryptoarb.connectors.gemini.client import GeminiClient
@@ -31,6 +32,7 @@ _CONNECTOR_REGISTRY: dict[str, type[BaseAsyncConnector]] = {
     "kraken": KrakenClient,
     "coinbase": CoinbaseClient,
     "gemini": GeminiClient,
+    "bitstamp": BitstampClient,
 }
 
 
@@ -55,7 +57,7 @@ async def create_connectors(
         limiter = RateLimiter(min_interval_ms=venue_cfg.rate_limit_ms)
 
         concrete_connector_cls = cast(
-            type[KrakenClient] | type[CoinbaseClient] | type[GeminiClient],
+            type[KrakenClient] | type[CoinbaseClient] | type[GeminiClient] | type[BitstampClient],
             connector_cls,
         )
         connectors[venue] = concrete_connector_cls(

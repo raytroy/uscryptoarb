@@ -58,6 +58,7 @@ def test_create_connectors_all_venues(full_config_path: str) -> None:
             assert "kraken" in connectors
             assert "coinbase" in connectors
             assert "gemini" in connectors
+            assert "bitstamp" in connectors
 
     asyncio.run(run())
 

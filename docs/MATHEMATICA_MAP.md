@@ -102,6 +102,7 @@ Databases (fees, withdrawal, accuracy)
 | `BidAskData[]` (Kraken) | `fetch_ticker()` | `connectors/kraken/client.py` | ✅ Ported | Async httpx client with rate limiting. Produces TopOfBook via tob_from_raw(). |
 | `BidAskData[]` (Coinbase) | `fetch_tickers()` | `connectors/coinbase/` | ✅ Ported | Async httpx client. Per-pair requests via `/market/product_book` (no public batch — LL-052). Parser converts to TopOfBook via `tob_from_raw()`. |
 | `BidAskData[]` (Gemini) | `fetch_tickers()` | `connectors/gemini/client.py` | ✅ Ported | Async httpx client using /v1/book/{symbol} (not ticker — LL-062). Per-pair requests. Parser converts to TopOfBook via tob_from_raw(). |
+| `BidAskData[]` (Bitstamp) | `fetch_tickers()` | `connectors/bitstamp/client.py` | ✅ Ported | Async httpx client using /api/v2/order_book/{symbol}/ with arrays-of-arrays parsing and microtimestamp support. |
 | `OrderBookPerExchange[]` | `fetch_orderbook()` | `connectors/*/orderbook.py` | ⏳ Deferred | Full orderbook depth. Phase 1 uses top-of-book only. Needed for trade sizing in Phase 3+. |
 | `GetTradingBalances[]` | `fetch_balances()` | `connectors/*/balances.py` | ⏳ Deferred | Account balance retrieval. Requires authenticated API. Phase 3+. |
 | `CheckExisitngOrders[]` | `check_open_orders()` | `connectors/*/orders.py` | ⏳ Deferred | Check for open orders before placing new ones. Phase 4. |
