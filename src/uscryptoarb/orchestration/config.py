@@ -12,7 +12,7 @@ from typing import Any, TypeVar
 
 import yaml
 from dotenv import load_dotenv
-from uscryptoarb.calculation.types import (
+from uscryptoarb.calculation.calc_types import (
     FeeSchedule,
     TradingAccuracy,
     TradingFeeRate,

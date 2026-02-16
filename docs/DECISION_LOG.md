@@ -98,7 +98,7 @@
   2. Raw `httpx` for all exchanges — rejected for Kraken and Coinbase because SDK handles auth, rate limiting, and response parsing. Acceptable for Gemini where no good SDK exists.
 - **Rationale**: Use SDKs where they save significant effort and are well-maintained. Use custom code where SDKs don't exist or abstract away needed details. Never use unified libraries that hide exchange-specific behavior.
 - **Consequences**: Each connector has exchange-specific code. SymbolTranslator handles the format differences. Connectors output canonical types regardless of SDK used.
-- **References**: PROJECT_INSTRUCTIONS.md Section 3, `venues/symbols.py`
+- **References**: PROJECT_INSTRUCTIONS.md Section 3, `venues/symbol_translator.py`
 
 ### DEC-006: Ohio-eligible exchanges only
 - **Date**: 2026-01-04
@@ -231,7 +231,7 @@
 - **Date**: 2026-02-15
 - **Status**: Accepted
 - **Context**: Code review identified the retry-with-backoff loop as duplicated across KrakenClient._request() and CoinbaseClient._fetch_product_book(). Both have identical constructor signatures, rate limiting, backoff sleep, and retry classification logic, but different response formats and error extraction.
-- **Decision**: Extract a `BaseAsyncConnector` ABC in `connectors/base.py` that provides shared constructor, venue property, and `_fetch_with_retry()` returning raw `httpx.Response`. Subclasses handle venue-specific JSON parsing and error extraction. The `ExchangeConnector` Protocol stays as the structural typing interface.
+- **Decision**: Extract a `BaseAsyncConnector` ABC in `connectors/connector_base.py` that provides shared constructor, venue property, and `_fetch_with_retry()` returning raw `httpx.Response`. Subclasses handle venue-specific JSON parsing and error extraction. The `ExchangeConnector` Protocol stays as the structural typing interface.
 - **Alternatives Considered**:
   1. ABC with abstract hooks for `_is_retryable()` and `_parse_response()` — rejected because it forces artificial abstraction over fundamentally different response formats, and the hooks would be complex to accommodate Kraken's error-in-200 pattern.
   2. Standalone retry utility function (not a class) — rejected because the retry logic shares state with the connector (rate limiter, timeout, backoff policy, venue name for logging). Passing all these as parameters defeats the purpose.
@@ -276,3 +276,19 @@
 - **Rationale**: The value of the Mathematica system is in its *domain logic* (fee models, return calculations, trade selection, limiting reactant pattern), not its *implementation patterns*. Python can preserve the domain logic while using better implementation patterns. Examples already exist: DEC-003 (boundary validation vs scattered MissingCheck) and DEC-011 (async httpx vs sync SDK) are cases where we already improved over Mathematica's approach.
 - **Consequences**: MATHEMATICA_MAP.md gains a `🔧 Improved` status for functions where the Python version intentionally diverges. Pre-implementation verification now includes "Improvements over Mathematica approach considered." Calculation Match metric allows documented divergence.
 - **References**: CLAUDE_INSTRUCTIONS.md "Relationship to Mathematica" section, DEC-003, DEC-011
+
+### DEC-019: Unique module name rule and document authority hierarchy
+- **Date**: 2026-02-16
+- **Status**: Accepted
+- **Context**: Duplicate module basenames reduced navigation clarity and three instruction documents drifted out of sync.
+- **Decision**:
+  - Add Rule 10.8: module names must be unique across `src/uscryptoarb/` except connector sub-package internal `client.py`/`parser.py`/`symbols.py`.
+  - Add Rule 10.9: second-instance patterns must be flagged in SESSION_HANDOFFS as Refactor Candidates and addressed next session or deferred with rationale.
+  - Define documentation authority hierarchy: `PROJECT_INSTRUCTIONS.md` -> `CLAUDE_INSTRUCTIONS.md` -> Claude.ai UI copy.
+- **Alternatives considered**:
+  - Rename connector internal `client.py`/`parser.py`/`symbols.py` files (rejected: package namespace already disambiguates and this pattern is intentional).
+  - Keep short-form `CLAUDE_INSTRUCTIONS.md` (rejected: excessive context loss and drift risk).
+  - Execute as multiple sessions (rejected: increases churn and transition risk during path rename sweep).
+- **Rationale**: Unique filenames improve code navigation and AI retrieval quality; explicit hierarchy prevents instruction drift.
+- **Consequences**: Five source modules and related tests renamed; checklists and operational docs updated; manual UI sync remains required by project owner.
+- **References**: LL-065, LL-066, Coding Rules 10.8 and 10.9.

@@ -6,6 +6,7 @@ All values are deterministic Decimal — no floats (LL-010).
 
 from decimal import Decimal
 
+from uscryptoarb.calculation.calc_types import WithdrawalFee
 from uscryptoarb.calculation.fees import (
     calc_buy_leg,
     calc_sell_leg,
@@ -14,7 +15,6 @@ from uscryptoarb.calculation.fees import (
     net_sell_proceeds,
     total_buy_cost,
 )
-from uscryptoarb.calculation.types import WithdrawalFee
 
 
 class TestCalcBuyLeg:

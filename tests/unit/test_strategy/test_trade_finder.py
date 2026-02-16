@@ -1,4 +1,4 @@
-"""Tests for strategy/scanner.py.
+"""Tests for strategy/trade_finder.py.
 
 Tests exchange filtering and the top-level scan pipeline.
 Uses shared fixtures from tests/conftest.py.
@@ -7,9 +7,9 @@ Uses shared fixtures from tests/conftest.py.
 from decimal import Decimal
 
 from uscryptoarb.calculation.arb_calc import calc_arb_opportunity
-from uscryptoarb.calculation.types import FeeSchedule
+from uscryptoarb.calculation.calc_types import FeeSchedule
 from uscryptoarb.marketdata.topofbook import TopOfBook
-from uscryptoarb.strategy.scanner import filter_valid_exchanges, find_trades_to_execute
+from uscryptoarb.strategy.trade_finder import filter_valid_exchanges, find_trades_to_execute
 
 
 class TestFilterValidExchanges:

@@ -1,4 +1,4 @@
-"""Tests for connectors/base.py — BaseAsyncConnector shared retry logic.
+"""Tests for connectors/connector_base.py — BaseAsyncConnector shared retry logic.
 
 Uses a minimal concrete subclass to test _fetch_with_retry() directly,
 isolating the shared retry/backoff/rate-limit behavior from venue-specific
@@ -16,11 +16,11 @@ if importlib.util.find_spec("httpx") is None:
 import httpx
 
 from tests.helpers import DummyRateLimiter
-from uscryptoarb.connectors.base import BaseAsyncConnector
+from uscryptoarb.connectors.connector_base import BaseAsyncConnector
 from uscryptoarb.http.backoff import BackoffPolicy
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
-from uscryptoarb.venues.symbols import SymbolTranslator
+from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 
 # Minimal concrete subclass for testing the ABC

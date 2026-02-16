@@ -8,6 +8,7 @@ from decimal import Decimal
 
 import pytest
 
+from uscryptoarb.calculation.calc_types import TradingAccuracy
 from uscryptoarb.calculation.sizing import (
     DEFAULT_KELLY_MULTIPLIER,
     DEFAULT_PROB_SUCCESS,
@@ -15,7 +16,6 @@ from uscryptoarb.calculation.sizing import (
     calc_kelly_fraction,
     calc_position_size,
 )
-from uscryptoarb.calculation.types import TradingAccuracy
 
 
 class TestCalcKellyFraction:

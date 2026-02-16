@@ -4,13 +4,13 @@ import logging
 import time
 from typing import Any
 
-from uscryptoarb.connectors.base import BaseAsyncConnector
+from uscryptoarb.connectors.connector_base import BaseAsyncConnector
 from uscryptoarb.connectors.kraken.parser import parse_ticker_response
 from uscryptoarb.connectors.kraken.symbols import KRAKEN_SYMBOLS
 from uscryptoarb.http.backoff import BackoffPolicy
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
-from uscryptoarb.venues.symbols import SymbolTranslator
+from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 logger = logging.getLogger(__name__)
 

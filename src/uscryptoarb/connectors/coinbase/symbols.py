@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from uscryptoarb.venues.symbols import create_translator
+from uscryptoarb.venues.symbol_translator import create_translator
 
 COINBASE_SYMBOL_MAP: dict[str, str] = {
     "BTC/USD": "BTC-USD",

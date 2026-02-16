@@ -1,7 +1,7 @@
 import pytest
 
 from uscryptoarb.markets.pairs import parse_pair
-from uscryptoarb.venues.symbols import SymbolTranslator, create_translator
+from uscryptoarb.venues.symbol_translator import SymbolTranslator, create_translator
 
 
 def test_parse_pair_normalizes() -> None:

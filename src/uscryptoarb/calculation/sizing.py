@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from uscryptoarb.calculation.types import TradingAccuracy
+from uscryptoarb.calculation.calc_types import TradingAccuracy
 from uscryptoarb.misc.decimals import floor_to_step
 
 ZERO = Decimal("0")

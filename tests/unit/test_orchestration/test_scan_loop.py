@@ -10,7 +10,7 @@ import pytest
 
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.orchestration.config import load_config
-from uscryptoarb.orchestration.scanner import (
+from uscryptoarb.orchestration.scan_loop import (
     create_connectors,
     fetch_all_venues,
     reorganize_by_pair,
@@ -140,7 +140,7 @@ class TestLogPairSpreads:
 
     def test_logs_spread_for_two_venues(self, caplog: pytest.LogCaptureFixture) -> None:
         """Verify spread logging outputs pair, venues, and spread percentage."""
-        from uscryptoarb.orchestration.scanner import _log_pair_spreads
+        from uscryptoarb.orchestration.scan_loop import _log_pair_spreads
 
         tobs = {
             "kraken": _tob("kraken", "BTC/USD", "97100", "97200"),
@@ -159,7 +159,7 @@ class TestLogPairSpreads:
 
     def test_spread_sign_positive_when_arb_exists(self, caplog: pytest.LogCaptureFixture) -> None:
         """Positive spread when sell bid > buy ask (arb direction)."""
-        from uscryptoarb.orchestration.scanner import _log_pair_spreads
+        from uscryptoarb.orchestration.scan_loop import _log_pair_spreads
 
         tobs = {
             "kraken": _tob("kraken", "BTC/USD", "97100", "97200"),
@@ -172,7 +172,7 @@ class TestLogPairSpreads:
 
     def test_spread_sign_negative_when_no_arb(self, caplog: pytest.LogCaptureFixture) -> None:
         """Negative spread when best bid < best ask (no arb)."""
-        from uscryptoarb.orchestration.scanner import _log_pair_spreads
+        from uscryptoarb.orchestration.scan_loop import _log_pair_spreads
 
         tobs = {
             "kraken": _tob("kraken", "BTC/USD", "97100", "97200"),
@@ -185,7 +185,7 @@ class TestLogPairSpreads:
 
     def test_venues_sorted_alphabetically(self, caplog: pytest.LogCaptureFixture) -> None:
         """Venue order in log is alphabetical for deterministic output."""
-        from uscryptoarb.orchestration.scanner import _log_pair_spreads
+        from uscryptoarb.orchestration.scan_loop import _log_pair_spreads
 
         tobs = {
             "zebra_exchange": _tob("zebra_exchange", "BTC/USD", "97100", "97200"),
