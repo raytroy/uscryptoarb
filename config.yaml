@@ -79,3 +79,10 @@ debug:
   enabled: false
   trace_pairs: []              # e.g. ["BTC/USD"] for DEBUG logging on that pair
   log_level: INFO
+
+# === Logging ===
+logging:
+  file_path: null              # set to path string to enable file logging
+  max_bytes: 10485760          # 10 MB per file
+  backup_count: 5              # keep 5 rotated files
+  stats_interval: 20           # log run stats every N cycles (0 = disable)

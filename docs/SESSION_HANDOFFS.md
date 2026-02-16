@@ -1294,12 +1294,20 @@
 
 ---
 
+## 2026-02-16 — Operational improvements for unattended running
 ## 2026-02-16 — End-to-end integration tests with mocked HTTP
 
 **Interface**: Claude Code
 **Branch**: main
 
 ### Completed
+- File logging: RotatingFileHandler (10MB, 5 backups) alongside stdout, config + CLI driven
+- Run statistics: RunStats dataclass in orchestration/run_stats.py, periodic + shutdown summaries
+- CLI: --log-file and --stats-interval flags
+- LoggingConfig dataclass in orchestration/config.py, parsed from new logging: YAML section
+- fetch_all_venues returns venue error dict alongside data
+- run_scan_loop returns RunStats, accepts stats_interval parameter
+- Full test coverage for all changes
 - Created `tests/integration/` directory with `__init__.py` and `test_end_to_end.py`
 - 4 integration tests exercising the full Phase 1 detection pipeline:
   1. `test_no_opportunity_all_prices_similar` — 3 exchanges, similar prices, zero opportunities
@@ -1316,6 +1324,43 @@
 - Nothing blocked
 
 ### Key Decisions Made
+- LoggingConfig owned by orchestration layer (I/O config per DEC-002)
+- stats_interval lives in LoggingConfig (controls logging frequency)
+- RunStats intentionally mutable (imperative shell accumulator, Coding Rule 2.2 exception documented)
+- fetch_all_venues return type changed to include venue errors (minor breaking change, all callers updated)
+
+### Behavioral Changes
+- `run_scan_loop()` now returns `RunStats` instead of `None`
+- `run_scan_cycle()` now returns `tuple[list[ArbOpportunity], dict[str, int]]` instead of `list[ArbOpportunity]`
+- `fetch_all_venues()` now returns `tuple[dict, dict[str, int]]` instead of `dict`
+- New `[stats]` log lines appear periodically and on shutdown
+- System works identically if config unchanged (all new keys have sensible defaults)
+
+### Files Created
+- `src/uscryptoarb/orchestration/run_stats.py`
+- `tests/unit/test_orchestration/test_run_stats.py`
+- `tests/unit/test_main.py`
+
+### Files Modified
+- `src/uscryptoarb/orchestration/config.py` (LoggingConfig, ScannerConfig field, parsing)
+- `src/uscryptoarb/orchestration/scan_loop.py` (stats integration, return types, time import)
+- `src/uscryptoarb/__main__.py` (setup_logging rewrite, CLI args, stats wiring)
+- `config.yaml` (logging section)
+- `tests/unit/test_orchestration/conftest.py` (logging section in FULL_CFG)
+- `tests/unit/test_orchestration/test_config.py` (LoggingConfig tests)
+- `tests/unit/test_orchestration/test_scan_loop.py` (tuple unpacking, stats tests)
+- `CHANGELOG.md`
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Refactor Candidates
+- None identified this session
+
+### Next Steps (Priority Order)
+1. Run `python -m uscryptoarb --dry-run` to verify output unchanged
+2. Run `python -m uscryptoarb --dry-run --log-file /tmp/test.log` to verify file created
+3. Run `python -m uscryptoarb --log-file /tmp/test.log` for 2-3 cycles, Ctrl+C, verify stats summary + file output
+4. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+5. Gemini production connector (`connectors/gemini/`)
 - Integration tests bypass `create_connectors()` and build connectors directly with MockTransport (LL-068)
 - Inline synthetic response data instead of fixture JSON files (keeps price arithmetic visible)
 - `now_ms()` patched in all 3 import sites via `_patch_now_ms` decorator (LL-067)
