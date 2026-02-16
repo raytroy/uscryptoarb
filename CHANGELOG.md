@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- `notebooks/03_gemini_exploration.ipynb`: Gemini API exploration notebook covering symbol mapping, order book endpoint (primary data source — tickers lack bid/ask sizes), rate limits, error handling, timestamp format, and production connector design notes
 
 ### Added
 - `connectors/base.py`: `BaseAsyncConnector` ABC with shared constructor, venue property, and `_fetch_with_retry()` retry/backoff/rate-limit logic (DEC-018)

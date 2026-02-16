@@ -911,3 +911,76 @@
 
 ### Notes for Next Session
 - The `full_config_path` fixture is available to any test under `tests/unit/test_orchestration/` via conftest.py. Future orchestration tests should use it instead of the production config.yaml.
+
+---
+
+## 2026-02-15 — Gemini exploration notebook
+
+**Interface**: Claude.ai WebUI
+**Branch**: main
+
+### Completed
+- Created `notebooks/03_gemini_exploration.ipynb` with 11 sections:
+  1. Setup & imports (httpx, nest_asyncio, reuses SymbolTranslator, tob_from_raw, to_decimal, require_present)
+  2. Symbol discovery & mapping (all 8 target pairs, SymbolTranslator round-trip, USD ≠ USDC verification)
+  3. Ticker endpoints V1 & V2 + pricefeed (documents that NONE provide bid/ask sizes)
+  4. Order book endpoint — primary data source (`/v1/book/{symbol}?limit_bids=1&limit_asks=1`)
+  5. Parse into TopOfBook (prototype `parse_gemini_book()` function, tested on all 8 pairs)
+  6. Async httpx pattern (production preview with `fetch_all_books_async()`)
+  7. Rate limit testing (burst + sustained, 120 req/min documented limit)
+  8. Error handling (invalid symbol, bad params, wrong endpoint)
+  9. Symbol details (precision, min sizes, USD vs USDC comparison)
+  10. Timestamp format deep dive (Unix seconds as integer strings)
+  11. Summary & connector design notes (comparison table, refactor candidates, fixture generation)
+- Searched LESSONS_LEARNED.md, DECISION_LOG.md, SESSION_HANDOFFS.md, and MATHEMATICA_MAP.md for relevant context
+- Researched Gemini API via official docs (docs.gemini.com/rest/market-data) and live API responses
+
+### In Progress
+- Notebook needs to be run locally to capture live API output (same as prior notebooks)
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- No new architectural decisions — follows established patterns (DEC-008 exploration-first, DEC-011 raw httpx, DEC-018 BaseAsyncConnector)
+- Production connector will use `/v1/book/{symbol}` (NOT ticker) because tickers lack bid/ask sizes
+- Rate limiter interval: 500ms (matches Kraken; 8 pairs × 500ms = 4s, within 5s polling)
+
+### Key Findings (from API research + docs)
+- **Critical**: Neither ticker V1 nor V2 provides bid/ask sizes. Must use order book endpoint.
+- 8/8 target pairs confirmed available (btcusd, btcusdc, ltcusd, ltcusdc, ltcbtc, solusd, solusdc, solbtc)
+- DEC-001 confirmed: USD ≠ USDC (distinct quote_currency in symbol details)
+- Symbol format: lowercase, no separator (e.g., `btcusd`, `solusdc`)
+- Order book response: `{"bids": [{"price": str, "amount": str, "timestamp": str}], "asks": [...]}`
+- Timestamps: Unix seconds as integer strings (not ms, not ISO 8601, not float)
+- Rate limits: 120 req/min public, burst of 5 queued, 429 on exceed
+- No batch endpoint — per-pair requests required (same as Coinbase)
+- Ticker V2: OHLC + bid/ask prices + hourly changes (useful for reporting but not TopOfBook)
+- Pricefeed endpoint (`/v1/pricefeed`): batch last-price only, no bid/ask/size
+
+### Refactor Candidates (per Coding Rule 10.8)
+- DummyRateLimiter: Now 3rd caller (Gemini tests) → extract to tests/helpers.py
+- Unix timestamp parsing: Kraken (float) vs Gemini (int string) — similar but not identical
+
+### Files Created
+- `notebooks/03_gemini_exploration.ipynb`
+
+### Files Modified
+- `docs/SESSION_HANDOFFS.md` (this entry)
+- `docs/LESSONS_LEARNED.md` (LL-060, LL-061)
+- `CHANGELOG.md` (notebook entry)
+
+### Next Steps (Priority Order)
+1. Ray: Run notebook locally, verify API connectivity, capture live output
+2. Build Gemini production connector (`connectors/gemini/`) using BaseAsyncConnector
+3. Extract DummyRateLimiter to tests/helpers.py (3rd caller trigger)
+4. End-to-end integration test with all 3 exchanges
+
+### Notes for Next Session
+- The notebook is ready to run but has no captured output yet. All cells use live API calls.
+- Gemini connector will be simpler than Kraken/Coinbase: no SDK wrapping, straightforward JSON responses.
+- BaseAsyncConnector handles retry/backoff — Gemini connector only needs `fetch_tickers()` and parsing.
+- Timestamp parsing is simpler than Coinbase: `int(ts_str) * 1000` vs ISO 8601 parsing.
+- The `/v1/book` endpoint returns strings for all fields (price, amount, timestamp) — clean for `to_decimal()`.
+- Per-pair fetch with 500ms delay means 8 pairs take ~4s. Well within 5s polling interval.
+- When building the connector, also update config.yaml `venues.primary` to include gemini.

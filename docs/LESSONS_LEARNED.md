@@ -265,3 +265,23 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Lesson**: Unit tests that verify parsing logic should use synthetic YAML fixtures with known values. A single smoke test can validate the production config loads without asserting specific values.
 - **Pattern**: `conftest.py` provides `FULL_CFG` string and `full_config_path` fixture that writes it to `tmp_path`. Tests assert against the synthetic values they control.
 - **Applies to**: Any test that calls `load_config()` — always pass a fixture path, never the production file, unless it's a smoke test.
+
+### LL-062: Gemini ticker endpoints lack bid/ask sizes — must use order book
+- **Date**: 2026-02-15
+- **Category**: Exchange-Specific
+- **Severity**: High
+- **What happened**: Explored Gemini ticker V1 (`/v1/pubticker/{symbol}`), ticker V2 (`/v2/ticker/{symbol}`), and pricefeed (`/v1/pricefeed`). None include bid/ask sizes — only bid/ask prices.
+- **Root cause**: Gemini's ticker endpoints are designed for price reporting, not order book depth. The V1 ticker returns `{bid, ask, last, volume}` and the V2 adds OHLC + hourly changes, but neither includes the quantity available at the best bid/ask.
+- **Fix applied**: Production connector will use the order book endpoint (`/v1/book/{symbol}?limit_bids=1&limit_asks=1`) which returns price, amount, and timestamp per level.
+- **Rule going forward**: Before building any exchange connector, verify the chosen endpoint provides ALL four TopOfBook fields (bid_px, bid_sz, ask_px, ask_sz). Do not assume ticker endpoints include sizes — Kraken does, but Coinbase and Gemini do not.
+- **Affected files**: `notebooks/03_gemini_exploration.ipynb`, future `connectors/gemini/client.py`
+
+### LL-063: Gemini order book timestamps are Unix seconds as integer strings
+- **Date**: 2026-02-15
+- **Category**: Exchange-Specific
+- **Severity**: Medium
+- **What happened**: Gemini order book `timestamp` field is a string containing Unix seconds as an integer (e.g., `"1547147541"`), not a float, not milliseconds, and not ISO 8601.
+- **Root cause**: Gemini's API predates modern timestamp conventions. The value is seconds since epoch with integer precision (no sub-second granularity).
+- **Fix applied**: Parser uses `int(timestamp_str) * 1000` to convert to milliseconds for consistency with TopOfBook's `ts_exchange_ms` field.
+- **Rule going forward**: Each exchange has its own timestamp format. Document and handle explicitly in the parser: Kraken = Unix seconds (float in orderbook), Coinbase = ISO 8601 with microseconds, Gemini = Unix seconds (integer string). Never assume timestamp format transfers across exchanges.
+- **Affected files**: `notebooks/03_gemini_exploration.ipynb`, future `connectors/gemini/parser.py`
