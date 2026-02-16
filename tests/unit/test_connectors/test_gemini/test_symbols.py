@@ -3,7 +3,6 @@ import pytest
 from uscryptoarb.connectors.gemini.symbols import (
     GEMINI_SYMBOL_MAP,
     GEMINI_SYMBOLS,
-    supported_pairs,
 )
 
 
@@ -22,8 +21,8 @@ def test_unknown_pair_raises() -> None:
         GEMINI_SYMBOLS.to_venue_symbol("ETH/USD")
 
 
-def test_supported_pairs_count() -> None:
-    assert len(supported_pairs()) == 8
+def test_symbol_map_has_eight_pairs() -> None:
+    assert len(GEMINI_SYMBOL_MAP) == 8
 
 
 def test_unknown_venue_symbol_raises() -> None:

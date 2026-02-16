@@ -72,7 +72,7 @@
 - **Root cause**: Python `float` uses IEEE 754 binary representation. Passing a float to `Decimal()` preserves the binary representation error.
 - **Fix applied**: `to_decimal()` explicitly rejects `float` inputs with `TypeError`. Only accepts `str`, `int`, or `Decimal`.
 - **Rule going forward**: NEVER use `float` for money, prices, fees, or quantities. Always use `Decimal` constructed from strings. The `to_decimal()` function is the single entry point for all numeric conversions. See DECISION_LOG.md DEC-007.
-- **Affected files**: `core/decimal_utils.py`, `validation/guards.py`
+- **Affected files**: `misc/decimals.py`, `validation/guards.py`
 
 ---
 
@@ -214,8 +214,8 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **What happened**: During calculation layer review, noticed TradingAccuracy is defined in `calculation/calc_types.py`. Per layering rules (Section 5.2), connectors can only import from Domain/Core. If connectors ever need to produce TradingAccuracy (e.g., from live fee/accuracy API responses), the type must move to `core/types.py`.
 - **Root cause**: TradingAccuracy was created as part of the calculation layer because that's where it's consumed. But it's fundamentally a domain type.
 - **Fix applied**: None yet — currently only test fixtures create TradingAccuracy, so no import violation exists.
-- **Rule going forward**: When building the config/fee loader or any connector that produces TradingAccuracy, move the type to `core/types.py` first. Same applies to TradingFeeRate and WithdrawalFee if connectors need to create them.
-- **Affected files**: `calculation/calc_types.py` → future `core/types.py`
+- **Rule going forward**: When building the config/fee loader or any connector that produces TradingAccuracy, move the type to a shared domain location first. Same applies to TradingFeeRate and WithdrawalFee if connectors need to create them.
+- **Affected files**: `calculation/calc_types.py` → Target path TBD (core/ directory was deleted)
 
 ### LL-054: TradingFeeRate.flat_fee must be applied in fee math even if currently zero
 - **Date**: 2026-02-14

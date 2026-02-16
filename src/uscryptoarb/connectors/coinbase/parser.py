@@ -10,7 +10,6 @@ from uscryptoarb.validation.guards import require_nonempty_list, require_present
 logger = logging.getLogger(__name__)
 
 
-# TODO: Extract to misc/timestamps.py when second connector needs ISO 8601 parsing (Rule 10.1)
 def _parse_iso_timestamp_ms(iso_str: str) -> int:
     """Convert ISO 8601 timestamp to milliseconds since epoch.
 

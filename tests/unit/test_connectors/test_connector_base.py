@@ -7,6 +7,7 @@ response parsing.
 
 import asyncio
 import importlib.util
+from decimal import Decimal
 
 import pytest
 
@@ -246,3 +247,39 @@ def test_params_passed_through() -> None:
 
     asyncio.run(run())
     assert "product_id=BTC-USD" in seen_urls[0]
+
+
+def test_fetch_tickers_per_pair_skips_unknown_pair() -> None:
+    """Template method logs warning and skips pairs not in symbol map."""
+
+    async def fetch_one(symbol: str) -> dict[str, list[dict[str, str]]]:
+        return {
+            "bids": [{"price": "100", "amount": "1"}],
+            "asks": [{"price": "101", "amount": "1"}],
+        }
+
+    def parse_one(raw: dict[str, list[dict[str, str]]], pair: str, ts: int) -> TopOfBook:
+        from uscryptoarb.marketdata.topofbook import TopOfBook
+
+        return TopOfBook(
+            venue="test",
+            pair=pair,
+            ts_local_ms=ts,
+            ts_exchange_ms=None,
+            bid_px=Decimal("100"),
+            bid_sz=Decimal("1"),
+            ask_px=Decimal("101"),
+            ask_sz=Decimal("1"),
+        )
+
+    async def run() -> None:
+        async with _make_client(lambda r: httpx.Response(200, json={})) as client:
+            c = _make_connector(client)
+            result = await c._fetch_tickers_per_pair(
+                ["UNKNOWN/PAIR"],
+                fetch_one=fetch_one,
+                parse_one=parse_one,
+            )
+            assert result == {}
+
+    asyncio.run(run())

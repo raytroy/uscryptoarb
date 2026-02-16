@@ -1150,3 +1150,95 @@
 - `src/uscryptoarb/config/app_config.py`
 - `src/uscryptoarb/config/__init__.py`
 - `tests/test_registry_and_config.py`
+
+---
+
+## 2026-02-16 — Consolidated Refactor (3 Code Reviews)
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Phase A: Safety bugs — TopOfBook `__post_init__`, return function assertions, pair-consistency assertion
+- Phase B: DRY cleanup — `now_ms()` utility (4 call sites), `_fetch_tickers_per_pair()` template method (Coinbase + Gemini), removed `supported_pairs()` dead code (3 files), extracted `make_arb_opportunity()` test helper
+- Phase C: Dead code removal — removed unused `filter_profitable()` and `sort_opportunities()` from arb_calc.py, added `Literal` type to `passes_threshold()` metric
+- Phase D: Documentation sync — fixed 7 MATHEMATICA_MAP.md stale entries, fixed CLAUDE_INSTRUCTIONS.md (entry point, SDK refs, fees.py, arb_calc.py), fixed DECISION_LOG.md (DEC-005 superseded, DEC-011 correction), fixed LESSONS_LEARNED.md (LL-010, LL-053 paths), removed stale TODO, fixed CHANGELOG structure
+- Phase E: Low-severity — added email skip-reason logging, migrated 5 flat test files to tests/unit/
+
+### In Progress
+- Nothing — refactor is complete
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- TopOfBook `__post_init__` uses defense-in-depth pattern (Section 6.2.5) — does NOT replace `validate_tob()`
+- Return function assertions are programmer invariants, not data validation — consistent with DEC-003
+- `_fetch_tickers_per_pair()` template excludes Kraken (batch endpoint is a different pattern)
+- `filter_profitable()` and `sort_opportunities()` removed as dead code — `select_trade()` handles pipeline filtering
+- DEC-005 formally marked as superseded by DEC-011/DEC-018 — all connectors use custom httpx
+
+### Refactor Candidates
+- None identified — this session resolved the existing backlog
+
+### Files Created
+- `src/uscryptoarb/misc/time_utils.py`
+- `tests/unit/test_misc/test_time_utils.py`
+- `tests/unit/test_misc/__init__.py` (if new)
+- `tests/unit/test_marketdata/__init__.py`
+- `tests/unit/test_markets/__init__.py`
+- `tests/unit/test_venues/__init__.py`
+
+### Files Modified
+- `src/uscryptoarb/marketdata/topofbook.py` (added __post_init__)
+- `src/uscryptoarb/calculation/returns.py` (added assertions)
+- `src/uscryptoarb/calculation/arb_calc.py` (added assertion, removed 2 functions)
+- `src/uscryptoarb/connectors/connector_base.py` (added _fetch_tickers_per_pair)
+- `src/uscryptoarb/connectors/coinbase/client.py` (refactored fetch_tickers)
+- `src/uscryptoarb/connectors/gemini/client.py` (refactored fetch_tickers)
+- `src/uscryptoarb/connectors/kraken/client.py` (now_ms import)
+- `src/uscryptoarb/connectors/kraken/symbols.py` (removed supported_pairs)
+- `src/uscryptoarb/connectors/coinbase/symbols.py` (removed supported_pairs)
+- `src/uscryptoarb/connectors/gemini/symbols.py` (removed supported_pairs)
+- `src/uscryptoarb/connectors/coinbase/parser.py` (removed stale TODO)
+- `src/uscryptoarb/orchestration/scan_loop.py` (now_ms import, registry type)
+- `src/uscryptoarb/strategy/selection.py` (Literal type)
+- `src/uscryptoarb/notification/email.py` (skip-reason logging)
+- `tests/helpers.py` (added make_arb_opportunity)
+- `tests/unit/test_notification/test_email.py` (use make_arb_opportunity)
+- `tests/unit/test_calculation/test_returns.py` (assertion tests)
+- `tests/unit/test_calculation/test_arb_calc.py` (pair-consistency test, removed dead test classes)
+- `tests/unit/test_connectors/test_connector_base.py` (template method test)
+- `tests/unit/test_connectors/test_kraken/test_symbols.py` (removed supported_pairs test)
+- `tests/unit/test_connectors/test_coinbase/test_symbols.py` (same)
+- `tests/unit/test_connectors/test_gemini/test_symbols.py` (same)
+- `CLAUDE_INSTRUCTIONS.md` (4 fixes)
+- `CHANGELOG.md` (refactor entries, structural fix)
+- `docs/DECISION_LOG.md` (DEC-005, DEC-011 corrections)
+- `docs/LESSONS_LEARNED.md` (LL-010, LL-053 path fixes)
+- `docs/MATHEMATICA_MAP.md` (7 stale entry fixes)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Files Moved
+- `tests/test_topofbook.py` → `tests/unit/test_marketdata/test_topofbook.py`
+- `tests/test_decimals.py` → `tests/unit/test_misc/test_decimals.py`
+- `tests/test_pairs_and_symbols.py` → `tests/unit/test_markets/test_pairs_and_symbols.py`
+- `tests/test_backoff.py` → `tests/unit/test_http/test_backoff.py`
+
+### Files Deleted
+- `tests/test_topofbook.py` (moved)
+- `tests/test_decimals.py` (moved)
+- `tests/test_pairs_and_symbols.py` (moved)
+- `tests/test_backoff.py` (moved)
+
+### Next Steps (Priority Order)
+1. Copy updated CLAUDE_INSTRUCTIONS.md into Claude.ai project instructions UI
+2. End-to-end integration tests with mocked exchange responses
+3. WebSocket integration planning (Phase 2)
+4. Verbose diagnostic logging for per-pair spread analysis
+
+### Notes for Next Session
+- All safety-critical bugs from code review are now resolved.
+- DRY violation backlog is cleared — no outstanding refactor candidates.
+- Documentation is synchronized with actual code state.
+- 5 flat test files were migrated to proper `tests/unit/` hierarchy.

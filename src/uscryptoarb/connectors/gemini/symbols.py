@@ -15,6 +15,3 @@ GEMINI_SYMBOL_MAP: dict[str, str] = {
 
 GEMINI_SYMBOLS = create_translator("gemini", GEMINI_SYMBOL_MAP)
 
-
-def supported_pairs() -> list[str]:
-    return list(GEMINI_SYMBOL_MAP)

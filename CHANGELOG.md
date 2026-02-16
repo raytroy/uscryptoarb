@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added
+- `misc/time_utils.py`: `now_ms()` utility replacing 4 inline `int(time.time() * 1000)` copies
+- `tests/unit/test_misc/test_time_utils.py`: Tests for timestamp utility
+
+### Changed
+- `marketdata/topofbook.py`: Added `__post_init__` crossed-book invariant check (defense-in-depth per Section 6.2.5)
+- `calculation/returns.py`: Added programmer-invariant assertions against division by zero in return functions
+- `calculation/arb_calc.py`: Added pair-consistency assertion in `calc_arb_opportunity()`
+- `connectors/connector_base.py`: Added `_fetch_tickers_per_pair()` template method for per-pair connectors
+- `connectors/coinbase/client.py`: Refactored `fetch_tickers()` to use `_fetch_tickers_per_pair()` template
+- `connectors/gemini/client.py`: Refactored `fetch_tickers()` to use `_fetch_tickers_per_pair()` template
+- `connectors/{kraken,coinbase,gemini}/client.py`: Replaced inline `int(time.time() * 1000)` with `now_ms()`
+- `orchestration/scan_loop.py`: Replaced inline timestamp with `now_ms()`, narrowed `_CONNECTOR_REGISTRY` type
+- `strategy/selection.py`: Added `Literal` type for `passes_threshold()` metric parameter
+
+### Removed
+- `calculation/arb_calc.py`: Removed unused `filter_profitable()` and `sort_opportunities()` (dead code — pipeline uses `select_trade()`)
+- `connectors/{kraken,coinbase,gemini}/symbols.py`: Removed unused `supported_pairs()` function
+- `connectors/coinbase/parser.py`: Removed stale TODO comment about timestamp extraction
+
+### Fixed
+- Documentation: Fixed `main.py` → `__main__.py` in CLAUDE_INSTRUCTIONS.md file tree
+- Documentation: Fixed exchange SDK references (all three use custom httpx, not SDKs)
+- Documentation: Fixed 7 stale entries in MATHEMATICA_MAP.md (paths, statuses)
+- Documentation: Fixed stale file paths in DECISION_LOG.md (DEC-005/DEC-011) and LESSONS_LEARNED.md (LL-010, LL-053 paths)
+- Documentation: Fixed fees.py description missing `total_buy_cost`, `net_sell_proceeds`
+- Documentation: Fixed CHANGELOG.md content duplication between [Unreleased] and [0.0.1]
+- `notification/email.py`: Added debug logging when email alert is skipped (was silent return)
 - `notebooks/03_gemini_exploration.ipynb`: Gemini API exploration notebook covering symbol mapping, order book endpoint (primary data source — tickers lack bid/ask sizes), rate limits, error handling, timestamp format, and production connector design notes
 
 ### Changed
@@ -153,27 +182,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2025-01-04
 
 ### Added
-- **Orchestration layer** (`src/uscryptoarb/orchestration/`) — imperative shell wiring pure pipeline to real I/O
-  - `config.py`: YAML + .env config loader with validation boundary, builds FeeSchedule objects for all (venue, pair) combinations
-  - `scan_loop.py`: Async polling loop with concurrent venue fetching, per-pair arbitrage detection, graceful shutdown
-- **Notification layer** (`src/uscryptoarb/notification/`) — email alerts for detected opportunities
-  - `email.py`: Gmail STARTTLS email sender, async via `to_thread()`, best-effort (never crashes scanner)
-- **CLI entry point** (`src/uscryptoarb/__main__.py`) — `python -m uscryptoarb` with `--dry-run`, `--trace-pair`, `--log-level`
-- **Package resources** (`src/uscryptoarb/resources/fee_schedules.json`) — production fee data (copy of test fixtures)
-- `config.yaml`: Default configuration file with per-pair trade amounts, per-venue connector settings
-- `.env.example`: Template for sensitive environment variables (SMTP credentials, future API keys)
-- `tests/helpers.py`: Shared test utilities (DummyRateLimiter extracted per Coding Rule 10.1)
-- `pyyaml>=6.0` and `python-dotenv>=1.0` added as runtime dependencies
-- `notebooks/02_coinbase_exploration.ipynb`: Coinbase Advanced Trade API exploration notebook covering product discovery, symbol mapping, BBO fetching (SDK and raw httpx), TopOfBook parsing, rate limit testing, and SDK vs httpx comparison
 - Initial project structure
-- `misc/decimals.py`: `to_decimal()`, `floor_to_step()`, `ceil_to_step()`
-- `markets/pairs.py`: `CanonicalPair`, `parse_pair()`
-- `venues/registry.py`: `VenueInfo`, `ohio_eligible()`
-- `venues/symbol_translator.py`: `SymbolTranslator`
-- `config/app_config.py`: `AppConfig`, `validate_config()`
-- `marketdata/topofbook.py`: `TopOfBook`, `validate_tob()`, `tob_from_raw()`
-- Basic test suite for registry and config validation
-- PROJECT_INSTRUCTIONS.md with comprehensive coding standards
 
 [Unreleased]: https://github.com/raytroy/uscryptoarb/compare/v0.0.1...HEAD
 [0.0.1]: https://github.com/raytroy/uscryptoarb/releases/tag/v0.0.1
