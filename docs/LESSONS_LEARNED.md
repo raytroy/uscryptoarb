@@ -237,26 +237,25 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Rule going forward**: When a CHANGELOG entry claims a documentation change, verify the target file actually reflects the change before committing. "Trust but verify" applies to our own documentation, not just external data.
 - **Affected files**: `PROJECT_INSTRUCTIONS.md`, `CLAUDE_INSTRUCTIONS.md`, `CHANGELOG.md`
 
-### LL-056: Package resources must avoid gitignored directories
-- **Date**: 2026-02-15
-- **Category**: Tooling
+### LL-056: Exchange withdrawal fees are dynamic and drift over time
+- **Date**: 2026-02-16
+- **Category**: Data Accuracy
 - **Severity**: Medium
-- **What happened**: Plan initially proposed `src/uscryptoarb/data/` for package resources, but `.gitignore` contains `data/` which would exclude it from version control.
-- **Root cause**: `.gitignore` patterns like `data/` match at any directory level.
-- **Fix applied**: Used `src/uscryptoarb/resources/` instead.
-- **Rule going forward**: Before creating new directories, check `.gitignore` for conflicts. Use descriptive names that won't collide with common gitignore patterns.
-- **Affected files**: `src/uscryptoarb/resources/`
+- **What happened**: Fee audit found Kraken BTC withdrawal fee had decreased from 0.00005 to ~0.00001 BTC, and SOL from 0.02 to ~0.005 SOL. All three exchanges now use dynamic (network-based) withdrawal fees rather than fixed schedules.
+- **Root cause**: Withdrawal fees were captured once during initial development and never refreshed. Network fees change with blockchain congestion.
+- **Fix applied**: Updated Kraken BTC and SOL withdrawal estimates. Added audit date to _sources.
+- **Rule going forward**: Withdrawal fees should be re-audited quarterly or when adding a new exchange. Phase 2+ should implement live fee lookups from exchange APIs.
+- **Affected files**: resources/fee_schedules.json, tests/fixtures/fee_schedules.json
 
-### LL-057: Frozen dataclasses with mutable default fields need tuples, not lists
-- **Date**: 2026-02-15
-- **Category**: Type System
-- **Severity**: Medium
-- **What happened**: Config dataclasses use `frozen=True` but contain list fields. Lists are mutable, which undermines the frozen guarantee.
-- **Root cause**: `@dataclass(frozen=True)` prevents reassignment of fields but doesn't prevent mutation of mutable field values like lists.
-- **Fix applied**: All sequence fields in config dataclasses use `tuple[str, ...]` instead of `list[str]`.
-- **Rule going forward**: Frozen dataclasses should only contain immutable field types: Decimal, str, int, bool, tuple, frozenset, None, or other frozen dataclasses. Never list, dict (use tuple, frozenset, or MappingProxyType).
-- **Affected files**: `orchestration/config.py`
-
+### LL-057: Exchange fee tier structures change without notice to downstream consumers
+- **Date**: 2026-02-16
+- **Category**: Data Accuracy
+- **Severity**: High
+- **What happened**: Coinbase introduced "Intro 1" and "Intro 2" tiers with dramatically higher fees (1.20% taker) for low-volume traders. Our config used 0.60% which was the old taker rate / new Intro 1 maker rate — neither correct for our use case. Kraken's 0.26% didn't match any current tier.
+- **Root cause**: Fee values were set during initial development and assumed to be stable. Exchange fee structures can change at any time.
+- **Fix applied**: Full audit against primary exchange documentation. Updated all trading fee rates with source URLs and audit dates.
+- **Rule going forward**: Fee rates must be re-verified against exchange documentation at least quarterly. Each fee value in config.yaml should have a comment with source URL and verification date.
+- **Affected files**: config.yaml, docs/DECISION_LOG.md
 
 ### LL-058: Config dataclasses must be defined in the layer that owns their contract
 - **Date**: 2026-02-15

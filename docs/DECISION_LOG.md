@@ -317,3 +317,23 @@
 - **Rationale**: Unique filenames improve code navigation and AI retrieval quality; explicit hierarchy prevents instruction drift.
 - **Consequences**: Five source modules and related tests renamed; checklists and operational docs updated; manual UI sync remains required by project owner.
 - **References**: LL-065, LL-066, Coding Rules 10.8 and 10.9.
+
+
+### DEC-022: Kraken taker fee corrected to 0.40%
+
+- **Date**: 2026-02-16
+- **Status**: Accepted
+- **Context**: Fee audit discovered config.yaml used 0.26% for Kraken, which doesn't match any current Kraken Pro tier. The lowest-tier taker rate is 0.40% ($0-$10K monthly volume). Multiple sources (kraken.com, CoinBureau Jan 2026, CryptoSlate Jan 2026) confirm this rate.
+- **Decision**: Update Kraken buy/sell fee to 0.0040 (0.40%) per DEC-013 (most conservative tier).
+- **Consequences**: Kraken trading costs increase ~54%. Fewer Kraken-involved opportunities pass threshold. Remaining opportunities are more reliable.
+- **References**: DEC-013, fee audit 2026-02-16
+
+### DEC-023: Coinbase taker fee updated to 1.20% (Intro 1 tier)
+
+- **Date**: 2026-02-16
+- **Status**: Accepted
+- **Context**: Fee audit discovered Coinbase restructured fee tiers, introducing "Intro 1" (0.60% maker / 1.20% taker for <$1K 30-day volume) and "Intro 2" (0.35% / 0.75% for ≥$1K). The old base tier of 0.40% maker / 0.60% taker has been replaced. Alternative was 0.40% at the Advanced 1 tier ($10K+ monthly volume), which is more realistic for active trading.
+- **Decision**: Use 1.20% taker (Intro 1) per strict interpretation of DEC-013.
+- **Rationale**: Strict DEC-013 compliance. If we later demonstrate consistent volume exceeding $10K/month, this can be revisited with a new DEC entry.
+- **Consequences**: Combined Coinbase buy+sell cost is ~2.40%. Very few cross-exchange spreads will exceed this plus the 0.55% threshold. Coinbase effectively becomes a high-cost exchange in our model. This is conservative — any opportunity that passes is highly likely to be real.
+- **References**: DEC-013, fee audit 2026-02-16
