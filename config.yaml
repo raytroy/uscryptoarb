@@ -1,5 +1,5 @@
 # USCryptoArb Configuration — Phase 1 Detection
-# Sensitive values (passwords, API keys) belong in .env, NOT here.
+# Sensitive values (passwords, API keys) belong in .env, NOT here..
 
 # === Venues ===
 venues:
