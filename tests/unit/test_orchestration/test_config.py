@@ -47,7 +47,7 @@ def test_load_config_happy_path(
     monkeypatch.setenv("SMTP_FROM_ADDR", "bot@example.com")
     monkeypatch.setenv("SMTP_PASSWORD", "secret")
     cfg = load_config(full_config_path)
-    assert cfg.venues == ("kraken", "coinbase")
+    assert cfg.venues == ("kraken", "coinbase", "gemini")
     assert "BTC/USD" in cfg.pairs
     assert cfg.arbitrage.threshold == Decimal("0.0055")
     assert cfg.email.from_addr == "bot@example.com"

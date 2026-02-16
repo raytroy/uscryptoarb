@@ -285,3 +285,13 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Fix applied**: Parser uses `int(timestamp_str) * 1000` to convert to milliseconds for consistency with TopOfBook's `ts_exchange_ms` field.
 - **Rule going forward**: Each exchange has its own timestamp format. Document and handle explicitly in the parser: Kraken = Unix seconds (float in orderbook), Coinbase = ISO 8601 with microseconds, Gemini = Unix seconds (integer string). Never assume timestamp format transfers across exchanges.
 - **Affected files**: `notebooks/03_gemini_exploration.ipynb`, future `connectors/gemini/parser.py`
+
+### LL-064: Python 3.14 + nest_asyncio + anyio breaks httpx.AsyncClient in notebooks
+- **Date**: 2026-02-15
+- **Category**: Tooling
+- **Severity**: Low
+- **What happened**: In Gemini exploration notebook (03), `httpx.AsyncClient` inside `async with` raised `TypeError: cannot create weak reference to 'NoneType' object` on both `client.get()` calls and `__aexit__` cleanup. All 8 async fetches failed.
+- **Root cause**: Python 3.14's asyncio + `nest_asyncio` + anyio (used by httpcore) interact badly. anyio's `CancelScope.__enter__` tries to look up current task in `WeakKeyDictionary`, but under `nest_asyncio` the task resolves to `None`, which can't be weak-referenced.
+- **Fix applied**: Skipped async cell in notebook. Synchronous `httpx.get()` calls in Section 4 already proved all 8 endpoints work. Added error-printing fallback to diagnose silently-swallowed exceptions.
+- **Rule going forward**: Exploration notebooks on Python 3.14 should test async patterns with try/except wrapper that prints errors, not silently swallows them. Production connector runs in real `asyncio.run()` event loop (not `nest_asyncio`) and is unaffected. If async testing needed in notebooks on 3.14, consider `asyncio.run()` in subprocess or downgrade to Python 3.13.
+- **Affected files**: `notebooks/03_gemini_exploration.ipynb`

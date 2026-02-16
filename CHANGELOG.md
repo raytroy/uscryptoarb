@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `notebooks/03_gemini_exploration.ipynb`: Gemini API exploration notebook covering symbol mapping, order book endpoint (primary data source — tickers lack bid/ask sizes), rate limits, error handling, timestamp format, and production connector design notes
 
 ### Added
+- Gemini connector (`src/uscryptoarb/connectors/gemini/`) — async httpx client using `/v1/book/{symbol}` endpoint (tickers lack bid/ask sizes per LL-062). Per-pair requests with configurable rate limiting. Inherits BaseAsyncConnector (DEC-018).
+  - `symbols.py`: GEMINI_SYMBOL_MAP with all 8 target pairs (lowercase no-separator format)
+  - `parser.py`: parse_book_response() with Unix-seconds-as-string timestamp conversion (LL-063)
+  - `client.py`: GeminiClient(BaseAsyncConnector) with JSON and plain-text error handling
+- `orchestration/scanner.py`: Gemini connector wired into create_connectors() factory
+- `config.yaml`: Gemini moved from commented-out secondary to venues.primary
+- `tests/unit/test_connectors/test_gemini/`: 3 test modules (~33 tests) mirroring Coinbase test structure
+- `tests/fixtures/`: 3 Gemini book fixtures (btc_usd, ltc_btc, sol_btc) from notebook Section 11 live capture
 - `connectors/base.py`: `BaseAsyncConnector` ABC with shared constructor, venue property, and `_fetch_with_retry()` retry/backoff/rate-limit logic (DEC-018)
 - `venues/symbols.py`: `create_translator()` factory function for validated SymbolTranslator construction
 - `tests/conftest.py`: `fee_schedule_factory` parametrized fixture for building FeeSchedule objects with explicit per-field control
@@ -69,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `notebooks/02_coinbase_exploration.ipynb`: Complete Coinbase API exploration — symbol mapping, BBO data, SDK vs httpx comparison, TopOfBook parsing, rate limits, error handling, product details
 
 ### Changed
+- `tests/unit/test_orchestration/conftest.py`: Synthetic FULL_CFG expanded with gemini venue_config and fees
 - Decoupled orchestration tests from production `config.yaml` values. All parsing logic tests now use a synthetic YAML fixture. A single `test_production_config_loads` smoke test validates the real file loads without error.
 
 - `connectors/kraken/client.py`: `KrakenClient` now extends `BaseAsyncConnector`; retry logic delegated to shared `_fetch_with_retry()`, Kraken-specific response validation preserved in `_request()`
