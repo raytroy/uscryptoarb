@@ -8,6 +8,7 @@ from decimal import Decimal
 
 import pytest
 
+from uscryptoarb.connectors.connector_base import ExchangeConnector
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.orchestration.config import load_config
 from uscryptoarb.orchestration.scan_loop import (
@@ -19,19 +20,20 @@ from uscryptoarb.orchestration.scan_loop import (
 )
 
 
-class MockConnector:
-    def __init__(self, venue_name: str, tobs):
-        self._venue_name = venue_name
-        self._tobs = tobs
+class MockConnector(ExchangeConnector):
+    def __init__(self, venue: str, tobs_or_exc):
+        self._venue = venue
+        self._value = tobs_or_exc
 
     @property
     def venue(self) -> str:
-        return self._venue_name
+        return self._venue
 
     async def fetch_tickers(self, pairs: list[str]) -> dict[str, TopOfBook]:
-        if isinstance(self._tobs, Exception):
-            raise self._tobs
-        return {p: t for p, t in self._tobs.items() if p in pairs}
+        if isinstance(self._value, Exception):
+            raise self._value
+        tobs: dict[str, TopOfBook] = self._value
+        return {p: tob for p, tob in tobs.items() if p in pairs}
 
 
 def _tob(venue: str, pair: str, bid: str, ask: str) -> TopOfBook:
@@ -67,8 +69,26 @@ def test_fetch_all_venues_one_fails() -> None:
     }
 
     async def run() -> None:
-        out = await fetch_all_venues(connectors, ["BTC/USD"], "run1")
+        out, venue_errors = await fetch_all_venues(connectors, ["BTC/USD"], "run1")
         assert list(out) == ["kraken"]
+        assert venue_errors == {"coinbase": 1}
+
+    asyncio.run(run())
+
+
+def test_fetch_all_venues_success_no_errors() -> None:
+    connectors = {
+        "kraken": MockConnector("kraken", {"BTC/USD": _tob("kraken", "BTC/USD", "101", "102")}),
+        "coinbase": MockConnector(
+            "coinbase",
+            {"BTC/USD": _tob("coinbase", "BTC/USD", "103", "104")},
+        ),
+    }
+
+    async def run() -> None:
+        out, venue_errors = await fetch_all_venues(connectors, ["BTC/USD"], "run_ok")
+        assert set(out.keys()) == {"kraken", "coinbase"}
+        assert venue_errors == {}
 
     asyncio.run(run())
 
@@ -95,7 +115,7 @@ def test_run_scan_cycle_detects_opportunity(full_config_path: str) -> None:
     }
 
     async def run() -> None:
-        opps = await run_scan_cycle(connectors, cfg, "run2")
+        opps, _errors = await run_scan_cycle(connectors, cfg, "run2")
         assert len(opps) >= 1
 
     asyncio.run(run())
@@ -112,7 +132,7 @@ def test_run_scan_cycle_missing_fees_skips(full_config_path: str) -> None:
     }
 
     async def run() -> None:
-        opps = await run_scan_cycle(connectors, cfg, "run3")
+        opps, _errors = await run_scan_cycle(connectors, cfg, "run3")
         assert opps == []
 
     asyncio.run(run())
@@ -129,7 +149,34 @@ def test_run_scan_loop_single_cycle_and_shutdown(full_config_path: str) -> None:
 
         stopper = asyncio.create_task(stop_soon())
         cfg2 = replace(cfg, polling=replace(cfg.polling, interval_seconds=1))
-        await run_scan_loop(cfg2, shutdown)
+        stats = await run_scan_loop(cfg2, shutdown, stats_interval=0)
+        assert stats.cycles_completed >= 1
+        await stopper
+
+    asyncio.run(run())
+
+
+def test_run_scan_loop_logs_stats_at_interval(
+    full_config_path: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Verify [stats] summary is logged at the configured interval."""
+    cfg = load_config(full_config_path)
+    shutdown = asyncio.Event()
+
+    async def run() -> None:
+        async def stop_after_delay() -> None:
+            await asyncio.sleep(0.5)
+            shutdown.set()
+
+        stopper = asyncio.create_task(stop_after_delay())
+        cfg2 = replace(cfg, polling=replace(cfg.polling, interval_seconds=1))
+        with caplog.at_level(logging.INFO):
+            stats = await run_scan_loop(cfg2, shutdown, stats_interval=1)
+        stats_lines = [r for r in caplog.records if "[stats]" in r.message]
+        assert len(stats_lines) >= 2
+        assert "Final:" in stats_lines[-1].message
+        assert stats.cycles_completed >= 1
         await stopper
 
     asyncio.run(run())

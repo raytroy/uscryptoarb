@@ -268,8 +268,14 @@ debug:
   trace_pairs: list[str]
   log_pipeline_stages: bool
   snapshot_dir: str | null
+
+logging:
+  file_path: str | null
+  max_bytes: int
+  backup_count: int
+  stats_interval: int
 ```
-CLI: `--trace-pair PAIR --dry-run --max-markets N --log-level LEVEL`
+CLI: `--trace-pair PAIR --dry-run --max-markets N --log-level LEVEL --log-file PATH --stats-interval N`
 
 ---
 ## Success Metrics

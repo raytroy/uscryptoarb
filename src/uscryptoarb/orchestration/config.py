@@ -59,6 +59,19 @@ class DebugConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class LoggingConfig:
+    """File logging and stats reporting configuration.
+
+    Owned by orchestration layer (I/O config per DEC-002).
+    """
+
+    file_path: str | None
+    max_bytes: int
+    backup_count: int
+    stats_interval: int
+
+
+@dataclass(frozen=True, slots=True)
 class ScannerConfig:
     venues: tuple[str, ...]
     pairs: tuple[str, ...]
@@ -67,6 +80,7 @@ class ScannerConfig:
     venue_configs: dict[str, VenueConnectorConfig]
     email: EmailConfig
     debug: DebugConfig
+    logging: LoggingConfig
     # Pragmatic mutability exception: nested dicts are treated immutable by convention.
     fees_by_pair_venue: dict[str, dict[str, FeeSchedule]]
 
@@ -197,6 +211,17 @@ def load_config(path: str = "config.yaml") -> ScannerConfig:
         log_level=str(debug_raw.get("log_level", "INFO")),
     )
 
+    logging_raw = raw_obj.get("logging", {})
+    if not isinstance(logging_raw, dict):
+        raise ValueError("logging must be a mapping")
+    file_path_raw = logging_raw.get("file_path")
+    logging_cfg = LoggingConfig(
+        file_path=str(file_path_raw) if file_path_raw is not None else None,
+        max_bytes=int(logging_raw.get("max_bytes", 10_485_760)),
+        backup_count=int(logging_raw.get("backup_count", 5)),
+        stats_interval=int(logging_raw.get("stats_interval", 20)),
+    )
+
     fee_data_text = (
         importlib.resources.files("uscryptoarb.resources")
         .joinpath("fee_schedules.json")
@@ -218,6 +243,7 @@ def load_config(path: str = "config.yaml") -> ScannerConfig:
         venue_configs=venue_configs,
         email=email_cfg,
         debug=debug_cfg,
+        logging=logging_cfg,
         fees_by_pair_venue=fees_by_pair_venue,
     )
 

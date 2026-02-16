@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 import uuid
 from contextlib import AsyncExitStack
 from decimal import Decimal
@@ -20,6 +21,7 @@ from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.misc.time_utils import now_ms
 from uscryptoarb.notification.email import send_alert
 from uscryptoarb.orchestration.config import ScannerConfig
+from uscryptoarb.orchestration.run_stats import RunStats
 from uscryptoarb.strategy.trade_finder import RejectionReason, find_trades_to_execute
 
 logger = logging.getLogger(__name__)
@@ -70,20 +72,28 @@ async def fetch_all_venues(
     connectors: dict[str, ExchangeConnector],
     pairs: list[str],
     run_id: str,
-) -> dict[str, dict[str, TopOfBook]]:
+) -> tuple[dict[str, dict[str, TopOfBook]], dict[str, int]]:
+    """Fetch top-of-book data from all venues concurrently.
+
+    Returns:
+        Tuple of (venue_data, venue_errors) where venue_errors is
+        {venue_name: 1} for each venue whose fetch raised an exception.
+    """
     venues = list(connectors)
     tasks = [connectors[venue].fetch_tickers(pairs) for venue in venues]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     out: dict[str, dict[str, TopOfBook]] = {}
+    venue_errors: dict[str, int] = {}
     for venue, result in zip(venues, results, strict=True):
         if isinstance(result, BaseException):
             logger.warning("[%s] Venue fetch failed for %s: %s", run_id, venue, result)
+            venue_errors[venue] = 1
             continue
         out[venue] = result
 
     logger.info("[%s] Fetched %d venues: %s", run_id, len(out), list(out.keys()))
-    return out
+    return out, venue_errors
 
 
 def reorganize_by_pair(
@@ -151,8 +161,14 @@ async def run_scan_cycle(
     connectors: dict[str, ExchangeConnector],
     config: ScannerConfig,
     run_id: str,
-) -> list[ArbOpportunity]:
-    venue_data = await fetch_all_venues(connectors, list(config.pairs), run_id)
+) -> tuple[list[ArbOpportunity], dict[str, int]]:
+    """Run one scan cycle across all venues and pairs.
+
+    Returns:
+        Tuple of (opportunities, venue_errors) where venue_errors is
+        {venue_name: error_count} for venues that failed during fetch.
+    """
+    venue_data, venue_errors = await fetch_all_venues(connectors, list(config.pairs), run_id)
     by_pair = reorganize_by_pair(venue_data, list(config.pairs))
     ts_now = now_ms()
     opportunities: list[ArbOpportunity] = []
@@ -213,24 +229,47 @@ async def run_scan_cycle(
         len(config.pairs),
         len(opportunities),
     )
-    return opportunities
+    return opportunities, venue_errors
 
 
-async def run_scan_loop(config: ScannerConfig, shutdown_event: asyncio.Event) -> None:
+async def run_scan_loop(
+    config: ScannerConfig,
+    shutdown_event: asyncio.Event,
+    stats_interval: int = 20,
+) -> RunStats:
+    """Main polling loop — runs scan cycles until shutdown.
+
+    Args:
+        config: Scanner configuration.
+        shutdown_event: Set to trigger graceful shutdown.
+        stats_interval: Log stats summary every N cycles (0 = disable).
+
+    Returns:
+        RunStats accumulated over the session.
+    """
+    stats = RunStats()
+
     async with AsyncExitStack() as stack:
         connectors = await create_connectors(config, stack)
         if not connectors:
             logger.error("No connectors created — exiting")
-            return
+            return stats
 
         logger.info("Scanner started: %d venues, %d pairs", len(connectors), len(config.pairs))
-        cycle_count = 0
 
         while not shutdown_event.is_set():
-            cycle_count += 1
             run_id = uuid.uuid4().hex[:12]
+            cycle_start = time.monotonic()
+            cycle_venue_errors: dict[str, int] = {}
+            cycle_opportunities = 0
+
             try:
-                opportunities = await run_scan_cycle(connectors, config, run_id)
+                opportunities, cycle_venue_errors = await run_scan_cycle(
+                    connectors,
+                    config,
+                    run_id,
+                )
+                cycle_opportunities = len(opportunities)
                 for opp in opportunities:
                     try:
                         await send_alert(opp, config.email)
@@ -238,6 +277,12 @@ async def run_scan_loop(config: ScannerConfig, shutdown_event: asyncio.Event) ->
                         logger.error("[%s] Email failed for %s: %s", run_id, opp.pair, exc)
             except Exception as exc:
                 logger.error("[%s] Scan cycle failed: %s", run_id, exc)
+
+            duration_ms = (time.monotonic() - cycle_start) * 1000
+            stats.record_cycle(duration_ms, cycle_opportunities, cycle_venue_errors)
+
+            if stats_interval > 0 and stats.cycles_completed % stats_interval == 0:
+                logger.info("[stats] %s", stats.summary_line())
 
             try:
                 await asyncio.wait_for(
@@ -247,4 +292,6 @@ async def run_scan_loop(config: ScannerConfig, shutdown_event: asyncio.Event) ->
             except TimeoutError:
                 pass
 
-        logger.info("Scanner stopped after %d cycles", cycle_count)
+        logger.info("[stats] Final: %s", stats.summary_line())
+
+    return stats

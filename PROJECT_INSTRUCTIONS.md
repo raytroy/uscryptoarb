@@ -686,6 +686,13 @@ debug:
   enabled: false
   trace_pairs: []
   log_level: INFO
+
+# === Logging ===
+logging:
+  file_path: null
+  max_bytes: 10485760
+  backup_count: 5
+  stats_interval: 20
 ```
 
 ### 9.2 Environment Variables

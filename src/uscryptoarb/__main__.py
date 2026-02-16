@@ -13,8 +13,9 @@ import logging
 import signal
 from contextlib import AsyncExitStack
 from dataclasses import replace
+from logging.handlers import RotatingFileHandler
 
-from uscryptoarb.orchestration.config import DebugConfig, ScannerConfig, load_config
+from uscryptoarb.orchestration.config import DebugConfig, LoggingConfig, ScannerConfig, load_config
 from uscryptoarb.orchestration.scan_loop import create_connectors, run_scan_cycle, run_scan_loop
 
 logger = logging.getLogger(__name__)
@@ -26,20 +27,62 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trace-pair", action="append", default=[])
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--log-level", default=None)
+    parser.add_argument("--log-file", default=None, help="Log file path (overrides config)")
+    parser.add_argument(
+        "--stats-interval",
+        type=int,
+        default=None,
+        help="Cycles between stats summaries",
+    )
     return parser.parse_args()
 
 
-def setup_logging(level: str, trace_pairs: list[str]) -> None:
-    logging.basicConfig(
-        level=getattr(logging, level.upper(), logging.INFO),
-        format="%(asctime)s %(levelname)-8s %(name)s %(message)s",
+def setup_logging(
+    level: str,
+    trace_pairs: list[str],
+    logging_cfg: LoggingConfig,
+    log_file_override: str | None,
+) -> None:
+    """Configure root logger with stdout and optional file handler.
+
+    Both handlers use the same format (Coding Rule 10.2 — single source
+    of truth for formatting). File handler uses RotatingFileHandler from
+    stdlib logging.handlers.
+
+    Args:
+        level: Log level string (e.g. "INFO", "DEBUG").
+        trace_pairs: Pairs to enable DEBUG logging for.
+        logging_cfg: Logging config from config.yaml.
+        log_file_override: CLI --log-file value (takes precedence over config).
+    """
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(getattr(logging, level.upper(), logging.INFO))
+
+    formatter = logging.Formatter(
+        "%(asctime)s %(levelname)-8s %(name)s %(message)s",
         datefmt="%Y-%m-%dT%H:%M:%S",
     )
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    root.addHandler(stream_handler)
+
+    file_path = log_file_override or logging_cfg.file_path
+    if file_path is not None:
+        file_handler = RotatingFileHandler(
+            file_path,
+            maxBytes=logging_cfg.max_bytes,
+            backupCount=logging_cfg.backup_count,
+        )
+        file_handler.setFormatter(formatter)
+        root.addHandler(file_handler)
+
     if trace_pairs:
         logging.getLogger("uscryptoarb.orchestration.scan_loop").setLevel(logging.DEBUG)
 
 
-async def _run(config: ScannerConfig, dry_run: bool) -> None:
+async def _run(config: ScannerConfig, dry_run: bool, stats_interval: int) -> None:
     shutdown_event = asyncio.Event()
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
@@ -51,7 +94,7 @@ async def _run(config: ScannerConfig, dry_run: bool) -> None:
     if dry_run:
         async with AsyncExitStack() as stack:
             connectors = await create_connectors(config, stack)
-            opps = await run_scan_cycle(connectors, config, run_id="dryrun")
+            opps, _venue_errors = await run_scan_cycle(connectors, config, run_id="dryrun")
             if not opps:
                 logger.info("DRY RUN: no opportunities found")
             for opp in opps:
@@ -67,7 +110,7 @@ async def _run(config: ScannerConfig, dry_run: bool) -> None:
                 )
         return
 
-    await run_scan_loop(config, shutdown_event)
+    await run_scan_loop(config, shutdown_event, stats_interval=stats_interval)
 
 
 def main() -> None:
@@ -83,8 +126,19 @@ def main() -> None:
         )
         config = replace(config, debug=debug_cfg)
 
-    setup_logging(config.debug.log_level, list(config.debug.trace_pairs))
-    asyncio.run(_run(config, args.dry_run))
+    stats_interval = (
+        args.stats_interval
+        if args.stats_interval is not None
+        else config.logging.stats_interval
+    )
+
+    setup_logging(
+        config.debug.log_level,
+        list(config.debug.trace_pairs),
+        config.logging,
+        args.log_file,
+    )
+    asyncio.run(_run(config, args.dry_run, stats_interval))
 
 
 if __name__ == "__main__":

@@ -4,8 +4,10 @@ from decimal import Decimal
 
 import pytest
 
+from tests.unit.test_orchestration.conftest import FULL_CFG
 from uscryptoarb.orchestration.config import (
     _DEFAULT_VENUE_CONFIG,
+    LoggingConfig,
     _load_dotenv_if_available,
     load_config,
 )
@@ -168,3 +170,32 @@ def test_load_dotenv_falls_back_to_dotenv_main(monkeypatch: pytest.MonkeyPatch) 
 
     _load_dotenv_if_available()
     assert called
+
+
+def test_logging_config_parsed(full_config_path: str) -> None:
+    """Verify logging section is parsed into LoggingConfig."""
+    cfg = load_config(full_config_path)
+    assert isinstance(cfg.logging, LoggingConfig)
+    assert cfg.logging.file_path is None
+    assert cfg.logging.max_bytes == 10_485_760
+    assert cfg.logging.backup_count == 5
+    assert cfg.logging.stats_interval == 20
+
+
+def test_logging_config_absent_uses_defaults(tmp_path) -> None:
+    """If logging section is missing from YAML, defaults are applied."""
+    minimal = FULL_CFG.replace(
+        "logging:\n"
+        "  file_path: null\n"
+        "  max_bytes: 10485760\n"
+        "  backup_count: 5\n"
+        "  stats_interval: 20\n",
+        "",
+    )
+    p2 = tmp_path / "no_logging.yaml"
+    p2.write_text(minimal)
+    cfg = load_config(str(p2))
+    assert cfg.logging.file_path is None
+    assert cfg.logging.max_bytes == 10_485_760
+    assert cfg.logging.backup_count == 5
+    assert cfg.logging.stats_interval == 20
