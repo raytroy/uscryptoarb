@@ -1291,3 +1291,60 @@
 2. Run pytest — expect some test value changes needed in fee math tests
 3. Run dry-run to compare behavior with old vs new fees
 4. Gemini connector implementation (next major feature)
+
+---
+
+## 2026-02-16 — End-to-end integration tests with mocked HTTP
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Created `tests/integration/` directory with `__init__.py` and `test_end_to_end.py`
+- 4 integration tests exercising the full Phase 1 detection pipeline:
+  1. `test_no_opportunity_all_prices_similar` — 3 exchanges, similar prices, zero opportunities
+  2. `test_opportunity_detected_and_email_triggered` — 2 exchanges, ~2.4% spread, opportunity + email
+  3. `test_one_exchange_500_uses_remaining_two` — graceful degradation on HTTP 500
+  4. `test_exchange_timeout_returns_no_opportunities` — graceful degradation on timeout
+- All tests mock at the HTTP transport layer (httpx.MockTransport), exercising connector parsing, symbol translation, response validation, calculation, strategy, and notification
+- Updated: fixtures/README.md, CHANGELOG.md, LESSONS_LEARNED.md (LL-067, LL-068, LL-069)
+
+### In Progress
+- Nothing
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- Integration tests bypass `create_connectors()` and build connectors directly with MockTransport (LL-068)
+- Inline synthetic response data instead of fixture JSON files (keeps price arithmetic visible)
+- `now_ms()` patched in all 3 import sites via `_patch_now_ms` decorator (LL-067)
+- Config built via `load_config()` with synthetic YAML (exercises real config parsing + real fee_schedules.json)
+
+### Behavioral Changes
+- None — new test file only, no production code changes
+
+### Files Created
+- `tests/integration/__init__.py`
+- `tests/integration/test_end_to_end.py`
+
+### Files Modified
+- `tests/fixtures/README.md` (integration test data note)
+- `CHANGELOG.md` (integration test entry)
+- `docs/LESSONS_LEARNED.md` (LL-067, LL-068, LL-069)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Refactor Candidates
+- `_patch_now_ms` decorator pattern — if future tests also need this, consider extracting to `tests/helpers.py`
+- `_write_config()` helper — similar to orchestration conftest `FULL_CFG` but integration-specific. If a 3rd config writer appears, consolidate.
+
+### Next Steps (Priority Order)
+1. Run full test suite: `python -m pytest tests/ -v`
+2. Run linting: `python -m ruff check tests/ && python -m mypy src/`
+3. WebSocket integration planning (Phase 2)
+4. Verbose diagnostic logging for per-pair spread analysis (if not already sufficient)
+
+### Notes for Next Session
+- Integration tests use real `fee_schedules.json` from production resources (loaded via `importlib.resources` inside `load_config`). If fee data changes, integration test assertions on return_net magnitude may need updating (but threshold comparison should remain stable).
+- The `_patch_now_ms` pattern patches 3 modules. If a new module imports `now_ms`, integration tests may start failing with staleness rejections — check LL-067.
+- `max_staleness_ms` is set to 10 trillion ms in integration test config AND overridden via `dataclasses.replace()` as defense-in-depth.

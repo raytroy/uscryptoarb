@@ -33,3 +33,16 @@ This directory stores deterministic fixture data used by tests.
 - **Date captured**: 2026-02-15
 - **Used by**: `tests/unit/test_connectors/test_gemini/test_parser.py`
 - **Notes**: Tests parser handles 7-decimal-place prices for SOL/BTC (bid=0.0012499, ask=0.0012506).
+
+## Integration Test Data
+
+The integration tests in `tests/integration/test_end_to_end.py` use **inline synthetic
+response data** rather than fixture files. This is intentional:
+
+- Integration test fixtures encode specific price relationships (e.g., "Kraken ask is 2.4%
+  below Coinbase bid") that would be confusing in generic fixture files.
+- Each test scenario needs precisely controlled prices to deterministically trigger
+  (or not trigger) the 0.55% threshold.
+- Keeping response data inline makes the price arithmetic visible next to the assertions.
+
+No fixture JSON files were created for integration tests.
