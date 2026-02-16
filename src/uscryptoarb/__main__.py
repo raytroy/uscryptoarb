@@ -15,7 +15,7 @@ from contextlib import AsyncExitStack
 from dataclasses import replace
 
 from uscryptoarb.orchestration.config import DebugConfig, ScannerConfig, load_config
-from uscryptoarb.orchestration.scanner import create_connectors, run_scan_cycle, run_scan_loop
+from uscryptoarb.orchestration.scan_loop import create_connectors, run_scan_cycle, run_scan_loop
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def setup_logging(level: str, trace_pairs: list[str]) -> None:
         datefmt="%Y-%m-%dT%H:%M:%S",
     )
     if trace_pairs:
-        logging.getLogger("uscryptoarb.orchestration.scanner").setLevel(logging.DEBUG)
+        logging.getLogger("uscryptoarb.orchestration.scan_loop").setLevel(logging.DEBUG)
 
 
 async def _run(config: ScannerConfig, dry_run: bool) -> None:

@@ -31,7 +31,7 @@ from decimal import Decimal
 from typing import cast
 
 from uscryptoarb.calculation.arb_calc import sort_opportunities
-from uscryptoarb.calculation.types import ArbOpportunity
+from uscryptoarb.calculation.calc_types import ArbOpportunity
 
 
 def passes_threshold(

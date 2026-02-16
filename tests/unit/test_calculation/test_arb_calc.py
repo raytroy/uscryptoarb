@@ -14,7 +14,7 @@ from uscryptoarb.calculation.arb_calc import (
     filter_profitable,
     sort_opportunities,
 )
-from uscryptoarb.calculation.types import FeeSchedule
+from uscryptoarb.calculation.calc_types import FeeSchedule
 from uscryptoarb.marketdata.topofbook import TopOfBook
 
 

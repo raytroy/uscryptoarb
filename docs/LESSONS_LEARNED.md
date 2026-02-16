@@ -38,7 +38,7 @@
 - **Root cause**: Kraken uses ISO 4217 currency code XBT for Bitcoin, not the common BTC. Their symbol for BTC/USD is `XXBTZUSD` (with X-prefix for crypto assets and Z-prefix for fiat).
 - **Fix applied**: SymbolTranslator maps canonical `BTC/USD` → Kraken `XXBTZUSD`.
 - **Rule going forward**: Always use SymbolTranslator for exchange API calls. Never hardcode exchange-specific symbols. Test symbol translation for every new pair added.
-- **Affected files**: `venues/symbols.py`, `notebooks/01_kraken_exploration.ipynb`
+- **Affected files**: `venues/symbol_translator.py`, `notebooks/01_kraken_exploration.ipynb`
 
 ### LL-002: Kraken ticker 'b' and 'a' arrays have 3 elements, not 2
 - **Date**: 2026-01-04
@@ -176,15 +176,15 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Rule going forward**: When building connectors for public (unauthenticated) use, verify each endpoint exists in the "Public" section of the Coinbase API docs. Do not assume URL pattern `/market/{endpoint}` mirrors every authenticated `/{endpoint}`. When API keys are added (Phase 2+), switch to batch `/best_bid_ask` for efficiency.
 - **Affected files**: `notebooks/02_coinbase_exploration.ipynb`, future `connectors/coinbase/client.py`
 
-### LL-053: TradingAccuracy lives in calculation/types.py — must migrate if connectors need it
+### LL-053: TradingAccuracy lives in calculation/calc_types.py — must migrate if connectors need it
 - **Date**: 2026-02-14
 - **Category**: Architecture
 - **Severity**: Medium
-- **What happened**: During calculation layer review, noticed TradingAccuracy is defined in `calculation/types.py`. Per layering rules (Section 5.2), connectors can only import from Domain/Core. If connectors ever need to produce TradingAccuracy (e.g., from live fee/accuracy API responses), the type must move to `core/types.py`.
+- **What happened**: During calculation layer review, noticed TradingAccuracy is defined in `calculation/calc_types.py`. Per layering rules (Section 5.2), connectors can only import from Domain/Core. If connectors ever need to produce TradingAccuracy (e.g., from live fee/accuracy API responses), the type must move to `core/types.py`.
 - **Root cause**: TradingAccuracy was created as part of the calculation layer because that's where it's consumed. But it's fundamentally a domain type.
 - **Fix applied**: None yet — currently only test fixtures create TradingAccuracy, so no import violation exists.
 - **Rule going forward**: When building the config/fee loader or any connector that produces TradingAccuracy, move the type to `core/types.py` first. Same applies to TradingFeeRate and WithdrawalFee if connectors need to create them.
-- **Affected files**: `calculation/types.py` → future `core/types.py`
+- **Affected files**: `calculation/calc_types.py` → future `core/types.py`
 
 ### LL-054: TradingFeeRate.flat_fee must be applied in fee math even if currently zero
 - **Date**: 2026-02-14
@@ -246,7 +246,7 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Root cause**: The `except` clause was intended to catch JSON parsing errors (ValueError from `.json()`, KeyError from missing keys), but it also caught the intentionally raised ValueError from the error message extraction.
 - **Fix applied**: Not fixed in this session per Coding Rule 10.6 (preserve behavior unless explicitly changing). The BaseAsyncConnector refactor moves HTTP error handling to `_fetch_with_retry()` which calls `raise_for_status()` directly, so the dead code path is eliminated naturally. The Coinbase-specific `_fetch_product_book()` now only handles API errors in HTTP 200 responses.
 - **Rule going forward**: When raising exceptions inside try/except blocks, ensure the except clause doesn't catch the intentionally raised exception. Use more specific exception types or restructure the try/except scope.
-- **Affected files**: `connectors/coinbase/client.py` (historical), `connectors/base.py` (fixed by design)
+- **Affected files**: `connectors/coinbase/client.py` (historical), `connectors/connector_base.py` (fixed by design)
 
 
 ### LL-060: Second instance of a pattern = mandatory refactor flag
@@ -296,12 +296,23 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Rule going forward**: Exploration notebooks on Python 3.14 should test async patterns with try/except wrapper that prints errors, not silently swallows them. Production connector runs in real `asyncio.run()` event loop (not `nest_asyncio`) and is unaffected. If async testing needed in notebooks on 3.14, consider `asyncio.run()` in subprocess or downgrade to Python 3.13.
 - **Affected files**: `notebooks/03_gemini_exploration.ipynb`
 
+
 ### LL-065: Duplicate module names across packages break AI-assisted navigation and project knowledge
 - **Date**: 2026-02-16
 - **Category**: Architecture / Naming
 - **Severity**: High
-- **What happened**: Multiple `.py` files across different packages shared the same basename: `scanner.py` (strategy/ and orchestration/), `symbols.py` (venues/ and 3 connector sub-packages), `client.py` (3 connector sub-packages), `parser.py` (3 connector sub-packages). When using Claude's project knowledge search, queries for "scanner" or "symbols" returned ambiguous results mixing code from unrelated layers, leading to confused suggestions and wasted debugging time.
-- **Root cause**: No naming uniqueness rule existed. Each file was named sensibly within its own package, but the flat namespace of basenames created collisions. The connector sub-package pattern (`client.py`, `parser.py`, `symbols.py` inside `connectors/<venue>/`) was a deliberate internal convention, but `scanner.py` and `symbols.py` also appeared in non-connector packages with entirely different purposes.
-- **Fix applied**: Renamed colliding modules: `strategy/scanner.py` → `strategy/trade_finder.py`, `orchestration/scanner.py` → `orchestration/scan_loop.py`, `venues/symbols.py` → `venues/symbol_translator.py`, `connectors/base.py` → `connectors/connector_base.py`, `calculation/types.py` → `calculation/calc_types.py`. Added Coding Rule 10.8 (unique module names) and pre-implementation verification step.
-- **Rule going forward**: Every new `.py` module name must be unique across the entire `src/uscryptoarb/` tree (excluding `__init__.py`). Connector sub-packages (`connectors/<venue>/`) are the one permitted exception for `client.py`, `parser.py`, `symbols.py`. Before creating any new module, run `find src/ -name "<proposed_name>.py"` to verify uniqueness. Add this check to the Pre-Implementation Verification checklist.
-- **Affected files**: `strategy/scanner.py`, `orchestration/scanner.py`, `venues/symbols.py`, `connectors/base.py`, `calculation/types.py`, all importing modules, all test files, PROJECT_INSTRUCTIONS.md, CLAUDE_INSTRUCTIONS.md
+- **What happened**: Multiple `.py` files shared basenames across packages, causing ambiguous search/navigation results for humans and coding agents.
+- **Root cause**: No module-name uniqueness rule existed at the repository level.
+- **Fix applied**: Renamed five modules and updated all importers/tests/docs. Added Coding Rule 10.8 and pre-implementation uniqueness verification.
+- **Rule going forward**: Every new `.py` module name must be unique across `src/uscryptoarb/` (excluding `__init__.py`). Connector sub-packages are the explicit exception for `client.py`, `parser.py`, and `symbols.py`.
+- **Affected files**: Renamed source modules/importers, renamed tests, `PROJECT_INSTRUCTIONS.md`, `CLAUDE_INSTRUCTIONS.md`.
+
+### LL-066: Three-way instruction document drift — establish single source of truth
+- **Date**: 2026-02-16
+- **Category**: Documentation / Process
+- **Severity**: Medium
+- **What happened**: `PROJECT_INSTRUCTIONS.md`, `CLAUDE_INSTRUCTIONS.md`, and the Claude.ai UI instruction copy drifted. Canonical rules and file trees were inconsistent across locations.
+- **Root cause**: Missing authority hierarchy and missing required regeneration step after instruction edits.
+- **Fix applied**: Established hierarchy: `PROJECT_INSTRUCTIONS.md` (canonical) -> `CLAUDE_INSTRUCTIONS.md` (derived) -> Claude.ai UI (manual copy target). Added regeneration step to propagation checklist.
+- **Rule going forward**: Always edit `PROJECT_INSTRUCTIONS.md` first, regenerate `CLAUDE_INSTRUCTIONS.md`, then copy into UI. Never update those three independently.
+- **Affected files**: Instruction documents and session handoff process.

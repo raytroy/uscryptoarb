@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from uscryptoarb.venues.symbols import create_translator
+from uscryptoarb.venues.symbol_translator import create_translator
 
 KRAKEN_SYMBOL_MAP: dict[str, str] = {
     "BTC/USD": "XXBTZUSD",

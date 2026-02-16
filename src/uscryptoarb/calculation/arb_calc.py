@@ -22,6 +22,7 @@ from __future__ import annotations
 import itertools
 from decimal import Decimal
 
+from uscryptoarb.calculation.calc_types import ArbOpportunity, FeeSchedule
 from uscryptoarb.calculation.fees import (
     calc_buy_leg,
     calc_sell_leg,
@@ -36,7 +37,6 @@ from uscryptoarb.calculation.returns import (
     calc_return_net,
     calc_return_raw,
 )
-from uscryptoarb.calculation.types import ArbOpportunity, FeeSchedule
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.markets.pairs import parse_pair
 

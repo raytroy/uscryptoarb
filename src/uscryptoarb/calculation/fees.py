@@ -32,7 +32,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from uscryptoarb.calculation.types import ArbLeg, WithdrawalFee
+from uscryptoarb.calculation.calc_types import ArbLeg, WithdrawalFee
 
 ZERO = Decimal("0")
 

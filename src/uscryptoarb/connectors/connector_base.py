@@ -22,7 +22,7 @@ from uscryptoarb.http.backoff import (
 )
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
-from uscryptoarb.venues.symbols import SymbolTranslator
+from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 logger = logging.getLogger(__name__)
 

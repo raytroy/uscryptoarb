@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.message import EmailMessage
 
-from uscryptoarb.calculation.types import ArbOpportunity
+from uscryptoarb.calculation.calc_types import ArbOpportunity
 
 logger = logging.getLogger(__name__)
 

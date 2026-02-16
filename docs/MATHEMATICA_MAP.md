@@ -48,9 +48,9 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `TradingFeesDataStructure[]` | `TradingFeeRate` | `calculation/types.py` | ✅ Ported | Per-venue buy/sell fee rate with pct_fee and flat_fee. Flat fee currently 0 for all exchanges (Phase 1). |
-| `WithdrawalFeeDataStructure[]` | `WithdrawalFee` | `calculation/types.py` | ✅ Ported | Per-venue, per-currency withdrawal fee with flat_fee and pct_fee. |
-| `TradingAccuracyDataStructure[]` | `TradingAccuracy` | `calculation/types.py` | ✅ Ported | Per-venue, per-pair precision constraints (price_decimals, lot_decimals, min/max order size, tick/lot step). |
+| `TradingFeesDataStructure[]` | `TradingFeeRate` | `calculation/calc_types.py` | ✅ Ported | Per-venue buy/sell fee rate with pct_fee and flat_fee. Flat fee currently 0 for all exchanges (Phase 1). |
+| `WithdrawalFeeDataStructure[]` | `WithdrawalFee` | `calculation/calc_types.py` | ✅ Ported | Per-venue, per-currency withdrawal fee with flat_fee and pct_fee. |
+| `TradingAccuracyDataStructure[]` | `TradingAccuracy` | `calculation/calc_types.py` | ✅ Ported | Per-venue, per-pair precision constraints (price_decimals, lot_decimals, min/max order size, tick/lot step). |
 | `OrderbookEachOrderDataStructure[]` | `OrderBookEntry` | `core/types.py` | 📋 Planned | Association with: price, volume. Used for individual orderbook levels. |
 | `OrderbookEachOrderDataStructureInverse[]` | — | — | 🔀 Redesigned | Handles inverse pairs (e.g., USD/BTC → BTC/USD). In Python, handled by `market_base_convert()` |
 | `ResponseDataStructure[]` | — | `connectors/*/parser.py` | 🔀 Redesigned | Generic JSON response parser. In Python, each connector has its own typed parser. |
@@ -91,7 +91,7 @@ Databases (fees, withdrawal, accuracy)
 | `PairTranslatorReverse[]` | `pair_translator_reverse()` | `core/pair_utils.py` | 📋 Planned | Reverse of PairTranslator — exchange format → canonical. Mathematica handles both string and non-string pair inputs. |
 | `MarketBaseConvert[]` | `market_base_convert()` | `core/pair_utils.py` | 📋 Planned | Splits canonical pair into market and base currencies. E.g., `BTC/USD` → market=`BTC`, base=`USD`. **Note**: In Mathematica, handles both "forward" and "inverse" pairs for orderbook processing. |
 | — | `CanonicalPair` | `markets/pairs.py` | ✅ Ported | Frozen dataclass with `base` and `quote` fields. `parse_pair()` factory. |
-| — | `SymbolTranslator` | `venues/symbols.py` | ✅ Ported | Maps canonical pairs to venue-specific symbols. More structured than Mathematica's string manipulation approach. |
+| — | `SymbolTranslator` | `venues/symbol_translator.py` | ✅ Ported | Maps canonical pairs to venue-specific symbols. More structured than Mathematica's string manipulation approach. |
 
 ---
 
@@ -120,10 +120,10 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `TrimExchangesToCalc[]` | `filter_valid_exchanges()` | `strategy/scanner.py` | 🔧 Improved | Combined L1/L2/L3 into single function with optional staleness parameter. Filters stale data; skips filtering when no staleness config provided. |
+| `TrimExchangesToCalc[]` | `filter_valid_exchanges()` | `strategy/trade_finder.py` | 🔧 Improved | Combined L1/L2/L3 into single function with optional staleness parameter. Filters stale data; skips filtering when no staleness config provided. |
 | `TrimExchangesToCalcL2[]` | — | — | 🔀 Redesigned | L2 variant with additional filtering. In Python, combined into single function with optional parameters. |
 | `TrimExchangesToCalcL3[]` | — | — | 🔀 Redesigned | L3 variant. Same — combined into single function. |
-| `NonDupExchangesWithMoney[]` | `filter_funded_exchanges()` | `strategy/scanner.py` | ⏳ Deferred | Filters to exchanges where user has balance. Requires Phase 3+ (balance checking). |
+| `NonDupExchangesWithMoney[]` | `filter_funded_exchanges()` | `strategy/trade_finder.py` | ⏳ Deferred | Filters to exchanges where user has balance. Requires Phase 3+ (balance checking). |
 
 ---
 
@@ -131,9 +131,9 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `GetTradingFees[]` | `TradingFeeRate` dataclass | `calculation/types.py` | ✅ Ported | Per-venue buy/sell trading fee model for calculation context. |
-| `GetWithdrawalFees[]` | `WithdrawalFee` dataclass | `calculation/types.py` | ✅ Ported | Per-venue, per-currency withdrawal fee model. |
-| `GetAccuracyData[]` | `TradingAccuracy` dataclass | `calculation/types.py` | ✅ Ported | Precision/min/max model for exchange-compliant sizing. |
+| `GetTradingFees[]` | `TradingFeeRate` dataclass | `calculation/calc_types.py` | ✅ Ported | Per-venue buy/sell trading fee model for calculation context. |
+| `GetWithdrawalFees[]` | `WithdrawalFee` dataclass | `calculation/calc_types.py` | ✅ Ported | Per-venue, per-currency withdrawal fee model. |
+| `GetAccuracyData[]` | `TradingAccuracy` dataclass | `calculation/calc_types.py` | ✅ Ported | Precision/min/max model for exchange-compliant sizing. |
 
 ### Fee Application (Buy/Sell Sides)
 
@@ -175,7 +175,7 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `TradesToExecute[]` | `find_trades_to_execute()` | `strategy/scanner.py` | ✅ Ported | Top-level pipeline: filter_valid_exchanges → calc_all_opportunities → sort → select_trade. Returns best ArbOpportunity or None. |
+| `TradesToExecute[]` | `find_trades_to_execute()` | `strategy/trade_finder.py` | ✅ Ported | Top-level pipeline: filter_valid_exchanges → calc_all_opportunities → sort → select_trade. Returns best ArbOpportunity or None. |
 | `SelectTradeToExecute[]` | `select_trade()` | `strategy/selection.py` | 🔧 Improved | Picks best trade by return_net (not sellMarket size). Uses > not >= for threshold. Checks only return_net (implies return_grs and return_raw). |
 | `ExecuteTradesL2[]` | `execute_trade_l2()` | `execution/orders.py` | ⏳ Deferred | Mid-level execution: checks threshold, delegates to L3 if passes. Phase 4. |
 | `ExecuteTradesL3[]` | `execute_trades()` | `execution/orders.py` | ⏳ Deferred | Full execution: check existing orders → get orderbooks → get balances → calc amount → execute. Phase 4. |

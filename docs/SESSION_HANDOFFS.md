@@ -62,9 +62,9 @@
 
 ### Completed
 - Item 1.4: Generic config validation helper — `_required_type()` replaces `_required_decimal()` and `_required_int()` in orchestration/config.py (13 call sites)
-- Item 1.2: Symbol mapping factory — `create_translator()` in venues/symbols.py, used by both Kraken and Coinbase symbol modules
+- Item 1.2: Symbol mapping factory — `create_translator()` in venues/symbol_translator.py, used by both Kraken and Coinbase symbol modules
 - Item 1.3: Fee schedule fixture factory — `fee_schedule_factory` in tests/conftest.py, 3 named fixtures refactored as thin wrappers
-- Item 1.1: BaseAsyncConnector ABC — shared constructor, venue property, and `_fetch_with_retry()` in connectors/base.py. KrakenClient and CoinbaseClient inherit from it. 13 new tests.
+- Item 1.1: BaseAsyncConnector ABC — shared constructor, venue property, and `_fetch_with_retry()` in connectors/connector_base.py. KrakenClient and CoinbaseClient inherit from it. 13 new tests.
 - Item 1.5: Deferred timestamp extraction with TODO comment per Coding Rule 10.1
 - Documented: DEC-018, LL-059, CHANGELOG, SESSION_HANDOFFS
 
@@ -88,10 +88,10 @@
 
 ### Files Modified
 - `src/uscryptoarb/orchestration/config.py` (generic _required_type helper)
-- `src/uscryptoarb/venues/symbols.py` (create_translator factory)
+- `src/uscryptoarb/venues/symbol_translator.py` (create_translator factory)
 - `src/uscryptoarb/connectors/kraken/symbols.py` (use factory)
 - `src/uscryptoarb/connectors/coinbase/symbols.py` (use factory)
-- `src/uscryptoarb/connectors/base.py` (BaseAsyncConnector ABC + Protocol)
+- `src/uscryptoarb/connectors/connector_base.py` (BaseAsyncConnector ABC + Protocol)
 - `src/uscryptoarb/connectors/kraken/client.py` (inherit ABC, delegate retry)
 - `src/uscryptoarb/connectors/coinbase/client.py` (inherit ABC, delegate retry)
 - `src/uscryptoarb/connectors/coinbase/parser.py` (TODO comment for Item 1.5)
@@ -518,7 +518,7 @@
 
 ### Files Created
 - `src/uscryptoarb/calculation/__init__.py`
-- `src/uscryptoarb/calculation/types.py`
+- `src/uscryptoarb/calculation/calc_types.py`
 - `src/uscryptoarb/calculation/returns.py`
 - `src/uscryptoarb/calculation/fees.py`
 - `src/uscryptoarb/calculation/sizing.py`
@@ -548,7 +548,7 @@
 - `parse_pair()` from `markets/pairs.py` is reused for market/base currency extraction (no duplication)
 - `floor_to_step()` from `misc/decimals.py` is reused in `calc_position_size()` (no duplication)
 - Withdrawal fee data in fee_schedules.json uses conservative estimates. Verify against live API when building fee config loader.
-- The `TradingAccuracy` dataclass lives in `calculation/types.py`. If connectors need to produce it (for live fee lookups), consider moving to `core/types.py` to avoid import direction issues.
+- The `TradingAccuracy` dataclass lives in `calculation/calc_types.py`. If connectors need to produce it (for live fee lookups), consider moving to `core/types.py` to avoid import direction issues.
 - Kelly golden test: $1000 bankroll, returnGrs=0.008, threshold=0.0055 → $0.59375 position. Intentionally conservative.
 
 ---
@@ -577,7 +577,7 @@
 
 ### Key Decisions Made
 - flat_fee added as optional parameter (default ZERO) for backward compatibility rather than refactoring to accept TradingFeeRate directly
-- TradingAccuracy stays in calculation/types.py for now; migration to core/types.py triggered when connectors need to produce it
+- TradingAccuracy stays in calculation/calc_types.py for now; migration to core/types.py triggered when connectors need to produce it
 
 ### Files Modified
 - MODIFIED: `src/uscryptoarb/calculation/fees.py` (flat_fee parameter added)
@@ -633,7 +633,7 @@
 ### Files Created
 - `src/uscryptoarb/strategy/__init__.py`
 - `src/uscryptoarb/strategy/selection.py`
-- `src/uscryptoarb/strategy/scanner.py`
+- `src/uscryptoarb/strategy/trade_finder.py`
 - `tests/unit/test_strategy/__init__.py`
 - `tests/unit/test_strategy/conftest.py`
 - `tests/unit/test_strategy/test_selection.py`
@@ -661,7 +661,7 @@
 
 ### Completed
 - Systematic review of all documentation against implemented code
-- Fixed `strategy/scanner.py`: removed redundant `sort_opportunities()` call in `find_trades_to_execute()` pipeline (Coding Rule 10.1 — `select_trade()` already sorts internally)
+- Fixed `strategy/trade_finder.py`: removed redundant `sort_opportunities()` call in `find_trades_to_execute()` pipeline (Coding Rule 10.1 — `select_trade()` already sorts internally)
 - Fixed `PROJECT_INSTRUCTIONS.md` Section 12: replaced stale inline table with pointer to MATHEMATICA_MAP.md (completing DEC-010, which was claimed done but hadn't actually been applied)
 - Fixed `CLAUDE_INSTRUCTIONS.md`: updated stale function names in Key Functions (`calc_return()` → `calc_return_raw/grs/net()`, `calc_arb_final()` → `calc_arb_opportunity()`, added `find_trades_to_execute()`)
 - Added DEC-016: orchestration before Gemini connector (strategic pivot)
@@ -679,7 +679,7 @@
 - DEC-016: Build orchestration layer with 2 exchanges (Kraken + Coinbase) before adding Gemini as third connector. Rationale: proves end-to-end pipeline, surfaces integration bugs early, delivers working Phase 1 sooner, makes Gemini low-risk incremental add.
 
 ### Files Modified
-- MODIFIED: `src/uscryptoarb/strategy/scanner.py` (removed redundant sort, updated docstring pipeline description)
+- MODIFIED: `src/uscryptoarb/strategy/trade_finder.py` (removed redundant sort, updated docstring pipeline description)
 - MODIFIED: `PROJECT_INSTRUCTIONS.md` (Section 12 → pointer to MATHEMATICA_MAP.md, Document History updated)
 - MODIFIED: `CLAUDE_INSTRUCTIONS.md` (Key Functions updated with correct names + MATHEMATICA_MAP.md reference)
 - MODIFIED: `CHANGELOG.md` (3 new Fixed entries, 1 Changed entry)
@@ -735,7 +735,7 @@
 ### Files Created
 - `src/uscryptoarb/orchestration/__init__.py`
 - `src/uscryptoarb/orchestration/config.py`
-- `src/uscryptoarb/orchestration/scanner.py`
+- `src/uscryptoarb/orchestration/scan_loop.py`
 - `src/uscryptoarb/notification/__init__.py`
 - `src/uscryptoarb/notification/email.py`
 - `src/uscryptoarb/__main__.py`
@@ -831,7 +831,7 @@
 **Branch**: main
 
 ### Completed
-- Added `_log_pair_spreads()` helper to `orchestration/scanner.py` — logs per-pair bid/ask per venue and best raw cross-exchange spread on every scan cycle
+- Added `_log_pair_spreads()` helper to `orchestration/scan_loop.py` — logs per-pair bid/ask per venue and best raw cross-exchange spread on every scan cycle
 - Reuses `calc_return_raw()` from calculation layer (Coding Rule 10.2 — no formula duplication)
 - All Decimal arithmetic, no float conversion (DEC-007)
 - 4 new tests covering: basic output, positive spread, negative spread, alphabetical venue ordering
@@ -848,7 +848,7 @@
 - Placed in orchestration layer (logging is I/O per DEC-002), not in strategy/calculation (pure layers)
 
 ### Files Modified
-- MODIFIED: `src/uscryptoarb/orchestration/scanner.py` (added `_log_pair_spreads`, one import, one call site)
+- MODIFIED: `src/uscryptoarb/orchestration/scan_loop.py` (added `_log_pair_spreads`, one import, one call site)
 - MODIFIED: `tests/unit/test_orchestration/test_scanner.py` (4 new tests)
 - MODIFIED: `CHANGELOG.md` (Added entry)
 - MODIFIED: `docs/SESSION_HANDOFFS.md` (this entry)
@@ -997,7 +997,7 @@
 - Created 3 fixture JSON files from notebook Section 11: gemini_book_btc_usd.json, gemini_book_ltc_btc.json, gemini_book_sol_btc.json
 - Created 4 test files: test_symbols.py (~5 tests), test_parser.py (~14 tests), test_client.py (~14 tests)
 - Updated tests/conftest.py with 3 Gemini fixture loaders
-- Wired GeminiClient into orchestration/scanner.py create_connectors()
+- Wired GeminiClient into orchestration/scan_loop.py create_connectors()
 - Verified `config.yaml` already had gemini enabled in venues.primary (no change needed)
 - Added gemini to orchestration test synthetic FULL_CFG (conftest.py)
 - Added LL-064 to LESSONS_LEARNED.md (nest_asyncio + Python 3.14)
@@ -1044,7 +1044,7 @@
 
 ### Files Modified
 - `config.yaml` (already had gemini in venues.primary; no edit in this session)
-- `src/uscryptoarb/orchestration/scanner.py` (GeminiClient import + elif branch)
+- `src/uscryptoarb/orchestration/scan_loop.py` (GeminiClient import + elif branch)
 - `tests/conftest.py` (3 Gemini fixture loaders)
 - `tests/unit/test_orchestration/conftest.py` (gemini in FULL_CFG)
 - `tests/unit/test_orchestration/test_scanner.py` (updated connector count assertion)
@@ -1068,3 +1068,26 @@
 - `load_fixture()` in test_parser files is a 3rd-instance refactor candidate (tests/helpers.py).
 - Pre-existing test issue: `test_load_config_happy_path` may still expect threshold `0.0055` vs config.yaml. Check if this was resolved in a prior session.
 - The orchestration test `test_create_connectors_both_venues` was updated to include gemini (now tests 3 venues).
+
+
+## Session: 2026-02-16 (LL-065/LL-066 Naming + Doc Sync)
+
+### Completed
+- Renamed five source modules to remove basename collisions: `calculation/calc_types.py`, `connectors/connector_base.py`, `venues/symbol_translator.py`, `strategy/trade_finder.py`, `orchestration/scan_loop.py`.
+- Updated all imports, tests, docs, and markdown references to post-rename paths.
+- Renamed three test modules to preserve naming parity with source refactors.
+- Updated `PROJECT_INSTRUCTIONS.md` with Rules 10.8 and 10.9, checklist updates, file-tree sync, Gemini entries, and history bump to 1.3.0.
+- Regenerated long-format `CLAUDE_INSTRUCTIONS.md` from project instructions, including post-rename paths and complete rules set.
+- Added LL-065/LL-066 and DEC-019 entries documenting naming policy and documentation authority hierarchy.
+
+### Validation
+- `PYTHONPATH=src python -m pytest tests/ -v --tb=short` passed.
+- `PYTHONPATH=src python -m mypy src/uscryptoarb/` passed.
+- `PYTHONPATH=src python -m ruff check src/ tests/` passed.
+- `PYTHONPATH=src python -m uscryptoarb --dry-run` smoke run successful.
+
+### Blocked / Follow-up
+- Ray must copy current `CLAUDE_INSTRUCTIONS.md` into the Claude.ai project instructions UI to complete three-way sync.
+
+### Refactor Candidates
+- None newly introduced in this session.

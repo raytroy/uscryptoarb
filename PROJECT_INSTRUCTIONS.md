@@ -143,7 +143,7 @@ uscryptoarb/
 │   ├── venues/
 │   │   ├── __init__.py
 │   │   ├── registry.py            # VenueInfo, ohio_eligible
-│   │   └── symbols.py             # SymbolTranslator, to_canonical
+│   │   └── symbol_translator.py   # SymbolTranslator, to_canonical
 │   ├── marketdata/
 │   │   ├── __init__.py
 │   │   └── topofbook.py           # TopOfBook, validate_tob, tob_from_raw
@@ -156,7 +156,7 @@ uscryptoarb/
 │   │   └── rate_limiter.py        # RateLimiter for exchange API rate limiting
 │   ├── calculation/
 │   │   ├── __init__.py
-│   │   ├── types.py               # TradingFeeRate, WithdrawalFee, TradingAccuracy, FeeSchedule, ArbLeg, ArbOpportunity
+│   │   ├── calc_types.py          # TradingFeeRate, WithdrawalFee, TradingAccuracy, FeeSchedule, ArbLeg, ArbOpportunity
 │   │   ├── returns.py             # calc_return_raw, calc_return_grs, calc_return_net, calc_profit_base
 │   │   ├── fees.py                # calc_buy_leg, calc_sell_leg, effective_buy_cost, effective_sell_proceeds, total_buy_cost, net_sell_proceeds
 │   │   ├── sizing.py              # calc_kelly_fraction, calc_kelly_amount, calc_position_size
@@ -164,27 +164,32 @@ uscryptoarb/
 │   ├── strategy/
 │   │   ├── __init__.py
 │   │   ├── selection.py           # select_trade, passes_threshold
-│   │   └── scanner.py             # find_trades_to_execute, filter_valid_exchanges
+│   │   └── trade_finder.py        # find_trades_to_execute, filter_valid_exchanges
 │   ├── connectors/
 │   │   ├── __init__.py
-│   │   ├── base.py                # ExchangeConnector Protocol
+│   │   ├── connector_base.py      # ExchangeConnector Protocol, BaseAsyncConnector
 │   │   ├── kraken/
 │   │   │   ├── __init__.py
 │   │   │   ├── symbols.py         # Kraken symbol mapping (BTC/USD → XXBTZUSD)
 │   │   │   ├── parser.py          # parse_kraken_ticker, parse_kraken_orderbook
 │   │   │   └── client.py          # KrakenClient (async httpx)
-│   │   └── coinbase/
+│   │   ├── coinbase/
+│   │   │   ├── __init__.py
+│   │   │   ├── symbols.py         # Coinbase symbol mapping (BTC/USD → BTC-USD)
+│   │   │   ├── parser.py          # parse_coinbase_bbo
+│   │   │   └── client.py          # CoinbaseClient (async httpx)
+│   │   └── gemini/
 │   │       ├── __init__.py
-│   │       ├── symbols.py         # Coinbase symbol mapping (BTC/USD → BTC-USD)
-│   │       ├── parser.py          # parse_coinbase_bbo
-│   │       └── client.py          # CoinbaseClient (async httpx)
+│   │       ├── symbols.py         # Gemini symbol mapping (BTC/USD → btcusd)
+│   │       ├── parser.py          # parse_gemini_orderbook
+│   │       └── client.py          # GeminiClient (async httpx)
 │   ├── notification/
 │   │   ├── __init__.py
 │   │   └── email.py               # EmailConfig, send_alert, format_opportunity_email
 │   ├── orchestration/
 │   │   ├── __init__.py
 │   │   ├── config.py              # ScannerConfig, load_config, _build_fee_schedules
-│   │   └── scanner.py             # run_scan_loop, run_scan_cycle, create_connectors, fetch_all_venues
+│   │   └── scan_loop.py           # run_scan_loop, run_scan_cycle, create_connectors, fetch_all_venues
 │   └── resources/
 │       ├── __init__.py
 │       └── fee_schedules.json     # Production fee data (withdrawal fees, trading accuracy)
@@ -201,7 +206,8 @@ uscryptoarb/
 │   │   ├── test_calculation/
 │   │   ├── test_connectors/
 │   │   │   ├── test_kraken/
-│   │   │   └── test_coinbase/
+│   │   │   ├── test_coinbase/
+│   │   │   └── test_gemini/
 │   │   ├── test_http/
 │   │   ├── test_notification/
 │   │   ├── test_orchestration/
@@ -382,7 +388,7 @@ After passing through a boundary, code can assume:
 
 Validation failures raise `ValueError` immediately. The orchestration layer handles recovery:
 ```python
-# orchestration/scanner.py
+# orchestration/scan_loop.py
 async def poll_all_venues(pairs: list[str]) -> dict[str, TopOfBook]:
     results: dict[str, TopOfBook] = {}
     
@@ -726,6 +732,25 @@ Types: feat, fix, refactor, test, docs, chore
 - [ ] Operational docs updated (MATHEMATICA_MAP, DECISION_LOG, LESSONS_LEARNED if applicable)
 - [ ] No secrets in code
 
+### 10.8 Unique Module Names
+
+Every `.py` module filename must be unique across `src/uscryptoarb/` (excluding `__init__.py`).
+
+Exception: connector sub-packages may intentionally keep the internal pattern `client.py`, `parser.py`, and `symbols.py`.
+
+Verification command before introducing a new module:
+
+```bash
+find src/uscryptoarb -name "<name>.py"
+```
+
+### 10.9 Refactor Checkpoint
+
+If a second instance of a pattern appears, add it to SESSION_HANDOFFS under **Refactor Candidates**. The next session must either:
+
+1. Refactor it, or
+2. Defer with explicit rationale in DECISION_LOG.
+
 ---
 
 ## 11. Development Phases
@@ -772,6 +797,7 @@ Per DEC-010, MATHEMATICA_MAP.md is the single source of truth for porting status
 [ ] Mathematica function identified (if porting)
 [ ] Existing patterns in codebase reviewed
 [ ] All imports verified to exist
+[ ] Module name uniqueness verified (find src/ -name "<proposed_name>.py")
 [ ] Test approach planned
 [ ] Approval received
 ```
@@ -791,6 +817,7 @@ Per DEC-010, MATHEMATICA_MAP.md is the single source of truth for porting status
 [ ] LESSONS_LEARNED.md updated (if mistakes fixed)
 [ ] Fixtures README updated (if fixtures added)
 [ ] SESSION_HANDOFFS.md appended (end of session)
+[ ] CLAUDE_INSTRUCTIONS.md regenerated (if PROJECT_INSTRUCTIONS.md changed)
 ```
 
 ---
@@ -832,3 +859,4 @@ The `docs/` directory contains living documents that support project continuity 
 | 2026-02-13 | 1.1.0 | Added operational docs (docs/ directory), Section 14, updated Sections 2, 7.2-7.4, 10.3, 12, 13 |
 | 2026-02-14 | 1.1.1 | Section 12: replaced inline table with pointer to MATHEMATICA_MAP.md (completing DEC-010) |
 | 2026-02-15 | 1.2.0 | Section 5.3 updated to match actual module structure; Section 12/13 verified; Section 2 verified |
+| 2026-02-16 | 1.3.0 | Sections 5.3, 10, 13 updated for LL-065 renames, Gemini, Rules 10.8/10.9 |
