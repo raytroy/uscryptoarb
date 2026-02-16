@@ -78,6 +78,7 @@ class ScannerConfig:
 
 _DEFAULT_VENUE_CONFIG = VenueConnectorConfig(rate_limit_ms=500, timeout_s=10.0, max_retries=3)
 
+
 def _required_decimal(value: Any, name: str) -> Decimal:
     raw = require_present(value, name)
     if raw is None:
@@ -90,6 +91,7 @@ def _required_int(value: Any, name: str) -> int:
     if raw is None:
         raise ValueError(f"Required value '{name}' is missing")
     return int(raw)
+
 
 def load_config(path: str = "config.yaml") -> ScannerConfig:
     load_dotenv()
@@ -205,7 +207,9 @@ def load_config(path: str = "config.yaml") -> ScannerConfig:
     )
 
     fee_data_text = (
-        importlib.resources.files("uscryptoarb.resources").joinpath("fee_schedules.json").read_text()
+        importlib.resources.files("uscryptoarb.resources")
+        .joinpath("fee_schedules.json")
+        .read_text()
     )
     fee_data = json.loads(fee_data_text)
     fees_by_pair_venue = _build_fee_schedules(
@@ -271,9 +275,8 @@ def _build_fee_schedules(
             sell_withdrawal_raw = venue_withdrawals.get(base_currency)
             accuracy_raw = venue_accuracy.get(pair)
 
-            if (
-                not isinstance(buy_withdrawal_raw, dict)
-                or not isinstance(sell_withdrawal_raw, dict)
+            if not isinstance(buy_withdrawal_raw, dict) or not isinstance(
+                sell_withdrawal_raw, dict
             ):
                 logger.warning(
                     "Skipping fee schedule for %s/%s due to missing withdrawal data",
