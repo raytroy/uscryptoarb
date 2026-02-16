@@ -1026,9 +1026,9 @@
 - No cache-control header needed
 
 ### Refactor Candidates (per Coding Rule 10.8)
-- `load_fixture()` helper: defined identically in test_kraken/test_parser.py, test_coinbase/test_parser.py, and now test_gemini/test_parser.py (3rd instance). Consider extracting to tests/helpers.py alongside DummyRateLimiter.
+- `load_fixture()` helper: ✅ RESOLVED — extracted to `tests/helpers.py`; all 3 parser test files now import from there. No local definitions remain.
 - Timestamp parsing: 3 exchange-specific formats, but each is a one-liner with different logic. No shared pattern to extract — explicitly deferred.
-
+- 
 ### Files Created
 - `src/uscryptoarb/connectors/gemini/__init__.py`
 - `src/uscryptoarb/connectors/gemini/symbols.py`
