@@ -111,8 +111,7 @@ class GeminiClient(BaseAsyncConnector):
         # Gemini error envelope: {"result": "error", "reason": "...", "message": "..."}
         if data.get("result") == "error":
             raise ValueError(
-                f"Gemini API error for {symbol}: "
-                f"{data.get('reason')} — {data.get('message', '')}"
+                f"Gemini API error for {symbol}: {data.get('reason')} — {data.get('message', '')}"
             )
 
         return data
