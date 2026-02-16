@@ -15,6 +15,7 @@ DEFAULT_VENUES: dict[str, VenueInfo] = {
     "kraken": VenueInfo(venue="kraken", ohio_allowed=True),
     "coinbase": VenueInfo(venue="coinbase", ohio_allowed=True),
     "gemini": VenueInfo(venue="gemini", ohio_allowed=True),
+    "bitstamp": VenueInfo(venue="bitstamp", ohio_allowed=True),
 }
 
 

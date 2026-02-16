@@ -84,6 +84,24 @@ def gemini_book_sol_btc_fixture() -> dict:
         return json.load(f)
 
 
+@pytest.fixture
+def bitstamp_book_btc_usd_fixture() -> dict:
+    with open(FIXTURES_DIR / "bitstamp_book_btc_usd.json") as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def bitstamp_book_ltc_btc_fixture() -> dict:
+    with open(FIXTURES_DIR / "bitstamp_book_ltc_btc.json") as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def bitstamp_book_btc_usdc_fixture() -> dict:
+    with open(FIXTURES_DIR / "bitstamp_book_btc_usdc.json") as f:
+        return json.load(f)
+
+
 # ---------------------------------------------------------------------------
 # TopOfBook fixtures — deterministic BTC/USD snapshots
 # ---------------------------------------------------------------------------

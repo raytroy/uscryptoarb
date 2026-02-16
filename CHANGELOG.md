@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Bitstamp connector (`src/uscryptoarb/connectors/bitstamp/`) — async httpx client using `/api/v2/order_book/{symbol}/` endpoint (tickers lack bid/ask sizes per LL-060). Per-pair requests with 150ms rate limiting. Inherits BaseAsyncConnector (DEC-018).
+  - `symbols.py`: BITSTAMP_SYMBOL_MAP with 6/8 target pairs (missing LTC/USDC, SOL/BTC)
+  - `parser.py`: parse_book_response() with arrays-of-arrays index-based parsing (LL-070) and microsecond timestamp conversion (LL-071)
+  - `client.py`: BitstampClient(BaseAsyncConnector) with HTML and JSON error handling
+- `orchestration/scan_loop.py`: Bitstamp connector wired into _CONNECTOR_REGISTRY
+- `config.yaml`: Bitstamp added to venues.primary with 150ms rate limit, 0.40% taker fee
+- `venues/registry.py`: Bitstamp added to DEFAULT_VENUES as Ohio-eligible
+- `resources/fee_schedules.json`: Bitstamp withdrawal fees and trading accuracy for 6 pairs
+- `tests/unit/test_connectors/test_bitstamp/`: 3 test modules (~35 tests)
+- `tests/fixtures/`: 3 Bitstamp book fixtures from notebook Section 11 live capture
 - **File logging** — optional `RotatingFileHandler` alongside stdout, configured via `logging.file_path` in config.yaml or `--log-file` CLI flag. 10MB rotation with 5 backup files by default.
 - **Run statistics** (`orchestration/run_stats.py`) — tracks cycles completed, opportunities detected, per-venue error counts, and rolling average cycle duration. Summary logged every N cycles (configurable via `logging.stats_interval` or `--stats-interval`) and on graceful shutdown.
 - **CLI enhancements** — `--log-file PATH` and `--stats-interval N` flags added to `python -m uscryptoarb`.
@@ -61,6 +71,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Synchronized instruction/documentation hierarchy: `PROJECT_INSTRUCTIONS.md` canonical updates, regenerated long-format `CLAUDE_INSTRUCTIONS.md`, and linked LL-065/LL-066 + DEC-019 guidance.
 
 ### Added
+- Bitstamp connector (`src/uscryptoarb/connectors/bitstamp/`) — async httpx client using `/api/v2/order_book/{symbol}/` endpoint (tickers lack bid/ask sizes per LL-060). Per-pair requests with 150ms rate limiting. Inherits BaseAsyncConnector (DEC-018).
+  - `symbols.py`: BITSTAMP_SYMBOL_MAP with 6/8 target pairs (missing LTC/USDC, SOL/BTC)
+  - `parser.py`: parse_book_response() with arrays-of-arrays index-based parsing (LL-070) and microsecond timestamp conversion (LL-071)
+  - `client.py`: BitstampClient(BaseAsyncConnector) with HTML and JSON error handling
+- `orchestration/scan_loop.py`: Bitstamp connector wired into _CONNECTOR_REGISTRY
+- `config.yaml`: Bitstamp added to venues.primary with 150ms rate limit, 0.40% taker fee
+- `venues/registry.py`: Bitstamp added to DEFAULT_VENUES as Ohio-eligible
+- `resources/fee_schedules.json`: Bitstamp withdrawal fees and trading accuracy for 6 pairs
+- `tests/unit/test_connectors/test_bitstamp/`: 3 test modules (~35 tests)
+- `tests/fixtures/`: 3 Bitstamp book fixtures from notebook Section 11 live capture
 - Gemini connector (`src/uscryptoarb/connectors/gemini/`) — async httpx client using `/v1/book/{symbol}` endpoint (tickers lack bid/ask sizes per LL-062). Per-pair requests with configurable rate limiting. Inherits BaseAsyncConnector (DEC-018).
   - `symbols.py`: GEMINI_SYMBOL_MAP with all 8 target pairs (lowercase no-separator format)
   - `parser.py`: parse_book_response() with Unix-seconds-as-string timestamp conversion (LL-063)
@@ -181,6 +201,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dead `trading_fees` section from both `fee_schedules.json` files (rates come from `config.yaml`)
 
 ### Added
+- Bitstamp connector (`src/uscryptoarb/connectors/bitstamp/`) — async httpx client using `/api/v2/order_book/{symbol}/` endpoint (tickers lack bid/ask sizes per LL-060). Per-pair requests with 150ms rate limiting. Inherits BaseAsyncConnector (DEC-018).
+  - `symbols.py`: BITSTAMP_SYMBOL_MAP with 6/8 target pairs (missing LTC/USDC, SOL/BTC)
+  - `parser.py`: parse_book_response() with arrays-of-arrays index-based parsing (LL-070) and microsecond timestamp conversion (LL-071)
+  - `client.py`: BitstampClient(BaseAsyncConnector) with HTML and JSON error handling
+- `orchestration/scan_loop.py`: Bitstamp connector wired into _CONNECTOR_REGISTRY
+- `config.yaml`: Bitstamp added to venues.primary with 150ms rate limit, 0.40% taker fee
+- `venues/registry.py`: Bitstamp added to DEFAULT_VENUES as Ohio-eligible
+- `resources/fee_schedules.json`: Bitstamp withdrawal fees and trading accuracy for 6 pairs
+- `tests/unit/test_connectors/test_bitstamp/`: 3 test modules (~35 tests)
+- `tests/fixtures/`: 3 Bitstamp book fixtures from notebook Section 11 live capture
 - `require_nonempty_list()` validation guard for bid/ask array validation
 - `ZERO` and `ONE` Decimal constants centralized in `misc/decimals.py`
 - `RejectionReason` enum for structured diagnostic telemetry in trade detection pipeline
@@ -196,6 +226,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2025-01-04
 
 ### Added
+- Bitstamp connector (`src/uscryptoarb/connectors/bitstamp/`) — async httpx client using `/api/v2/order_book/{symbol}/` endpoint (tickers lack bid/ask sizes per LL-060). Per-pair requests with 150ms rate limiting. Inherits BaseAsyncConnector (DEC-018).
+  - `symbols.py`: BITSTAMP_SYMBOL_MAP with 6/8 target pairs (missing LTC/USDC, SOL/BTC)
+  - `parser.py`: parse_book_response() with arrays-of-arrays index-based parsing (LL-070) and microsecond timestamp conversion (LL-071)
+  - `client.py`: BitstampClient(BaseAsyncConnector) with HTML and JSON error handling
+- `orchestration/scan_loop.py`: Bitstamp connector wired into _CONNECTOR_REGISTRY
+- `config.yaml`: Bitstamp added to venues.primary with 150ms rate limit, 0.40% taker fee
+- `venues/registry.py`: Bitstamp added to DEFAULT_VENUES as Ohio-eligible
+- `resources/fee_schedules.json`: Bitstamp withdrawal fees and trading accuracy for 6 pairs
+- `tests/unit/test_connectors/test_bitstamp/`: 3 test modules (~35 tests)
+- `tests/fixtures/`: 3 Bitstamp book fixtures from notebook Section 11 live capture
 - Initial project structure
 
 [Unreleased]: https://github.com/raytroy/uscryptoarb/compare/v0.0.1...HEAD

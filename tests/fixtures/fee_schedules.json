@@ -1,13 +1,13 @@
 {
   "_comment": "Phase 1 fee data (DEC-013). Trading fee RATES come from config.yaml, NOT this file. This file contains withdrawal fees and trading accuracy (precision/sizing).",
   "_sources": {
-    "kraken_trading": "https://www.kraken.com/features/fee-schedule — taker rate at $0-$10k tier, verified 2026-02-16",
-    "coinbase_trading": "https://help.coinbase.com/en/coinbase/trading-and-funding/advanced-trade/advanced-trade-fees — Intro 1 taker rate, verified 2026-02-16",
-    "gemini_trading": "https://www.gemini.com/fees/activetrader-fee-schedule — taker rate at $0 tier, verified 2026-02-16",
-    "kraken_withdrawal": "https://support.kraken.com/articles/360000767986 — dynamic fees, estimates from cefirates.com Feb 2026",
-    "coinbase_withdrawal": "https://help.coinbase.com/en/coinbase/trading-and-funding/pricing-and-fees/fees — network fees only, no Coinbase surcharge",
-    "gemini_withdrawal": "https://www.gemini.com/fees/transfer-fee-schedule — dynamic fees, Jan 2026",
-    "gemini_trading_accuracy": "https://api.gemini.com/v1/symbols/details/{symbol} — captured 2026-02-16"
+    "kraken_trading": "https://www.kraken.com/features/fee-schedule \u2014 taker rate at $0-$10k tier, verified 2026-02-16",
+    "coinbase_trading": "https://help.coinbase.com/en/coinbase/trading-and-funding/advanced-trade/advanced-trade-fees \u2014 Intro 1 taker rate, verified 2026-02-16",
+    "gemini_trading": "https://www.gemini.com/fees/activetrader-fee-schedule \u2014 taker rate at $0 tier, verified 2026-02-16",
+    "kraken_withdrawal": "https://support.kraken.com/articles/360000767986 \u2014 dynamic fees, estimates from cefirates.com Feb 2026",
+    "coinbase_withdrawal": "https://help.coinbase.com/en/coinbase/trading-and-funding/pricing-and-fees/fees \u2014 network fees only, no Coinbase surcharge",
+    "gemini_withdrawal": "https://www.gemini.com/fees/transfer-fee-schedule \u2014 dynamic fees, Jan 2026",
+    "gemini_trading_accuracy": "https://api.gemini.com/v1/symbols/details/{symbol} \u2014 captured 2026-02-16"
   },
   "withdrawal_fees": {
     "kraken": {
@@ -73,6 +73,28 @@
       },
       "USDC": {
         "flat_fee": "0.0",
+        "pct_fee": "0"
+      }
+    },
+    "bitstamp": {
+      "BTC": {
+        "flat_fee": "0.0005",
+        "pct_fee": "0"
+      },
+      "LTC": {
+        "flat_fee": "0.001",
+        "pct_fee": "0"
+      },
+      "SOL": {
+        "flat_fee": "0.02",
+        "pct_fee": "0"
+      },
+      "USD": {
+        "flat_fee": "0.0",
+        "pct_fee": "0"
+      },
+      "USDC": {
+        "flat_fee": "1.0",
         "pct_fee": "0"
       }
     }
@@ -274,6 +296,56 @@
         "max_order_size": null,
         "tick_size": "0.0000001",
         "lot_step": "0.000001"
+      }
+    },
+    "bitstamp": {
+      "BTC/USD": {
+        "price_decimals": 0,
+        "lot_decimals": 8,
+        "min_order_size": "0.00015",
+        "max_order_size": null,
+        "tick_size": "1",
+        "lot_step": "0.00000001"
+      },
+      "BTC/USDC": {
+        "price_decimals": 0,
+        "lot_decimals": 8,
+        "min_order_size": "0.00015",
+        "max_order_size": null,
+        "tick_size": "1",
+        "lot_step": "0.00000001"
+      },
+      "LTC/USD": {
+        "price_decimals": 2,
+        "lot_decimals": 8,
+        "min_order_size": "0.2",
+        "max_order_size": null,
+        "tick_size": "0.01",
+        "lot_step": "0.00000001"
+      },
+      "LTC/BTC": {
+        "price_decimals": 8,
+        "lot_decimals": 8,
+        "min_order_size": "0.2",
+        "max_order_size": null,
+        "tick_size": "0.00000001",
+        "lot_step": "0.00000001"
+      },
+      "SOL/USD": {
+        "price_decimals": 3,
+        "lot_decimals": 5,
+        "min_order_size": "0.12",
+        "max_order_size": null,
+        "tick_size": "0.001",
+        "lot_step": "0.00001"
+      },
+      "SOL/USDC": {
+        "price_decimals": 3,
+        "lot_decimals": 5,
+        "min_order_size": "0.12",
+        "max_order_size": null,
+        "tick_size": "0.001",
+        "lot_step": "0.00001"
       }
     }
   }
