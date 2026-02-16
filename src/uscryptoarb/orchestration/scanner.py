@@ -13,6 +13,7 @@ from uscryptoarb.calculation.returns import calc_return_raw
 from uscryptoarb.calculation.types import ArbOpportunity
 from uscryptoarb.connectors.base import ExchangeConnector
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
+from uscryptoarb.connectors.gemini.client import GeminiClient
 from uscryptoarb.connectors.kraken.client import KrakenClient
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
@@ -42,6 +43,13 @@ async def create_connectors(
             )
         elif venue == "coinbase":
             connectors[venue] = CoinbaseClient(
+                client=http_client,
+                rate_limiter=limiter,
+                timeout_s=venue_cfg.timeout_s,
+                max_retries=venue_cfg.max_retries,
+            )
+        elif venue == "gemini":
+            connectors[venue] = GeminiClient(
                 client=http_client,
                 rate_limiter=limiter,
                 timeout_s=venue_cfg.timeout_s,

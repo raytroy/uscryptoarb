@@ -47,7 +47,7 @@ def _tob(venue: str, pair: str, bid: str, ask: str) -> TopOfBook:
     )
 
 
-def test_create_connectors_both_venues(full_config_path: str) -> None:
+def test_create_connectors_all_venues(full_config_path: str) -> None:
     config = load_config(full_config_path)
 
     async def run() -> None:
@@ -55,6 +55,7 @@ def test_create_connectors_both_venues(full_config_path: str) -> None:
             connectors = await create_connectors(config, stack)
             assert "kraken" in connectors
             assert "coinbase" in connectors
+            assert "gemini" in connectors
 
     asyncio.run(run())
 
