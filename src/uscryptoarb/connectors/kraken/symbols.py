@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from uscryptoarb.venues.symbols import SymbolTranslator
+from uscryptoarb.venues.symbols import create_translator
 
 KRAKEN_SYMBOL_MAP: dict[str, str] = {
     "BTC/USD": "XXBTZUSD",
@@ -13,7 +13,7 @@ KRAKEN_SYMBOL_MAP: dict[str, str] = {
     "SOL/BTC": "SOLXBT",
 }
 
-KRAKEN_SYMBOLS = SymbolTranslator(venue="kraken", canonical_to_venue=KRAKEN_SYMBOL_MAP)
+KRAKEN_SYMBOLS = create_translator("kraken", KRAKEN_SYMBOL_MAP)
 
 
 def supported_pairs() -> list[str]:

@@ -31,3 +31,24 @@ class SymbolTranslator:
             return self._venue_to_canonical[venue_symbol]
         except KeyError as e:
             raise KeyError(f"{self.venue}: no canonical mapping for {venue_symbol}") from e
+
+
+def create_translator(venue: str, mapping: dict[str, str]) -> SymbolTranslator:
+    """Create a validated SymbolTranslator for a venue.
+
+    Establishes the standard construction pattern for all exchange connectors.
+    Use this instead of constructing SymbolTranslator directly.
+
+    Args:
+        venue: Venue identifier (e.g. "kraken", "coinbase").
+        mapping: Canonical pair → venue symbol mapping. Must be non-empty.
+
+    Returns:
+        Configured SymbolTranslator with forward and reverse lookups.
+
+    Raises:
+        ValueError: If mapping is empty.
+    """
+    if not mapping:
+        raise ValueError(f"Symbol mapping for {venue} must be non-empty")
+    return SymbolTranslator(venue=venue, canonical_to_venue=mapping)

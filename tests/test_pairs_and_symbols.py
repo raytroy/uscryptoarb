@@ -1,7 +1,7 @@
 import pytest
 
 from uscryptoarb.markets.pairs import parse_pair
-from uscryptoarb.venues.symbols import SymbolTranslator
+from uscryptoarb.venues.symbols import SymbolTranslator, create_translator
 
 
 def test_parse_pair_normalizes() -> None:
@@ -34,3 +34,15 @@ def test_symbol_translator_reverse_missing() -> None:
     tr = SymbolTranslator(venue="example", canonical_to_venue={})
     with pytest.raises(KeyError):
         tr.to_canonical("XXBTZUSD")
+
+
+def test_create_translator_happy_path() -> None:
+    t = create_translator("test_venue", {"BTC/USD": "BTC-USD", "SOL/USD": "SOL-USD"})
+    assert t.venue == "test_venue"
+    assert t.to_venue_symbol("BTC/USD") == "BTC-USD"
+    assert t.to_canonical("SOL-USD") == "SOL/USD"
+
+
+def test_create_translator_empty_mapping_raises() -> None:
+    with pytest.raises(ValueError, match="must be non-empty"):
+        create_translator("test_venue", {})

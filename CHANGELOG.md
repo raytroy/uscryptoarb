@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `connectors/base.py`: `BaseAsyncConnector` ABC with shared constructor, venue property, and `_fetch_with_retry()` retry/backoff/rate-limit logic (DEC-018)
+- `venues/symbols.py`: `create_translator()` factory function for validated SymbolTranslator construction
+- `tests/conftest.py`: `fee_schedule_factory` parametrized fixture for building FeeSchedule objects with explicit per-field control
+- `tests/unit/test_connectors/test_base_connector.py`: 13 tests for shared retry logic (timeout, 5xx, 429, 404, exhausted retries, rate limiting, header/param passthrough)
 - **Orchestration layer** (`src/uscryptoarb/orchestration/`) — imperative shell wiring pure pipeline to real I/O
 - **Verbose spread logging** in `orchestration/scanner.py` — per-pair bid/ask and best raw spread logged on every scan cycle for pipeline diagnostics
   - `config.py`: YAML + .env config loader with validation boundary, builds FeeSchedule objects for all (venue, pair) combinations
@@ -64,10 +68,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `notebooks/02_coinbase_exploration.ipynb`: Complete Coinbase API exploration — symbol mapping, BBO data, SDK vs httpx comparison, TopOfBook parsing, rate limits, error handling, product details
 
 ### Changed
+- `connectors/kraken/client.py`: `KrakenClient` now extends `BaseAsyncConnector`; retry logic delegated to shared `_fetch_with_retry()`, Kraken-specific response validation preserved in `_request()`
+- `connectors/coinbase/client.py`: `CoinbaseClient` now extends `BaseAsyncConnector`; retry logic delegated to shared `_fetch_with_retry()`, Coinbase-specific response validation preserved in `_fetch_product_book()`
+- `connectors/kraken/symbols.py`: Uses `create_translator()` factory instead of direct `SymbolTranslator()` construction
+- `connectors/coinbase/symbols.py`: Uses `create_translator()` factory instead of direct `SymbolTranslator()` construction
+- `orchestration/config.py`: `_required_decimal()` and `_required_int()` replaced by generic `_required_type()` helper
+- `tests/conftest.py`: Fee fixtures (`kraken_btc_usd_fees`, `coinbase_btc_usd_fees`, `gemini_btc_usd_fees`) refactored as thin wrappers around `fee_schedule_factory`; intermediate sub-fixtures (individual fee rates, withdrawals, accuracies) removed — factory handles construction directly
 - `tests/unit/test_connectors/test_kraken/test_client.py`: DummyRateLimiter extracted to tests/helpers.py
 - `tests/unit/test_connectors/test_coinbase/test_client.py`: DummyRateLimiter extracted to tests/helpers.py
 
 ### Fixed
+- `connectors/base.py`: Unified 429 (rate limit) retry handling — Kraken connector previously did not retry on HTTP 429, now both connectors retry via shared logic (DEC-018)
 - `notification/email.py`: Fixed layering violation — `EmailConfig` moved from `orchestration/config.py` to `notification/email.py` (DEC-017). Notification layer no longer imports from orchestration.
 - `notification/email.py`: Fixed SMTP connection leak — `_send_smtp()` now uses context manager (`with smtplib.SMTP(...)`) to ensure socket cleanup on auth or send failures.
 - `orchestration/config.py`: Removed dead code — unreachable `if raw is None` checks in `_required_decimal()` and `_required_int()` after `require_present()` already validates.
