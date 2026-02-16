@@ -200,3 +200,28 @@ def require_non_negative(value: Decimal, name: str) -> Decimal:
     if value < 0:
         raise ValueError(f"'{name}' must be non-negative, got {value}")
     return value
+
+
+def require_nonempty_list(value: Any, name: str) -> list[Any]:
+    """Validate that a value is a non-empty list.
+
+    Used by connector parsers to validate bid/ask arrays at the
+    data boundary before extracting top-of-book.
+
+    Args:
+        value: The value to check.
+        name: Descriptive name for error messages.
+
+    Returns:
+        The validated list.
+
+    Raises:
+        ValueError: If value is None, not a list, or empty.
+    """
+    if value is None:
+        raise ValueError(f"Required value '{name}' is missing")
+    if not isinstance(value, list):
+        raise ValueError(f"{name} must be a list")
+    if len(value) == 0:
+        raise ValueError(f"{name} is empty")
+    return value

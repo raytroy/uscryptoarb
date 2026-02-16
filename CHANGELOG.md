@@ -123,6 +123,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pyproject.toml`: Added httpx to runtime dependencies
 - Development priority resequenced: orchestration layer before Gemini connector (DEC-016)
 
+
+### Fixed
+- Gemini `trading_accuracy` missing from both `fee_schedules.json` files, silently excluding Gemini from all arbitrage calculations despite working connector
+- `config.yaml` had gemini commented out in `venues.primary` despite Gemini connector being fully operational
+- `validate_tob()` permitted zero prices and sizes, which would cause `ZeroDivisionError` in `calc_return_raw()`
+- `DecimalLike` type alias included `float`, contradicting `to_decimal()` runtime rejection
+- Kraken connector captured `ts_local_ms` before HTTP call (inconsistent with Coinbase and Gemini)
+- `httpx` import placement in Kraken and Coinbase clients used `noqa: E402` unnecessarily
+
+### Removed
+- `src/yaml.py` and `src/dotenv/` import shims that risked shadowing PyYAML and python-dotenv
+- `src/uscryptoarb/config/app_config.py` — legacy config superseded by `orchestration/config.py`
+- Dead `trading_fees` section from both `fee_schedules.json` files (rates come from `config.yaml`)
+
+### Added
+- `require_nonempty_list()` validation guard for bid/ask array validation
+- `ZERO` and `ONE` Decimal constants centralized in `misc/decimals.py`
+- `RejectionReason` enum for structured diagnostic telemetry in trade detection pipeline
+- `_CONNECTOR_REGISTRY` dict replacing if/elif connector creation chain
+- Fee schedule structural drift guard test (`test_fee_data_consistency.py`)
+- Venue registry tests migrated to `tests/unit/test_venues/test_registry.py`
+
+### Changed
+- `select_trade()` uses `max()` (O(n)) instead of `sort()[0]` (O(n log n))
+- `find_trades_to_execute()` returns `ArbOpportunity | RejectionReason` instead of `ArbOpportunity | None`
+- `load_fixture()` centralized in `tests/helpers.py` (removed 3 identical copies)
+
 ## [0.0.1] - 2025-01-04
 
 ### Added

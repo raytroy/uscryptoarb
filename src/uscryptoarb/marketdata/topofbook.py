@@ -35,8 +35,8 @@ def validate_tob(t: TopOfBook) -> None:
     ):
         if v is None:
             raise ValueError(f"{name} is required")
-        if v < 0:
-            raise ValueError(f"{name} must be >= 0")
+        if v <= 0:
+            raise ValueError(f"{name} must be > 0")
 
     # sanity: if both sides present, enforce book ordering
     if t.bid_px > 0 and t.ask_px > 0 and t.bid_px >= t.ask_px:

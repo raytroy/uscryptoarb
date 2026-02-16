@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from uscryptoarb.marketdata.topofbook import TopOfBook, tob_from_raw
-from uscryptoarb.validation.guards import require_present
+from uscryptoarb.validation.guards import require_nonempty_list, require_present
 
 logger = logging.getLogger(__name__)
 
@@ -34,22 +34,8 @@ def parse_product_book_response(
     if not isinstance(pricebook_obj, dict):
         raise ValueError("pricebook must be an object")
 
-    bids_obj = pricebook_obj.get("bids")
-    asks_obj = pricebook_obj.get("asks")
-
-    if bids_obj is None:
-        raise ValueError("Required value 'pricebook.bids' is missing")
-    if asks_obj is None:
-        raise ValueError("Required value 'pricebook.asks' is missing")
-
-    if not isinstance(bids_obj, list):
-        raise ValueError("pricebook.bids must be a list")
-    if not isinstance(asks_obj, list):
-        raise ValueError("pricebook.asks must be a list")
-    if len(bids_obj) == 0:
-        raise ValueError("pricebook.bids is empty")
-    if len(asks_obj) == 0:
-        raise ValueError("pricebook.asks is empty")
+    bids_obj = require_nonempty_list(pricebook_obj.get("bids"), "pricebook.bids")
+    asks_obj = require_nonempty_list(pricebook_obj.get("asks"), "pricebook.asks")
 
     best_bid = bids_obj[0]
     best_ask = asks_obj[0]

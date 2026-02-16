@@ -4,6 +4,8 @@ import logging
 import time
 from typing import Any
 
+import httpx
+
 from uscryptoarb.connectors.coinbase.parser import parse_product_book_response
 from uscryptoarb.connectors.coinbase.symbols import COINBASE_SYMBOLS
 from uscryptoarb.connectors.connector_base import BaseAsyncConnector
@@ -14,8 +16,6 @@ from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 logger = logging.getLogger(__name__)
 
-# Re-export for type checking — httpx is used by callers constructing clients
-import httpx  # noqa: E402
 
 
 class CoinbaseClient(BaseAsyncConnector):

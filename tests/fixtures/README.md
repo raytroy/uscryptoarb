@@ -10,7 +10,7 @@ This directory stores deterministic fixture data used by tests.
 - **Created**: 2026-02-14
 - **Purpose**: Deterministic fee/accuracy data for calculation layer tests
 - **Contents**: Trading fees (flat rates per DEC-013), withdrawal fees, and trading accuracy (precision/min/max) for Kraken, Coinbase, Gemini across all 8 target pairs
-- **Notes**: Withdrawal fees are conservative estimates. Kraken fees are dynamic and may drift from these values. Coinbase and Gemini withdrawal fees are set to zero (free withdrawals). Trading accuracy data sourced from Kraken AssetPairs API and Coinbase Products API responses captured in exploration notebooks.
+- **Notes**: Withdrawal fees are conservative estimates. Kraken fees are dynamic and may drift from these values. Coinbase and Gemini withdrawal fees are set to zero (free withdrawals). Trading accuracy data sourced from Kraken AssetPairs API, Coinbase Products API, and Gemini /v1/symbols/details/{symbol} API responses (captured in exploration notebooks and via direct API calls 2026-02-16).
 
 
 ### gemini_book_btc_usd.json

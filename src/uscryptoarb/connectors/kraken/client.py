@@ -4,6 +4,8 @@ import logging
 import time
 from typing import Any
 
+import httpx
+
 from uscryptoarb.connectors.connector_base import BaseAsyncConnector
 from uscryptoarb.connectors.kraken.parser import parse_ticker_response
 from uscryptoarb.connectors.kraken.symbols import KRAKEN_SYMBOLS
@@ -14,8 +16,6 @@ from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 logger = logging.getLogger(__name__)
 
-# Re-export for type checking — httpx is used by callers constructing clients
-import httpx  # noqa: E402
 
 
 class KrakenClient(BaseAsyncConnector):
@@ -60,8 +60,8 @@ class KrakenClient(BaseAsyncConnector):
             return {}
 
         symbol_str = ",".join(symbols)
-        ts_local_ms = int(time.time() * 1000)
         result = await self._request("GET", self.TICKER_PATH, params={"pair": symbol_str})
+        ts_local_ms = int(time.time() * 1000)
         return parse_ticker_response(result, ts_local_ms=ts_local_ms, symbols=self._symbols)
 
     async def validate_symbols(self) -> None:

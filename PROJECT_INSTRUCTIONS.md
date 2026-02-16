@@ -36,8 +36,8 @@ Build a production-grade cross-exchange crypto arbitrage system for Ohio-eligibl
 ### 3.1 Primary (Phase 1)
 | Exchange | Ohio Status | SDK | Symbol Format |
 |----------|-------------|-----|---------------|
-| Kraken | ✅ (not ME/NY) | `python-kraken-sdk` | `XBTUSD` (XBT=BTC) |
-| Coinbase | ✅ | `coinbase-advanced-py` | `BTC-USD` |
+| Kraken | ✅ (not ME/NY) | custom httpx | `XBTUSD` (XBT=BTC) |
+| Coinbase | ✅ | custom httpx | `BTC-USD` |
 | Gemini | ✅ OHMT licensed | Custom wrapper | `btcusd` |
 
 ### 3.2 Secondary (Phase 2)
@@ -171,17 +171,17 @@ uscryptoarb/
 │   │   ├── kraken/
 │   │   │   ├── __init__.py
 │   │   │   ├── symbols.py         # Kraken symbol mapping (BTC/USD → XXBTZUSD)
-│   │   │   ├── parser.py          # parse_kraken_ticker, parse_kraken_orderbook
+│   │   │   ├── parser.py          # parse_ticker_response, parse_orderbook_response
 │   │   │   └── client.py          # KrakenClient (async httpx)
 │   │   ├── coinbase/
 │   │   │   ├── __init__.py
 │   │   │   ├── symbols.py         # Coinbase symbol mapping (BTC/USD → BTC-USD)
-│   │   │   ├── parser.py          # parse_coinbase_bbo
+│   │   │   ├── parser.py          # parse_product_book_response
 │   │   │   └── client.py          # CoinbaseClient (async httpx)
 │   │   └── gemini/
 │   │       ├── __init__.py
 │   │       ├── symbols.py         # Gemini symbol mapping (BTC/USD → btcusd)
-│   │       ├── parser.py          # parse_gemini_orderbook
+│   │       ├── parser.py          # parse_book_response
 │   │       └── client.py          # GeminiClient (async httpx)
 │   ├── notification/
 │   │   ├── __init__.py
@@ -219,6 +219,7 @@ uscryptoarb/
 ├── notebooks/
 │   ├── 01_kraken_exploration.ipynb
 │   └── 02_coinbase_exploration.ipynb
+- 03_gemini_exploration.ipynb
 ├── docs/
 │   ├── LESSONS_LEARNED.md
 │   ├── SESSION_HANDOFFS.md
@@ -263,7 +264,7 @@ trading_info_db: List[TradingAccuracy]  # tradingInfoDatabase
 
 | Location | What Gets Validated | Example |
 |----------|---------------------|---------|
-| Connector `parse_*` functions | API responses | `parse_kraken_ticker()` |
+| Connector `parse_*` functions | API responses | `parse_ticker_response()` |
 | Factory functions | Raw inputs → domain types | `tob_from_raw()` |
 | `__post_init__` methods | Dataclass invariants | Crossed book check |
 | Config loaders | YAML/env inputs | `load_config()` |

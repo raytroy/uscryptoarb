@@ -139,6 +139,37 @@ _(Additional entries beyond API gotchas — add as encountered)_
 
 ---
 
+
+### LL-067: validate_tob must use strictly-positive checks for prices and sizes
+- **Date**: 2026-02-16
+- **Category**: Correctness
+- **Severity**: High
+- **What happened**: `validate_tob()` checked `if v < 0` which permitted `Decimal("0")` for bid_px, ask_px, bid_sz, ask_sz. Zero buy_price causes `ZeroDivisionError` in `calc_return_raw()`.
+- **Root cause**: Boundary validation used "non-negative" (>= 0) instead of "strictly positive" (> 0). Prices and sizes of zero have no market meaning.
+- **Fix applied**: Changed to `if v <= 0` with error message "must be > 0".
+- **Rule going forward**: Prices and sizes at data boundaries must be strictly positive. Zero is never a valid market data value. Use `require_positive()` for explicit boundary checks.
+- **Affected files**: `src/uscryptoarb/marketdata/topofbook.py`
+
+### LL-068: Import shim files in src/ risk shadowing installed packages
+- **Date**: 2026-02-16
+- **Category**: Architecture / Dependencies
+- **Severity**: Critical
+- **What happened**: `src/yaml.py` contained a minimal YAML parser with `_parse_scalar()` that converted decimal strings to `float`. If resolved before the real PyYAML, all config values like `"0.0055"` would silently become floats, which `to_decimal()` rejects.
+- **Root cause**: Shim files created for "offline test environments" but both packages are hard dependencies. Python's import resolution can prioritize `src/` over `site-packages/` depending on `sys.path` ordering.
+- **Fix applied**: Deleted `src/yaml.py` and `src/dotenv/`.
+- **Rule going forward**: NEVER create .py files in `src/` that share names with third-party packages. If a package is needed, add it to `pyproject.toml` dependencies. If offline use is needed, use a virtual environment with pre-installed packages.
+- **Affected files**: Deleted `src/yaml.py`, `src/dotenv/`
+
+### LL-069: Fee schedule JSON files must be structurally synchronized
+- **Date**: 2026-02-16
+- **Category**: Testing / Data Integrity
+- **Severity**: Medium
+- **What happened**: Gemini `trading_accuracy` was added to production `fee_schedules.json` plan but was missing from both files. No test caught the structural gap.
+- **Root cause**: Two independently-maintained copies of fee data (production vs test) with no structural consistency check.
+- **Fix applied**: Added `test_fee_data_consistency.py` that verifies both files cover the same venues, pairs, currencies, and field names (but not values — test data is intentionally deterministic).
+- **Rule going forward**: When adding a venue, pair, or currency to either fee_schedules.json, the drift guard test will fail until both files are updated. Run the guard test after any fee data changes.
+- **Affected files**: `tests/unit/test_orchestration/test_fee_data_consistency.py`
+
 ## Document History
 
 | Date | Entry | Author |

@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from uscryptoarb.marketdata.topofbook import TopOfBook, tob_from_raw
+from uscryptoarb.validation.guards import require_nonempty_list
 
 logger = logging.getLogger(__name__)
 
@@ -31,22 +32,8 @@ def parse_book_response(
     Raises:
         ValueError: If bids/asks are missing, wrong type, or empty
     """
-    bids_list = raw.get("bids")
-    asks_list = raw.get("asks")
-
-    if bids_list is None:
-        raise ValueError(f"Required value '{canonical_pair}.bids' is missing")
-    if asks_list is None:
-        raise ValueError(f"Required value '{canonical_pair}.asks' is missing")
-
-    if not isinstance(bids_list, list):
-        raise ValueError(f"{canonical_pair}.bids must be a list")
-    if not isinstance(asks_list, list):
-        raise ValueError(f"{canonical_pair}.asks must be a list")
-    if len(bids_list) == 0:
-        raise ValueError(f"{canonical_pair}.bids is empty")
-    if len(asks_list) == 0:
-        raise ValueError(f"{canonical_pair}.asks is empty")
+    bids_list = require_nonempty_list(raw.get("bids"), f"{canonical_pair}.bids")
+    asks_list = require_nonempty_list(raw.get("asks"), f"{canonical_pair}.asks")
 
     best_bid = bids_list[0]
     best_ask = asks_list[0]

@@ -19,44 +19,44 @@ from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.notification.email import send_alert
 from uscryptoarb.orchestration.config import ScannerConfig
-from uscryptoarb.strategy.trade_finder import find_trades_to_execute
+from uscryptoarb.strategy.trade_finder import RejectionReason, find_trades_to_execute
 
 logger = logging.getLogger(__name__)
+
+
+_CONNECTOR_REGISTRY: dict[str, type[KrakenClient] | type[CoinbaseClient] | type[GeminiClient]] = {
+    "kraken": KrakenClient,
+    "coinbase": CoinbaseClient,
+    "gemini": GeminiClient,
+}
 
 
 async def create_connectors(
     config: ScannerConfig,
     stack: AsyncExitStack,
 ) -> dict[str, ExchangeConnector]:
+    """Create exchange connectors for all configured venues.
+
+    Uses _CONNECTOR_REGISTRY to map venue names to connector classes.
+    All connectors share the BaseAsyncConnector constructor signature (DEC-018).
+    """
     connectors: dict[str, ExchangeConnector] = {}
     for venue in config.venues:
+        connector_cls = _CONNECTOR_REGISTRY.get(venue)
+        if connector_cls is None:
+            logger.warning("Unknown venue in config, skipping connector creation: %s", venue)
+            continue
+
         venue_cfg = config.venue_configs[venue]
         http_client = await stack.enter_async_context(httpx.AsyncClient())
         limiter = RateLimiter(min_interval_ms=venue_cfg.rate_limit_ms)
 
-        if venue == "kraken":
-            connectors[venue] = KrakenClient(
-                client=http_client,
-                rate_limiter=limiter,
-                timeout_s=venue_cfg.timeout_s,
-                max_retries=venue_cfg.max_retries,
-            )
-        elif venue == "coinbase":
-            connectors[venue] = CoinbaseClient(
-                client=http_client,
-                rate_limiter=limiter,
-                timeout_s=venue_cfg.timeout_s,
-                max_retries=venue_cfg.max_retries,
-            )
-        elif venue == "gemini":
-            connectors[venue] = GeminiClient(
-                client=http_client,
-                rate_limiter=limiter,
-                timeout_s=venue_cfg.timeout_s,
-                max_retries=venue_cfg.max_retries,
-            )
-        else:
-            logger.warning("Unknown venue in config, skipping connector creation: %s", venue)
+        connectors[venue] = connector_cls(
+            client=http_client,
+            rate_limiter=limiter,
+            timeout_s=venue_cfg.timeout_s,
+            max_retries=venue_cfg.max_retries,
+        )
 
     return connectors
 
@@ -190,8 +190,17 @@ async def run_scan_cycle(
                 opp,
             )
 
-        if opp is not None:
-            opportunities.append(opp)
+        if isinstance(opp, RejectionReason):
+            if pair in config.debug.trace_pairs or config.debug.enabled:
+                logger.debug(
+                    "[%s] %s: no opportunity — %s",
+                    run_id,
+                    pair,
+                    opp.name,
+                )
+            continue
+
+        opportunities.append(opp)
 
     logger.info(
         "[%s] Scan complete: %d pairs, %d opportunities",

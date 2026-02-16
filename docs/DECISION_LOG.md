@@ -240,6 +240,31 @@
 - **Consequences**: KrakenClient and CoinbaseClient inherit from BaseAsyncConnector. Constructor signature unchanged (same positional/keyword args). ExchangeConnector Protocol unaffected. Future Gemini connector inherits from BaseAsyncConnector and only needs to implement fetch_tickers().
 - **References**: Coding Rule 10.1 (don't generalize until 2 real callers — now 2, soon 3), LL-052 (Coinbase per-pair requests)
 
+
+### DEC-019: Type-1 and Type-3 arbitrage deferred to Phase 2+
+- **Date**: 2026-02-16
+- **Status**: Deferred
+- **Context**: Code review noted absence of triangular (Type-1) and cross-pair (Type-3) arbitrage engines.
+- **Decision**: Defer. The Mathematica system ran 10,000+ trades primarily on Type-2 arbitrage. Type-2 is validated and is the current focus. Type-1/3 can be added when Type-2 is fully live and profitable.
+- **Rationale**: Type-2 alone provides sufficient opportunity with 3 exchanges × 8 pairs = 24 directional comparisons per scan cycle.
+- **References**: PROJECT_INSTRUCTIONS.md ("Type-2 primary")
+
+### DEC-020: Execution-feasibility gate deferred to Phase 3+
+- **Date**: 2026-02-16
+- **Status**: Deferred
+- **Context**: Code review noted no slippage modeling, partial-fill risk assessment, or "unknown cost → block execution" gate.
+- **Decision**: Defer. Phase 1 is detection/alerts only — no trades are executed. Execution gates will be implemented in Phase 3 (paper trading) and Phase 4 (live trading).
+- **Rationale**: Adding execution complexity to a detection-only system provides no value and increases maintenance burden.
+- **References**: PROJECT_INSTRUCTIONS.md Section 11 (Development Phases)
+
+### DEC-021: Structured rejection telemetry via RejectionReason enum
+- **Date**: 2026-02-16
+- **Status**: Accepted
+- **Context**: `find_trades_to_execute()` returned bare `None` for 4 different failure modes, making operator diagnosis impossible without parsing logs.
+- **Decision**: Return `ArbOpportunity | RejectionReason` with 4 enum variants: INSUFFICIENT_VENUES, ALL_STALE, MISSING_FEES, BELOW_THRESHOLD.
+- **Alternatives Considered**: (1) Logging-only — rejected because structured returns enable programmatic reaction. (2) Exception hierarchy — rejected because "no trade found" is an expected outcome, not an error. (3) Result wrapper dataclass — over-engineered for 4 boolean outcomes.
+- **Consequences**: Callers use `isinstance(result, RejectionReason)` to distinguish. Existing tests updated from `is None` checks to enum comparisons.
+
 ## Document History
 
 | Date | Entry | Description |

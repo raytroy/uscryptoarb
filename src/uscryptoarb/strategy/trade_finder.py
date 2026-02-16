@@ -24,11 +24,25 @@ Intentional improvements over Mathematica (DEC-012):
 from __future__ import annotations
 
 from decimal import Decimal
+from enum import Enum, auto
 
 from uscryptoarb.calculation.arb_calc import calc_all_opportunities
 from uscryptoarb.calculation.calc_types import ArbOpportunity, FeeSchedule
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.strategy.selection import select_trade
+
+
+class RejectionReason(Enum):
+    """Structured reason why find_trades_to_execute returned no opportunity.
+
+    Provides diagnostic telemetry for operators to distinguish between
+    different "no trade" scenarios without parsing log messages.
+    """
+
+    INSUFFICIENT_VENUES = auto()
+    ALL_STALE = auto()
+    MISSING_FEES = auto()
+    BELOW_THRESHOLD = auto()
 
 
 def filter_valid_exchanges(
@@ -78,37 +92,19 @@ def find_trades_to_execute(
     trade_amount: Decimal,
     ts_calculated_ms: int,
     max_staleness_ms: int | None = None,
-) -> ArbOpportunity | None:
+) -> ArbOpportunity | RejectionReason:
     """Top-level pipeline: filter -> calc_all -> select.
 
     This is the Mathematica TradesToExecute[] equivalent.
     Composes existing calculation layer functions into a single
     detection pipeline.
 
-    The pipeline:
-        1. filter_valid_exchanges() — remove stale data
-        2. Intersect with fees_by_venue keys — only venues we have fee data for
-        3. calc_all_opportunities() — N*(N-1) directional opportunities
-        4. select_trade() — filter by threshold, sort, pick best (or None)
-
-    Preconditions (enforced by orchestration, trusted here per DEC-003):
-        - All TopOfBook objects are already validated (non-crossed, positive prices)
-        - fees_by_venue contains entries for all configured venues
-        - threshold and trade_amount are positive Decimals
-
-    Args:
-        tobs_by_venue: {venue_name: TopOfBook} for a single pair.
-        fees_by_venue: {venue_name: FeeSchedule} for the same pair.
-        threshold: Minimum return_net to qualify (e.g. Decimal("0.0055")).
-        trade_amount: Reference amount in market currency for return calc.
-        ts_calculated_ms: Timestamp of this scan cycle in ms since epoch.
-            Also used as the reference time for staleness filtering.
-        max_staleness_ms: Maximum data age in ms. None disables filtering.
-
     Returns:
-        The best ArbOpportunity above threshold, or None if none qualify
-        or fewer than 2 valid venues remain after filtering.
+        The best ArbOpportunity above threshold, or a RejectionReason
+        explaining why no trade was found.
     """
+    original_count = len(tobs_by_venue)
+
     # Step 1: Filter stale exchanges
     fresh_tobs = filter_valid_exchanges(
         tobs_by_venue,
@@ -116,21 +112,30 @@ def find_trades_to_execute(
         current_time_ms=ts_calculated_ms,
     )
 
+    if len(fresh_tobs) < 2:
+        if original_count < 2:
+            return RejectionReason.INSUFFICIENT_VENUES
+        return RejectionReason.ALL_STALE
+
     # Step 2: Intersect with venues that have fee data.
-    # This is a set operation (not validation) — ensures calc_all_opportunities
-    # won't KeyError on a venue present in tobs but absent from fees.
-    usable_venues = set(fresh_tobs.keys()) & set(fees_by_venue.keys())
-    filtered_tobs = {v: fresh_tobs[v] for v in usable_venues}
-    filtered_fees = {v: fees_by_venue[v] for v in usable_venues}
+    usable_venues = set(fresh_tobs) & set(fees_by_venue)
+    if len(usable_venues) < 2:
+        return RejectionReason.MISSING_FEES
+
+    usable_tobs = {v: fresh_tobs[v] for v in usable_venues}
+    usable_fees = {v: fees_by_venue[v] for v in usable_venues}
 
     # Step 3: Calculate all pairwise opportunities
-    all_opps = calc_all_opportunities(
-        tobs_by_venue=filtered_tobs,
-        fees_by_venue=filtered_fees,
+    opportunities = calc_all_opportunities(
+        tobs_by_venue=usable_tobs,
+        fees_by_venue=usable_fees,
         trade_amount=trade_amount,
         ts_calculated_ms=ts_calculated_ms,
     )
 
     # Step 4: Select best above threshold
-    # select_trade() handles its own sorting internally
-    return select_trade(all_opps, threshold)
+    best = select_trade(opportunities, threshold)
+    if best is None:
+        return RejectionReason.BELOW_THRESHOLD
+
+    return best
