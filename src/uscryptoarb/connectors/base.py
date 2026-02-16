@@ -138,9 +138,7 @@ class BaseAsyncConnector(ABC):
                 await asyncio.sleep(delay_ms / 1000)
 
             except httpx.HTTPStatusError as exc:
-                retryable = (
-                    exc.response.status_code >= 500 or exc.response.status_code == 429
-                )
+                retryable = exc.response.status_code >= 500 or exc.response.status_code == 429
                 if not retryable or attempt >= self._max_retries:
                     raise
                 delay_ms = compute_delay_ms(attempt, self._backoff)

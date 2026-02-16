@@ -335,9 +335,7 @@ def _build_fee_schedules(
                     tick_size=_required_type(
                         accuracy_raw.get("tick_size"), "tick_size", to_decimal
                     ),
-                    lot_step=_required_type(
-                        accuracy_raw.get("lot_step"), "lot_step", to_decimal
-                    ),
+                    lot_step=_required_type(accuracy_raw.get("lot_step"), "lot_step", to_decimal),
                 ),
             )
 

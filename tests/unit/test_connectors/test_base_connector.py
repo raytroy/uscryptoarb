@@ -242,9 +242,7 @@ def test_params_passed_through() -> None:
     async def run() -> None:
         async with _make_client(handler) as client:
             c = _make_connector(client)
-            await c._fetch_with_retry(
-                "GET", "http://test/api", params={"product_id": "BTC-USD"}
-            )
+            await c._fetch_with_retry("GET", "http://test/api", params={"product_id": "BTC-USD"})
 
     asyncio.run(run())
     assert "product_id=BTC-USD" in seen_urls[0]
