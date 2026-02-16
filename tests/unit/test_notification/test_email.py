@@ -5,8 +5,7 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from uscryptoarb.calculation.types import ArbLeg, ArbOpportunity
-from uscryptoarb.notification.email import format_opportunity_email, send_alert
-from uscryptoarb.orchestration.config import EmailConfig
+from uscryptoarb.notification.email import EmailConfig, format_opportunity_email, send_alert
 
 
 def _opp() -> ArbOpportunity:

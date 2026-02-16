@@ -130,58 +130,101 @@ Orchestration   → Everything
 uscryptoarb/
 ├── src/uscryptoarb/
 │   ├── __init__.py
-│   ├── core/
+│   ├── __main__.py                # CLI entry point: python -m uscryptoarb (RunFinal[] equivalent)
+│   ├── config/
 │   │   ├── __init__.py
-│   │   ├── types.py          # All dataclasses
-│   │   ├── pair_utils.py     # MarketBaseConvert, PairTranslator
-│   │   └── decimal_utils.py  # to_decimal, floor_to_step
+│   │   └── app_config.py          # AppConfig, validate_config (legacy — superseded by orchestration/config.py)
+│   ├── misc/
+│   │   ├── __init__.py
+│   │   └── decimals.py            # to_decimal, floor_to_step, ceil_to_step
+│   ├── markets/
+│   │   ├── __init__.py
+│   │   └── pairs.py               # CanonicalPair, parse_pair
+│   ├── venues/
+│   │   ├── __init__.py
+│   │   ├── registry.py            # VenueInfo, ohio_eligible
+│   │   └── symbols.py             # SymbolTranslator, to_canonical
+│   ├── marketdata/
+│   │   ├── __init__.py
+│   │   └── topofbook.py           # TopOfBook, validate_tob, tob_from_raw
 │   ├── validation/
 │   │   ├── __init__.py
-│   │   ├── guards.py         # is_missing, require_present, require_positive, require_non_negative
-│   │   └── orderbook.py      # validate_orderbook
+│   │   └── guards.py              # is_missing, require_present, require_positive, require_non_negative
+│   ├── http/
+│   │   ├── __init__.py
+│   │   ├── backoff.py             # Bounded retry with async backoff
+│   │   └── rate_limiter.py        # RateLimiter for exchange API rate limiting
 │   ├── calculation/
 │   │   ├── __init__.py
-│   │   ├── types.py          # TradingFeeRate, WithdrawalFee, TradingAccuracy, FeeSchedule, ArbLeg, ArbOpportunity
-│   │   ├── returns.py        # calc_return_raw, calc_return_grs, calc_return_net, calc_profit_base
-│   │   ├── fees.py           # calc_buy_leg, calc_sell_leg, effective_buy_cost, effective_sell_proceeds, total_buy_cost, net_sell_proceeds
-│   │   ├── sizing.py         # calc_kelly_fraction, calc_kelly_amount, calc_position_size
-│   │   └── arb_calc.py       # calc_arb_opportunity, calc_all_opportunities, sort_opportunities, filter_profitable
+│   │   ├── types.py               # TradingFeeRate, WithdrawalFee, TradingAccuracy, FeeSchedule, ArbLeg, ArbOpportunity
+│   │   ├── returns.py             # calc_return_raw, calc_return_grs, calc_return_net, calc_profit_base
+│   │   ├── fees.py                # calc_buy_leg, calc_sell_leg, effective_buy_cost, effective_sell_proceeds, total_buy_cost, net_sell_proceeds
+│   │   ├── sizing.py              # calc_kelly_fraction, calc_kelly_amount, calc_position_size
+│   │   └── arb_calc.py            # calc_arb_opportunity, calc_all_opportunities, sort_opportunities, filter_profitable
 │   ├── strategy/
 │   │   ├── __init__.py
-│   │   ├── selection.py      # select_trade, passes_threshold
-│   │   └── scanner.py        # find_trades_to_execute
+│   │   ├── selection.py           # select_trade, passes_threshold
+│   │   └── scanner.py             # find_trades_to_execute, filter_valid_exchanges
 │   ├── connectors/
 │   │   ├── __init__.py
-│   │   ├── base.py           # BaseConnector protocol
+│   │   ├── base.py                # ExchangeConnector Protocol
 │   │   ├── kraken/
-│   │   ├── coinbase/
-│   │   └── gemini/
-│   ├── execution/
-│   │   ├── __init__.py
-│   │   └── orders.py
+│   │   │   ├── __init__.py
+│   │   │   ├── symbols.py         # Kraken symbol mapping (BTC/USD → XXBTZUSD)
+│   │   │   ├── parser.py          # parse_kraken_ticker, parse_kraken_orderbook
+│   │   │   └── client.py          # KrakenClient (async httpx)
+│   │   └── coinbase/
+│   │       ├── __init__.py
+│   │       ├── symbols.py         # Coinbase symbol mapping (BTC/USD → BTC-USD)
+│   │       ├── parser.py          # parse_coinbase_bbo
+│   │       └── client.py          # CoinbaseClient (async httpx)
 │   ├── notification/
 │   │   ├── __init__.py
-│   │   └── email.py
-│   └── config.py
+│   │   └── email.py               # EmailConfig, send_alert, format_opportunity_email
+│   ├── orchestration/
+│   │   ├── __init__.py
+│   │   ├── config.py              # ScannerConfig, load_config, _build_fee_schedules
+│   │   └── scanner.py             # run_scan_loop, run_scan_cycle, create_connectors, fetch_all_venues
+│   └── resources/
+│       ├── __init__.py
+│       └── fee_schedules.json     # Production fee data (withdrawal fees, trading accuracy)
 ├── tests/
+│   ├── __init__.py
+│   ├── conftest.py                # Shared fixtures (TopOfBook, FeeSchedule, etc.)
+│   ├── helpers.py                 # Shared test utilities (DummyRateLimiter)
+│   ├── test_backoff.py
+│   ├── test_decimals.py
+│   ├── test_pairs_and_symbols.py
+│   ├── test_registry_and_config.py  # Legacy tests for venues and AppConfig
+│   ├── test_topofbook.py
 │   ├── unit/
-│   │   ├── test_core/
-│   │   ├── test_validation/
 │   │   ├── test_calculation/
-│   │   └── test_strategy/
-│   ├── integration/
-│   └── conftest.py           # Shared fixtures
+│   │   ├── test_connectors/
+│   │   │   ├── test_kraken/
+│   │   │   └── test_coinbase/
+│   │   ├── test_http/
+│   │   ├── test_notification/
+│   │   ├── test_orchestration/
+│   │   ├── test_strategy/
+│   │   └── test_validation/
+│   └── fixtures/
+│       ├── README.md              # Fixture provenance documentation
+│       └── fee_schedules.json     # Test fee data
 ├── notebooks/
-│   ├── 01_kraken_connectivity.ipynb
-│   ├── 02_coinbase_connectivity.ipynb
-│   ├── 03_cross_exchange_comparison.ipynb
-│   └── ...
+│   ├── 01_kraken_exploration.ipynb
+│   └── 02_coinbase_exploration.ipynb
+├── docs/
+│   ├── LESSONS_LEARNED.md
+│   ├── SESSION_HANDOFFS.md
+│   ├── DECISION_LOG.md
+│   └── MATHEMATICA_MAP.md
 ├── config.yaml
+├── .env.example
 ├── pyproject.toml
 ├── README.md
 ├── CHANGELOG.md
-├── CLAUDE_INSTRUCTIONS.md    # WebUI version
-└── PROJECT_INSTRUCTIONS.md   # This file
+├── CLAUDE_INSTRUCTIONS.md
+└── PROJECT_INSTRUCTIONS.md
 ```
 
 ---
@@ -788,3 +831,4 @@ The `docs/` directory contains living documents that support project continuity 
 | 2026-01-04 | 1.0.0 | Initial comprehensive instructions |
 | 2026-02-13 | 1.1.0 | Added operational docs (docs/ directory), Section 14, updated Sections 2, 7.2-7.4, 10.3, 12, 13 |
 | 2026-02-14 | 1.1.1 | Section 12: replaced inline table with pointer to MATHEMATICA_MAP.md (completing DEC-010) |
+| 2026-02-15 | 1.2.0 | Section 5.3 updated to match actual module structure; Section 12/13 verified; Section 2 verified |

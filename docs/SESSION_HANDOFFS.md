@@ -707,3 +707,54 @@
 - Email alerts require .env with SMTP_FROM_ADDR and SMTP_PASSWORD set.
 - config.yaml `venues.primary` currently has [kraken, coinbase]. Add gemini after connector is built.
 - Per-pair trade amounts are in config.yaml under arbitrage.trade_amounts. Adjust as needed.
+
+
+---
+
+## 2026-02-15 — Post-orchestration review: 7 fixes (bugs + doc sync)
+
+**Interface**: Claude.ai WebUI → Claude Code
+**Branch**: main
+
+### Completed
+- Fixed layering violation: EmailConfig moved from orchestration/config.py to notification/email.py (DEC-017)
+- Fixed SMTP connection leak: _send_smtp() now uses context manager for socket cleanup
+- Removed dead code: unreachable None checks in _required_decimal() and _required_int()
+- Verified Section 12 has MATHEMATICA_MAP.md pointer (per LL-055 "trust but verify")
+- Fixed MATHEMATICA_MAP.md Section 13 stale module paths (misc/decimals.py, markets/pairs.py)
+- Updated PROJECT_INSTRUCTIONS.md Section 5.3 to match actual module structure
+- Verified README.md has correct Coinbase status and Usage section
+- Added DEC-017, LL-058, CHANGELOG entries
+
+### In Progress
+- Nothing — all 7 fixes complete
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- DEC-017: EmailConfig defined in notification/email.py, imported by orchestration (types belong in the consuming layer)
+
+### Files Modified
+- `src/uscryptoarb/notification/email.py` (added EmailConfig definition, SMTP context manager)
+- `src/uscryptoarb/notification/__init__.py` (exports EmailConfig)
+- `src/uscryptoarb/orchestration/config.py` (removed EmailConfig, imports from notification, removed dead code)
+- `tests/unit/test_notification/test_email.py` (updated EmailConfig import source)
+- `PROJECT_INSTRUCTIONS.md` (Section 5.3 updated, Sections 2/12/13 verified)
+- `docs/MATHEMATICA_MAP.md` (Section 13 paths corrected, Section 4 path corrected)
+- `docs/DECISION_LOG.md` (added DEC-017)
+- `docs/LESSONS_LEARNED.md` (added LL-058)
+- `CHANGELOG.md` (5 Fixed entries)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. **Ray manual action**: Copy updated CLAUDE_INSTRUCTIONS.md from repo into Claude.ai project instructions UI
+2. End-to-end integration test with mocked exchange responses
+3. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+4. Gemini production connector (`connectors/gemini/`)
+
+### Notes for Next Session
+- CLAUDE_INSTRUCTIONS.md in the project instructions UI still has stale function names. Ray must copy the repo version after this session.
+- LL-053 flagged that calculation types (TradingFeeRate, etc.) should move to core/types.py when connectors need them. notification/email.py also imports ArbOpportunity from calculation — same pattern, tracked but not yet actionable.
+- Legacy config/app_config.py still exists, referenced only by tests/test_registry_and_config.py. Consider removing in a future cleanup session.
+- All ~93+ tests pass. All documentation is now aligned with code.

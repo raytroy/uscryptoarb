@@ -87,7 +87,7 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `PairTranslator[]` | `pair_translator()` | `core/pair_utils.py` | 📋 Planned | Converts canonical pair to exchange format. Mathematica uses string manipulation with flags (NoSpace, UnderScore, Hyphen). Python version should use SymbolTranslator lookup. |
+| `PairTranslator[]` | `pair_translator()` | `markets/pairs.py` | 📋 Planned | Converts canonical pair to exchange format. Mathematica uses string manipulation with flags (NoSpace, UnderScore, Hyphen). Python version should use SymbolTranslator lookup. |
 | `PairTranslatorReverse[]` | `pair_translator_reverse()` | `core/pair_utils.py` | 📋 Planned | Reverse of PairTranslator — exchange format → canonical. Mathematica handles both string and non-string pair inputs. |
 | `MarketBaseConvert[]` | `market_base_convert()` | `core/pair_utils.py` | 📋 Planned | Splits canonical pair into market and base currencies. E.g., `BTC/USD` → market=`BTC`, base=`USD`. **Note**: In Mathematica, handles both "forward" and "inverse" pairs for orderbook processing. |
 | — | `CanonicalPair` | `markets/pairs.py` | ✅ Ported | Frozen dataclass with `base` and `quote` fields. `parse_pair()` factory. |
@@ -206,14 +206,14 @@ Databases (fees, withdrawal, accuracy)
 
 | Mathematica | Python | Module | Status | Notes |
 |-------------|--------|--------|--------|-------|
-| `to_decimal()` | `to_decimal()` | `core/decimal_utils.py` | ✅ Ported | No direct Mathematica equivalent (Mathematica uses arbitrary precision natively). Rejects floats. |
-| `floor_to_step()` | `floor_to_step()` | `core/decimal_utils.py` | ✅ Ported | Floor to exchange step size. |
-| `ceil_to_step()` | `ceil_to_step()` | `core/decimal_utils.py` | ✅ Ported | Ceil to exchange step size. |
-| `parse_pair()` | `parse_pair()` | `markets/pairs.py` | ✅ Ported | Parses "BTC/USD" → CanonicalPair(base="BTC", quote="USD"). |
-| `validate_tob()` | `validate_tob()` | `marketdata/topofbook.py` | ✅ Ported | Validates TopOfBook invariants (not crossed, positive prices). |
-| `tob_from_raw()` | `tob_from_raw()` | `marketdata/topofbook.py` | ✅ Ported | Factory function — primary validation boundary for market data. |
-| `ohio_eligible()` | `ohio_eligible()` | `venues/registry.py` | ✅ Ported | Checks if an exchange is eligible for Ohio operation. |
-| `validate_config()` | `validate_config()` | `config/app_config.py` | ✅ Ported | Validates application configuration at startup. |
+| — | `to_decimal()` | `misc/decimals.py` | ✅ Ported | No direct Mathematica equivalent (Mathematica uses arbitrary precision natively). Rejects floats. |
+| — | `floor_to_step()` | `misc/decimals.py` | ✅ Ported | Floor to exchange step size. |
+| — | `ceil_to_step()` | `misc/decimals.py` | ✅ Ported | Ceil to exchange step size. |
+| — | `parse_pair()` | `markets/pairs.py` | ✅ Ported | Parses "BTC/USD" → CanonicalPair(base="BTC", quote="USD"). |
+| — | `validate_tob()` | `marketdata/topofbook.py` | ✅ Ported | Validates TopOfBook invariants (not crossed, positive prices). |
+| — | `tob_from_raw()` | `marketdata/topofbook.py` | ✅ Ported | Factory function — primary validation boundary for market data. |
+| — | `ohio_eligible()` | `venues/registry.py` | ✅ Ported | Checks if an exchange is eligible for Ohio operation. |
+| — | `validate_config()` | `config/app_config.py` | ✅ Ported | Validates AppConfig at startup. Legacy module — production use superseded by `orchestration/config.py` `load_config()`. |
 
 ---
 
@@ -254,3 +254,4 @@ These are intentional differences between Mathematica and Python implementations
 | 2026-02-13 | Initial creation with comprehensive function inventory from CryptoArbitrage_V14.9.4_NoKeys.nb |
 | 2026-02-14 | Updated Sections 7, 8, 9: 12 functions 📋→✅ for calculation layer implementation |
 | 2026-02-14 | Updated Sections 6, 10: TrimExchangesToCalc → 🔧 Improved, TradesToExecute → ✅ Ported, SelectTradeToExecute → 🔧 Improved. Added threshold behavior to differences table. |
+| 2026-02-15 | Fixed stale module paths in Section 13 (core/decimal_utils.py → misc/decimals.py, etc). Fixed Section 4 planned path. Added superseded note for validate_config(). |
