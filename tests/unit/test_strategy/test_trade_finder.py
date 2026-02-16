@@ -232,7 +232,6 @@ class TestFindTradesToExecute:
         )
         assert result == RejectionReason.ALL_STALE
 
-
     def test_missing_fees_returns_missing_fees(
         self,
         kraken_btc_usd_tob: TopOfBook,
@@ -253,6 +252,7 @@ class TestFindTradesToExecute:
             ts_calculated_ms=1707900000000,
         )
         assert result == RejectionReason.MISSING_FEES
+
     def test_three_venues_returns_best(
         self,
         kraken_btc_usd_tob: TopOfBook,

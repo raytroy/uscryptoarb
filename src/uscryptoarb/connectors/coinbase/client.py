@@ -17,7 +17,6 @@ from uscryptoarb.venues.symbol_translator import SymbolTranslator
 logger = logging.getLogger(__name__)
 
 
-
 class CoinbaseClient(BaseAsyncConnector):
     """Async Coinbase public API client."""
 

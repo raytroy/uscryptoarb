@@ -63,23 +63,24 @@ class TestFeeScheduleStructuralConsistency:
             prod_pairs = set(prod[venue].keys())
             test_pairs = set(test.get(venue, {}).keys())
             assert prod_pairs == test_pairs, (
-                f"{venue} pair mismatch in trading_accuracy: "
-                f"prod={prod_pairs}, test={test_pairs}"
+                f"{venue} pair mismatch in trading_accuracy: prod={prod_pairs}, test={test_pairs}"
             )
 
     def test_trading_accuracy_field_keys_match(self) -> None:
         """Every accuracy entry should have the same set of fields."""
         prod = _load_production()["trading_accuracy"]
         test = _load_test()["trading_accuracy"]
-        expected_fields = {"price_decimals", "lot_decimals", "min_order_size",
-                          "max_order_size", "tick_size", "lot_step"}
+        expected_fields = {
+            "price_decimals",
+            "lot_decimals",
+            "min_order_size",
+            "max_order_size",
+            "tick_size",
+            "lot_step",
+        }
         for venue in prod:
             for pair in prod[venue]:
                 prod_fields = set(prod[venue][pair].keys())
                 test_fields = set(test.get(venue, {}).get(pair, {}).keys())
-                assert prod_fields == expected_fields, (
-                    f"prod {venue}/{pair} fields: {prod_fields}"
-                )
-                assert test_fields == expected_fields, (
-                    f"test {venue}/{pair} fields: {test_fields}"
-                )
+                assert prod_fields == expected_fields, f"prod {venue}/{pair} fields: {prod_fields}"
+                assert test_fields == expected_fields, f"test {venue}/{pair} fields: {test_fields}"

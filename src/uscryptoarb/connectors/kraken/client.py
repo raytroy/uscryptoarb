@@ -17,7 +17,6 @@ from uscryptoarb.venues.symbol_translator import SymbolTranslator
 logger = logging.getLogger(__name__)
 
 
-
 class KrakenClient(BaseAsyncConnector):
     """Async Kraken public API client."""
 
