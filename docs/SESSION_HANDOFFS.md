@@ -758,3 +758,45 @@
 - LL-053 flagged that calculation types (TradingFeeRate, etc.) should move to core/types.py when connectors need them. notification/email.py also imports ArbOpportunity from calculation — same pattern, tracked but not yet actionable.
 - Legacy config/app_config.py still exists, referenced only by tests/test_registry_and_config.py. Consider removing in a future cleanup session.
 - All ~93+ tests pass. All documentation is now aligned with code.
+
+---
+
+## 2026-02-15 — Verbose spread logging
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Added `_log_pair_spreads()` helper to `orchestration/scanner.py` — logs per-pair bid/ask per venue and best raw cross-exchange spread on every scan cycle
+- Reuses `calc_return_raw()` from calculation layer (Coding Rule 10.2 — no formula duplication)
+- All Decimal arithmetic, no float conversion (DEC-007)
+- 4 new tests covering: basic output, positive spread, negative spread, alphabetical venue ordering
+- Works in both `--dry-run` (single cycle) and continuous polling mode
+
+### In Progress
+- Nothing
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- Spread logging at INFO level (not gated behind debug.enabled) — visibility is more valuable than quiet in Phase 1
+- Placed in orchestration layer (logging is I/O per DEC-002), not in strategy/calculation (pure layers)
+
+### Files Modified
+- MODIFIED: `src/uscryptoarb/orchestration/scanner.py` (added `_log_pair_spreads`, one import, one call site)
+- MODIFIED: `tests/unit/test_orchestration/test_scanner.py` (4 new tests)
+- MODIFIED: `CHANGELOG.md` (Added entry)
+- MODIFIED: `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. Run `python -m uscryptoarb --dry-run` to verify spread output with real market data
+2. Run continuous mode (`python -m uscryptoarb`) for a few cycles, verify Ctrl+C shutdown
+3. End-to-end integration test with mocked exchange responses
+4. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+5. Gemini production connector (`connectors/gemini/`)
+
+### Notes for Next Session
+- Expected output per pair: `[dryrun] BTC/USD: coinbase bid=X ask=Y | kraken bid=X ask=Y | best_spread=+0.023% (threshold=0.550%)`
+- Spreads will almost always be negative or very small positive — real arb windows are rare and fleeting
+- If log volume is too high in continuous mode (8 lines per 5s cycle), can gate behind `debug.enabled` in a future session

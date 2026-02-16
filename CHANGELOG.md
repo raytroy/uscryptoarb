@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Orchestration layer** (`src/uscryptoarb/orchestration/`) — imperative shell wiring pure pipeline to real I/O
+- **Verbose spread logging** in `orchestration/scanner.py` — per-pair bid/ask and best raw spread logged on every scan cycle for pipeline diagnostics
   - `config.py`: YAML + .env config loader with validation boundary, builds FeeSchedule objects for all (venue, pair) combinations
   - `scanner.py`: Async polling loop with concurrent venue fetching, per-pair arbitrage detection, graceful shutdown
 - **Notification layer** (`src/uscryptoarb/notification/`) — email alerts for detected opportunities

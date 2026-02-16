@@ -5,9 +5,11 @@ import logging
 import time
 import uuid
 from contextlib import AsyncExitStack
+from decimal import Decimal
 
 import httpx
 
+from uscryptoarb.calculation.returns import calc_return_raw
 from uscryptoarb.calculation.types import ArbOpportunity
 from uscryptoarb.connectors.base import ExchangeConnector
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
@@ -87,6 +89,51 @@ def reorganize_by_pair(
     return by_pair
 
 
+def _log_pair_spreads(
+    pair: str,
+    tobs_by_venue: dict[str, TopOfBook],
+    threshold: Decimal,
+    run_id: str,
+) -> None:
+    """Log bid/ask per venue and best raw cross-exchange spread.
+
+    Provides per-pair diagnostics so operators can verify the pipeline
+    is calculating correctly and see how close markets are to threshold.
+    Runs on every scan cycle (dry-run and continuous).
+
+    Uses calc_return_raw() from the calculation layer to compute the
+    best-case spread (Coding Rule 10.2 — single source of truth).
+
+    Args:
+        pair: Canonical pair string (e.g. "BTC/USD").
+        tobs_by_venue: {venue_name: TopOfBook} for this pair. Must have >= 2 entries.
+        threshold: Configured minimum return_net for alerting.
+        run_id: Correlation ID for this scan cycle.
+    """
+    parts = []
+    for venue, tob in sorted(tobs_by_venue.items()):
+        parts.append(f"{venue} bid={tob.bid_px} ask={tob.ask_px}")
+
+    best_bid = max(tob.bid_px for tob in tobs_by_venue.values())
+    best_ask = min(tob.ask_px for tob in tobs_by_venue.values())
+    raw_spread = calc_return_raw(buy_price=best_ask, sell_price=best_bid)
+
+    spread_pct = raw_spread * Decimal("100")
+    threshold_pct = threshold * Decimal("100")
+    sign = "+" if spread_pct >= 0 else ""
+
+    venue_str = " | ".join(parts)
+    logger.info(
+        "[%s] %s: %s | best_spread=%s%s%% (threshold=%s%%)",
+        run_id,
+        pair,
+        venue_str,
+        sign,
+        f"{spread_pct:.3f}",
+        f"{threshold_pct:.3f}",
+    )
+
+
 async def run_scan_cycle(
     connectors: dict[str, ExchangeConnector],
     config: ScannerConfig,
@@ -102,6 +149,8 @@ async def run_scan_cycle(
         if len(tobs_by_venue) < 2:
             logger.debug("[%s] Skipping %s: only %d venue(s)", run_id, pair, len(tobs_by_venue))
             continue
+
+        _log_pair_spreads(pair, tobs_by_venue, config.arbitrage.threshold, run_id)
 
         fees_by_venue = config.fees_by_pair_venue.get(pair)
         if fees_by_venue is None:
