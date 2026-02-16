@@ -346,3 +346,23 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Fix applied**: Established hierarchy: `PROJECT_INSTRUCTIONS.md` (canonical) -> `CLAUDE_INSTRUCTIONS.md` (derived) -> Claude.ai UI (manual copy target). Added regeneration step to propagation checklist.
 - **Rule going forward**: Always edit `PROJECT_INSTRUCTIONS.md` first, regenerate `CLAUDE_INSTRUCTIONS.md`, then copy into UI. Never update those three independently.
 - **Affected files**: Instruction documents and session handoff process.
+
+### LL-067: Integration tests need now_ms() patched in 3 separate modules
+- **Date**: 2026-02-16
+- **Category**: Testing
+- **What happened**: `now_ms()` is imported directly in `connector_base.py`, `kraken/client.py`, and `scan_loop.py`. Patching only one or two leaves the others using real wall-clock time, causing staleness filtering to reject all data (since fixture timestamps are in the past).
+- **Rule**: When patching utility functions for integration tests, search for ALL import sites with `grep -rn "from.*import now_ms" src/` and patch every one.
+- **References**: tests/integration/test_end_to_end.py `_patch_now_ms` decorator
+
+### LL-068: Integration tests should bypass create_connectors() and build connectors directly
+- **Date**: 2026-02-16
+- **Category**: Testing
+- **What happened**: `create_connectors()` creates real `httpx.AsyncClient()` instances. Integration tests need MockTransport-backed clients. Building connectors manually is cleaner than monkeypatching the factory.
+- **Rule**: For HTTP-level mocking, construct connector instances directly with `httpx.AsyncClient(transport=MockTransport(handler))`. Test `create_connectors()` separately in unit tests.
+- **References**: DEC-018 (shared constructor signature makes this straightforward)
+
+### LL-069: Kraken _request() unwraps the {"error":[], "result":{}} envelope — mocks must include it
+- **Date**: 2026-02-16
+- **Category**: Testing / Connectors
+- **What happened**: Kraken mock responses must include the full `{"error": [], "result": {...}}` envelope because `KrakenClient._request()` validates and unwraps it before passing to the parser.
+- **Rule**: Always match the full response envelope when mocking exchange APIs, not just the inner payload. Review the client's response validation code before writing mock responses.

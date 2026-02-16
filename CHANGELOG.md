@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `misc/time_utils.py`: `now_ms()` utility replacing 4 inline `int(time.time() * 1000)` copies
 - `tests/unit/test_misc/test_time_utils.py`: Tests for timestamp utility
+- **End-to-end integration tests** (`tests/integration/test_end_to_end.py`) — 4 tests exercising the full Phase 1 detection pipeline with mocked HTTP transport:
+  - No opportunity (similar prices across 3 exchanges)
+  - Opportunity detected + email notification triggered (2 exchanges, ~2.4% spread)
+  - Partial failure graceful degradation (1 exchange HTTP 500, remaining 2 produce opportunity)
+  - Timeout graceful degradation (1 of 2 exchanges times out, insufficient venues)
 
 ### Changed
 - `orchestration/scan_loop.py`: `fetch_all_venues()` now returns `tuple[dict, dict[str, int]]` with venue error counts. `run_scan_cycle()` returns `tuple[list[ArbOpportunity], dict[str, int]]`. `run_scan_loop()` accepts `stats_interval` parameter and returns `RunStats`.
