@@ -26,9 +26,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from uscryptoarb.calculation.calc_types import TradingAccuracy
-from uscryptoarb.misc.decimals import floor_to_step
-
-ZERO = Decimal("0")
+from uscryptoarb.misc.decimals import ZERO, floor_to_step
 
 # DEC-014: Industry-standard Kelly Criterion defaults
 DEFAULT_PROB_SUCCESS = Decimal("0.95")

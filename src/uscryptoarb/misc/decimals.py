@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from decimal import ROUND_DOWN, ROUND_UP, Decimal
 
-DecimalLike = Decimal | str | int | float
+DecimalLike = Decimal | str | int
+
+ZERO = Decimal("0")
+ONE = Decimal("1")
 
 
 def to_decimal(x: DecimalLike) -> Decimal:

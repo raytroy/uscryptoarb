@@ -11,7 +11,7 @@ The Mathematica notebook is a **validated reference**, not gospel. It proves the
 - When in doubt, **suggest the better approach** rather than defaulting to what Mathematica does.
 
 ## Exchanges
-Primary: Kraken (`python-kraken-sdk`), Coinbase (`coinbase-advanced-py`), Gemini (custom httpx)
+Primary: Kraken (custom httpx), Coinbase (custom httpx), Gemini (custom httpx)
 Secondary: Bitstamp, bitFlyer, OKCoin
 
 **Symbol formats**: Kraken=`XBTUSD` (XBT for BTC) | Coinbase=`BTC-USD` | Gemini=`btcusd`
@@ -102,11 +102,11 @@ connectors/
 connector_base.py      # ExchangeConnector Protocol, BaseAsyncConnector ABC
 kraken/
 symbols.py           # Kraken symbol mapping (BTC/USD → XXBTZUSD)
-parser.py            # parse_kraken_ticker, parse_kraken_orderbook
+parser.py            # parse_ticker_response, parse_orderbook_response
 client.py            # KrakenClient (async httpx)
 coinbase/
 symbols.py           # Coinbase symbol mapping (BTC/USD → BTC-USD)
-parser.py            # parse_coinbase_bbo
+parser.py            # parse_product_book_response
 client.py            # CoinbaseClient (async httpx)
 gemini/
 symbols.py           # Gemini symbol mapping (BTC/USD → btcusd)

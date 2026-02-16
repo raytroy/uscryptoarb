@@ -1,18 +1,10 @@
-import json
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 
+from tests.helpers import load_fixture
 from uscryptoarb.connectors.kraken.parser import parse_orderbook_response, parse_ticker_response
 from uscryptoarb.connectors.kraken.symbols import KRAKEN_SYMBOLS
-
-FIXTURES = Path(__file__).resolve().parents[4] / "fixtures"
-
-
-def load_fixture(name: str) -> dict:
-    with open(FIXTURES / name) as f:
-        return json.load(f)
 
 
 def test_parse_ticker_happy_path() -> None:

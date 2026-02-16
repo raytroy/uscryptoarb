@@ -39,8 +39,7 @@ from uscryptoarb.calculation.returns import (
 )
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.markets.pairs import parse_pair
-
-ZERO = Decimal("0")
+from uscryptoarb.misc.decimals import ZERO
 
 
 def calc_arb_opportunity(

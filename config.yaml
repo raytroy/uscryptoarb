@@ -3,8 +3,7 @@
 
 # === Venues ===
 venues:
-  primary: [kraken, coinbase]
-  # secondary: [gemini]  # uncomment when Gemini connector is ready
+  primary: [kraken, coinbase, gemini]
 
 # === Pairs ===
 pairs:

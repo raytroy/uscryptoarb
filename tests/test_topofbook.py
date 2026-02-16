@@ -32,3 +32,45 @@ def test_tob_rejects_crossed_book() -> None:
             ask_px="99",
             ask_sz="1",
         )
+
+
+def test_tob_rejects_zero_bid_price() -> None:
+    with pytest.raises(ValueError, match="bid_px must be > 0"):
+        tob_from_raw(
+            venue="test",
+            pair="BTC/USD",
+            ts_local_ms=1,
+            ts_exchange_ms=None,
+            bid_px="0",
+            bid_sz="1",
+            ask_px="100",
+            ask_sz="1",
+        )
+
+
+def test_tob_rejects_zero_ask_size() -> None:
+    with pytest.raises(ValueError, match="ask_sz must be > 0"):
+        tob_from_raw(
+            venue="test",
+            pair="BTC/USD",
+            ts_local_ms=1,
+            ts_exchange_ms=None,
+            bid_px="99",
+            bid_sz="1",
+            ask_px="100",
+            ask_sz="0",
+        )
+
+
+def test_tob_rejects_zero_bid_size() -> None:
+    with pytest.raises(ValueError, match="bid_sz must be > 0"):
+        tob_from_raw(
+            venue="test",
+            pair="BTC/USD",
+            ts_local_ms=1,
+            ts_exchange_ms=None,
+            bid_px="99",
+            bid_sz="0",
+            ask_px="100",
+            ask_sz="1",
+        )

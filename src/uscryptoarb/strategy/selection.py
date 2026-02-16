@@ -30,7 +30,6 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import cast
 
-from uscryptoarb.calculation.arb_calc import sort_opportunities
 from uscryptoarb.calculation.calc_types import ArbOpportunity
 
 
@@ -84,5 +83,4 @@ def select_trade(
     qualifying = [o for o in opportunities if passes_threshold(o, threshold)]
     if not qualifying:
         return None
-    ranked = sort_opportunities(qualifying, by="return_net", descending=True)
-    return ranked[0]
+    return max(qualifying, key=lambda o: o.return_net)

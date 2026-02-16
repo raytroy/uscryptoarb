@@ -33,8 +33,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from uscryptoarb.calculation.calc_types import ArbLeg, WithdrawalFee
-
-ZERO = Decimal("0")
+from uscryptoarb.misc.decimals import ZERO
 
 
 def calc_buy_leg(

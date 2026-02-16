@@ -9,7 +9,11 @@ from decimal import Decimal
 from uscryptoarb.calculation.arb_calc import calc_arb_opportunity
 from uscryptoarb.calculation.calc_types import FeeSchedule
 from uscryptoarb.marketdata.topofbook import TopOfBook
-from uscryptoarb.strategy.trade_finder import filter_valid_exchanges, find_trades_to_execute
+from uscryptoarb.strategy.trade_finder import (
+    RejectionReason,
+    filter_valid_exchanges,
+    find_trades_to_execute,
+)
 
 
 class TestFilterValidExchanges:
@@ -177,9 +181,9 @@ class TestFindTradesToExecute:
             trade_amount=Decimal("0.01"),
             ts_calculated_ms=1707900000000,
         )
-        assert result is None
+        assert result == RejectionReason.BELOW_THRESHOLD
 
-    def test_single_venue_returns_none(
+    def test_single_venue_returns_insufficient_venues(
         self,
         kraken_btc_usd_tob: TopOfBook,
         kraken_btc_usd_fees: FeeSchedule,
@@ -192,9 +196,9 @@ class TestFindTradesToExecute:
             trade_amount=Decimal("0.01"),
             ts_calculated_ms=1707900000000,
         )
-        assert result is None
+        assert result == RejectionReason.INSUFFICIENT_VENUES
 
-    def test_empty_venues_returns_none(self) -> None:
+    def test_empty_venues_returns_insufficient_venues(self) -> None:
         result = find_trades_to_execute(
             tobs_by_venue={},
             fees_by_venue={},
@@ -202,9 +206,9 @@ class TestFindTradesToExecute:
             trade_amount=Decimal("0.01"),
             ts_calculated_ms=1707900000000,
         )
-        assert result is None
+        assert result == RejectionReason.INSUFFICIENT_VENUES
 
-    def test_stale_venue_excluded_leaves_single(
+    def test_stale_venue_excluded_returns_all_stale(
         self,
         kraken_btc_usd_tob: TopOfBook,
         stale_tob: TopOfBook,
@@ -226,8 +230,29 @@ class TestFindTradesToExecute:
             ts_calculated_ms=1707900001000,
             max_staleness_ms=5000,
         )
-        assert result is None
+        assert result == RejectionReason.ALL_STALE
 
+
+    def test_missing_fees_returns_missing_fees(
+        self,
+        kraken_btc_usd_tob: TopOfBook,
+        coinbase_btc_usd_tob: TopOfBook,
+        kraken_btc_usd_fees: FeeSchedule,
+    ) -> None:
+        """2 fresh venues but fees only for 1 -> MISSING_FEES."""
+        result = find_trades_to_execute(
+            tobs_by_venue={
+                "kraken": kraken_btc_usd_tob,
+                "coinbase": coinbase_btc_usd_tob,
+            },
+            fees_by_venue={
+                "kraken": kraken_btc_usd_fees,
+            },
+            threshold=Decimal("-1.0"),
+            trade_amount=Decimal("0.01"),
+            ts_calculated_ms=1707900000000,
+        )
+        assert result == RejectionReason.MISSING_FEES
     def test_three_venues_returns_best(
         self,
         kraken_btc_usd_tob: TopOfBook,
@@ -326,8 +351,8 @@ class TestFindTradesToExecute:
             trade_amount=Decimal("0.01"),
             ts_calculated_ms=1707900000000,
         )
-        # Only kraken has fees, so only 1 usable venue -> no arb possible
-        assert result is None
+        # Only kraken has fees, so only 1 usable venue -> missing fees
+        assert result == RejectionReason.MISSING_FEES
 
     def test_golden_values(
         self,

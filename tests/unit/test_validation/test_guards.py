@@ -7,6 +7,7 @@ import pytest
 from uscryptoarb.validation.guards import (
     is_missing,
     require_non_negative,
+    require_nonempty_list,
     require_positive,
     require_present,
 )
@@ -166,3 +167,29 @@ class TestRequireNonNegative:
     def test_raises_for_nan(self) -> None:
         with pytest.raises(ValueError, match="Required value 'balance' is missing"):
             require_non_negative(Decimal("NaN"), "balance")
+
+
+class TestRequireNonemptyList:
+    def test_happy_path(self) -> None:
+        result = require_nonempty_list([1, 2, 3], "test_list")
+        assert result == [1, 2, 3]
+
+    def test_single_element(self) -> None:
+        result = require_nonempty_list(["a"], "test_list")
+        assert result == ["a"]
+
+    def test_none_raises(self) -> None:
+        with pytest.raises(ValueError, match="Required value 'test_list' is missing"):
+            require_nonempty_list(None, "test_list")
+
+    def test_not_a_list_raises(self) -> None:
+        with pytest.raises(ValueError, match="must be a list"):
+            require_nonempty_list("string", "test_list")
+
+    def test_dict_raises(self) -> None:
+        with pytest.raises(ValueError, match="must be a list"):
+            require_nonempty_list({"a": 1}, "test_list")
+
+    def test_empty_list_raises(self) -> None:
+        with pytest.raises(ValueError, match="is empty"):
+            require_nonempty_list([], "test_list")

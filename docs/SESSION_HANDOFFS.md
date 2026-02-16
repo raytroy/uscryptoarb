@@ -1091,3 +1091,62 @@
 
 ### Refactor Candidates
 - None newly introduced in this session.
+
+
+---
+
+## 2026-02-16 — QA Remediation (17-step plan)
+
+**Interface**: Claude.ai WebUI → Claude Code
+**Branch**: main
+
+### Completed
+- BUG-1: Populated Gemini trading_accuracy in both fee_schedules.json files (8 pairs from live API)
+- BUG-2: Enabled gemini in config.yaml venues.primary
+- BUG-3: Fixed validate_tob() to reject zero prices/sizes (was `< 0`, now `<= 0`)
+- BUG-4: Removed float from DecimalLike type alias
+- BUG-5: Moved Kraken ts_local_ms capture to after HTTP call (matches Coinbase/Gemini)
+- SHADOW-1: Deleted src/yaml.py and src/dotenv/ import shims
+- IMPORT-1: Fixed httpx import placement in Kraken/Coinbase clients (removed noqa: E402)
+- DRY-1: Centralized ZERO/ONE constants in misc/decimals.py
+- DRY-2: Extracted require_nonempty_list() guard, used in Coinbase/Gemini parsers
+- DRY-4: Centralized load_fixture() in tests/helpers.py (removed 3 copies)
+- DEAD-1: Removed dead trading_fees section from both fee_schedules.json files
+- DRY-5: Replaced create_connectors if/elif chain with _CONNECTOR_REGISTRY dict
+- DEAD-2: Deleted legacy config/app_config.py, migrated venue tests
+- PERF-1: Changed select_trade() from sort()[0] to max()
+- GAP-3: Added fee schedule structural drift guard test (5 tests)
+- GAP-4: Added RejectionReason enum to find_trades_to_execute() (DEC-021)
+- DOC-1 through DOC-10: Fixed README, CLAUDE_INSTRUCTIONS, PROJECT_INSTRUCTIONS, CHANGELOG, fixtures README
+- DEC-019: Documented Type-1/3 deferral
+- DEC-020: Documented execution-gate deferral
+- DEC-021: Documented RejectionReason design decision
+- LL-067: Strictly positive prices/sizes
+- LL-068: Import shadowing risk
+- LL-069: Fee schedule structural synchronization
+
+### In Progress
+- Nothing — all 17 steps complete
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- DEC-019: Type-1/3 arbitrage consciously deferred to Phase 2+
+- DEC-020: Execution-feasibility gate deferred to Phase 3+
+- DEC-021: RejectionReason enum preferred over exceptions or logging-only
+
+### Refactor Candidates
+- None remaining — all identified DRY violations resolved
+
+### Files Created
+- `tests/unit/test_orchestration/test_fee_data_consistency.py` (5 tests)
+- `tests/unit/test_venues/__init__.py`
+- `tests/unit/test_venues/test_registry.py` (2 tests migrated)
+
+### Files Deleted
+- `src/yaml.py`
+- `src/dotenv/__init__.py` (+ directory)
+- `src/uscryptoarb/config/app_config.py`
+- `src/uscryptoarb/config/__init__.py`
+- `tests/test_registry_and_config.py`
