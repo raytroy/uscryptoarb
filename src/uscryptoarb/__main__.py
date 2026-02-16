@@ -127,9 +127,7 @@ def main() -> None:
         config = replace(config, debug=debug_cfg)
 
     stats_interval = (
-        args.stats_interval
-        if args.stats_interval is not None
-        else config.logging.stats_interval
+        args.stats_interval if args.stats_interval is not None else config.logging.stats_interval
     )
 
     setup_logging(

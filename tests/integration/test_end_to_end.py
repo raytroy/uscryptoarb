@@ -209,6 +209,7 @@ def _write_config(tmp_path: Path, venues: list[str], email_enabled: bool = False
 # Patch decorator: deterministic now_ms() across all 3 import sites
 # ---------------------------------------------------------------------------
 
+
 def _patch_now_ms(func):
     """Patch now_ms() in all modules that import it.
 
@@ -249,17 +250,20 @@ class TestNoOpportunitySimilarPrices:
 
         def kraken_handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
-                200, json=_kraken_ticker_response("99500.0", "99600.0"),
+                200,
+                json=_kraken_ticker_response("99500.0", "99600.0"),
             )
 
         def coinbase_handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
-                200, json=_coinbase_book_response("99480.0", "99580.0"),
+                200,
+                json=_coinbase_book_response("99480.0", "99580.0"),
             )
 
         def gemini_handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
-                200, json=_gemini_book_response("99490.0", "99590.0"),
+                200,
+                json=_gemini_book_response("99490.0", "99590.0"),
             )
 
         connectors = {
@@ -305,12 +309,14 @@ class TestOpportunityDetectedEmailSent:
     def test_opportunity_detected_and_email_triggered(self, tmp_path: Path) -> None:
         def kraken_handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
-                200, json=_kraken_ticker_response("99000.0", "99100.0"),
+                200,
+                json=_kraken_ticker_response("99000.0", "99100.0"),
             )
 
         def coinbase_handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
-                200, json=_coinbase_book_response("101500.0", "101600.0"),
+                200,
+                json=_coinbase_book_response("101500.0", "101600.0"),
             )
 
         connectors = {
@@ -319,7 +325,9 @@ class TestOpportunityDetectedEmailSent:
         }
 
         cfg_path = _write_config(
-            tmp_path, ["kraken", "coinbase"], email_enabled=True,
+            tmp_path,
+            ["kraken", "coinbase"],
+            email_enabled=True,
         )
         config = load_config(cfg_path)
         config = replace(
@@ -331,9 +339,7 @@ class TestOpportunityDetectedEmailSent:
             # --- Pipeline detection ---
             opportunities = await run_scan_cycle(connectors, config, run_id="integ-arb")
 
-            assert len(opportunities) == 1, (
-                f"Expected 1 opportunity, got {len(opportunities)}"
-            )
+            assert len(opportunities) == 1, f"Expected 1 opportunity, got {len(opportunities)}"
             opp = opportunities[0]
 
             # Direction: buy cheap on kraken (ask=99100), sell expensive on coinbase (bid=101500)
@@ -397,7 +403,8 @@ class TestPartialFailureGracefulDegradation:
     def test_one_exchange_500_uses_remaining_two(self, tmp_path: Path) -> None:
         def kraken_handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
-                200, json=_kraken_ticker_response("99000.0", "99100.0"),
+                200,
+                json=_kraken_ticker_response("99000.0", "99100.0"),
             )
 
         def coinbase_500_handler(request: httpx.Request) -> httpx.Response:
@@ -405,7 +412,8 @@ class TestPartialFailureGracefulDegradation:
 
         def gemini_handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
-                200, json=_gemini_book_response("101500.0", "101600.0"),
+                200,
+                json=_gemini_book_response("101500.0", "101600.0"),
             )
 
         connectors = {
@@ -455,7 +463,8 @@ class TestTimeoutInsufficientVenues:
     def test_exchange_timeout_returns_no_opportunities(self, tmp_path: Path) -> None:
         def kraken_handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
-                200, json=_kraken_ticker_response("99500.0", "99600.0"),
+                200,
+                json=_kraken_ticker_response("99500.0", "99600.0"),
             )
 
         def gemini_timeout_handler(request: httpx.Request) -> httpx.Response:
