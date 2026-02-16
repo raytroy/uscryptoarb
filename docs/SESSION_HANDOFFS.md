@@ -864,3 +864,50 @@
 - Expected output per pair: `[dryrun] BTC/USD: coinbase bid=X ask=Y | kraken bid=X ask=Y | best_spread=+0.023% (threshold=0.550%)`
 - Spreads will almost always be negative or very small positive — real arb windows are rare and fleeting
 - If log volume is too high in continuous mode (8 lines per 5s cycle), can gate behind `debug.enabled` in a future session
+
+---
+
+## 2026-02-15 — Decouple orchestration tests from production config.yaml
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Created `tests/unit/test_orchestration/conftest.py` with `FULL_CFG` synthetic YAML and `full_config_path` fixture
+- Refactored `test_config.py`: split `test_load_config_happy_path` into smoke test (no value assertions) + parsing test (synthetic fixture). Converted 5 tests total from `load_config("config.yaml")` to `full_config_path`.
+- Refactored `test_scanner.py`: converted 4 tests from `load_config("config.yaml")` to `full_config_path`. `TestLogPairSpreads` was already decoupled (no changes needed).
+- Documented as LL-061 in LESSONS_LEARNED.md
+
+### In Progress
+- Nothing
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- Production config.yaml gets a single smoke test (loads without error, non-empty venues/pairs) — no value assertions
+- All parsing/logic tests use synthetic YAML written to tmp_path via conftest fixture
+- Synthetic fixture includes only 2 pairs (BTC/USD, LTC/USD) and 2 venues (kraken, coinbase) — minimal but complete
+
+### Behavioral Changes
+- None. All tests assert the same things, just against synthetic config instead of production file.
+
+### Files Created
+- `tests/unit/test_orchestration/conftest.py`
+
+### Files Modified
+- `tests/unit/test_orchestration/test_config.py` (full replacement)
+- `tests/unit/test_orchestration/test_scanner.py` (full replacement)
+- `CHANGELOG.md`
+- `docs/LESSONS_LEARNED.md` (new entry)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. Run `python -m uscryptoarb --dry-run` to verify spread output with real market data
+2. Run continuous mode for a few cycles, verify Ctrl+C shutdown
+3. End-to-end integration test with mocked exchange responses
+4. Gemini exploration notebook (`notebooks/03_gemini_exploration.ipynb`)
+5. Gemini production connector (`connectors/gemini/`)
+
+### Notes for Next Session
+- The `full_config_path` fixture is available to any test under `tests/unit/test_orchestration/` via conftest.py. Future orchestration tests should use it instead of the production config.yaml.

@@ -68,6 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `notebooks/02_coinbase_exploration.ipynb`: Complete Coinbase API exploration — symbol mapping, BBO data, SDK vs httpx comparison, TopOfBook parsing, rate limits, error handling, product details
 
 ### Changed
+- Decoupled orchestration tests from production `config.yaml` values. All parsing logic tests now use a synthetic YAML fixture. A single `test_production_config_loads` smoke test validates the real file loads without error.
+
 - `connectors/kraken/client.py`: `KrakenClient` now extends `BaseAsyncConnector`; retry logic delegated to shared `_fetch_with_retry()`, Kraken-specific response validation preserved in `_request()`
 - `connectors/coinbase/client.py`: `CoinbaseClient` now extends `BaseAsyncConnector`; retry logic delegated to shared `_fetch_with_retry()`, Coinbase-specific response validation preserved in `_fetch_product_book()`
 - `connectors/kraken/symbols.py`: Uses `create_translator()` factory instead of direct `SymbolTranslator()` construction
