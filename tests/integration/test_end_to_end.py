@@ -431,7 +431,9 @@ class TestPartialFailureGracefulDegradation:
 
         async def run() -> None:
             opportunities, _errors = await run_scan_cycle(
-                connectors, config, run_id="integ-partial"
+                connectors,
+                config,
+                run_id="integ-partial",
             )
 
             # Should find opportunity between kraken and gemini
@@ -487,7 +489,9 @@ class TestTimeoutInsufficientVenues:
         async def run() -> None:
             # Must not raise — graceful degradation
             opportunities, _errors = await run_scan_cycle(
-                connectors, config, run_id="integ-timeout"
+                connectors,
+                config,
+                run_id="integ-timeout",
             )
             assert opportunities == [], (
                 f"Expected no opportunities with only 1 venue, got {len(opportunities)}"
