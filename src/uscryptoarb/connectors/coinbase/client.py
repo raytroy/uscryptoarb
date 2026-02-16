@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import time
 from typing import Any
 
 import httpx
@@ -45,35 +44,11 @@ class CoinbaseClient(BaseAsyncConnector):
 
     async def fetch_tickers(self, pairs: list[str]) -> dict[str, TopOfBook]:
         """Fetch top-of-book for multiple pairs."""
-        if not pairs:
-            return {}
-
-        results: dict[str, TopOfBook] = {}
-        for canonical in pairs:
-            try:
-                venue_symbol = self._symbols.to_venue_symbol(canonical)
-            except KeyError:
-                logger.warning(
-                    "Skipping unsupported canonical pair for Coinbase: %s",
-                    canonical,
-                )
-                continue
-
-            try:
-                raw = await self._fetch_product_book(venue_symbol)
-                ts_local_ms = int(time.time() * 1000)
-                tob = parse_product_book_response(raw, canonical, ts_local_ms)
-                results[canonical] = tob
-            except Exception as exc:
-                logger.warning(
-                    "Failed to fetch Coinbase ticker for %s (%s): %s",
-                    canonical,
-                    venue_symbol,
-                    exc,
-                )
-                continue
-
-        return results
+        return await self._fetch_tickers_per_pair(
+            pairs,
+            fetch_one=self._fetch_product_book,
+            parse_one=parse_product_book_response,
+        )
 
     async def _fetch_product_book(self, product_id: str) -> dict[str, Any]:
         """Fetch product book for a single product_id with retry.

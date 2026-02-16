@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from uscryptoarb.marketdata.topofbook import tob_from_raw
+from uscryptoarb.marketdata.topofbook import TopOfBook, tob_from_raw
 
 
 def test_tob_happy_path() -> None:
@@ -74,3 +74,49 @@ def test_tob_rejects_zero_bid_size() -> None:
             ask_px="100",
             ask_sz="1",
         )
+
+
+class TestTopOfBookPostInit:
+    """Tests for __post_init__ defense-in-depth invariant."""
+
+    def test_direct_construction_crossed_book_raises(self) -> None:
+        """Direct TopOfBook() with crossed book raises ValueError."""
+        with pytest.raises(ValueError, match="Crossed book"):
+            TopOfBook(
+                venue="test",
+                pair="BTC/USD",
+                ts_local_ms=1000,
+                ts_exchange_ms=None,
+                bid_px=Decimal("100"),
+                bid_sz=Decimal("1"),
+                ask_px=Decimal("99"),
+                ask_sz=Decimal("1"),
+            )
+
+    def test_direct_construction_locked_book_raises(self) -> None:
+        """Locked book (bid == ask) also raises."""
+        with pytest.raises(ValueError, match="Crossed book"):
+            TopOfBook(
+                venue="test",
+                pair="BTC/USD",
+                ts_local_ms=1000,
+                ts_exchange_ms=None,
+                bid_px=Decimal("100"),
+                bid_sz=Decimal("1"),
+                ask_px=Decimal("100"),
+                ask_sz=Decimal("1"),
+            )
+
+    def test_direct_construction_valid_book_succeeds(self) -> None:
+        """Normal book (bid < ask) succeeds."""
+        tob = TopOfBook(
+            venue="test",
+            pair="BTC/USD",
+            ts_local_ms=1000,
+            ts_exchange_ms=None,
+            bid_px=Decimal("99"),
+            bid_sz=Decimal("1"),
+            ask_px=Decimal("100"),
+            ask_sz=Decimal("1"),
+        )
+        assert tob.bid_px < tob.ask_px

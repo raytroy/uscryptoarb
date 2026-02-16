@@ -2,21 +2,22 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import time
 import uuid
 from contextlib import AsyncExitStack
 from decimal import Decimal
+from typing import cast
 
 import httpx
 
 from uscryptoarb.calculation.calc_types import ArbOpportunity
 from uscryptoarb.calculation.returns import calc_return_raw
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
-from uscryptoarb.connectors.connector_base import ExchangeConnector
+from uscryptoarb.connectors.connector_base import BaseAsyncConnector, ExchangeConnector
 from uscryptoarb.connectors.gemini.client import GeminiClient
 from uscryptoarb.connectors.kraken.client import KrakenClient
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
+from uscryptoarb.misc.time_utils import now_ms
 from uscryptoarb.notification.email import send_alert
 from uscryptoarb.orchestration.config import ScannerConfig
 from uscryptoarb.strategy.trade_finder import RejectionReason, find_trades_to_execute
@@ -24,7 +25,7 @@ from uscryptoarb.strategy.trade_finder import RejectionReason, find_trades_to_ex
 logger = logging.getLogger(__name__)
 
 
-_CONNECTOR_REGISTRY: dict[str, type[KrakenClient] | type[CoinbaseClient] | type[GeminiClient]] = {
+_CONNECTOR_REGISTRY: dict[str, type[BaseAsyncConnector]] = {
     "kraken": KrakenClient,
     "coinbase": CoinbaseClient,
     "gemini": GeminiClient,
@@ -51,7 +52,11 @@ async def create_connectors(
         http_client = await stack.enter_async_context(httpx.AsyncClient())
         limiter = RateLimiter(min_interval_ms=venue_cfg.rate_limit_ms)
 
-        connectors[venue] = connector_cls(
+        concrete_connector_cls = cast(
+            type[KrakenClient] | type[CoinbaseClient] | type[GeminiClient],
+            connector_cls,
+        )
+        connectors[venue] = concrete_connector_cls(
             client=http_client,
             rate_limiter=limiter,
             timeout_s=venue_cfg.timeout_s,
@@ -149,7 +154,7 @@ async def run_scan_cycle(
 ) -> list[ArbOpportunity]:
     venue_data = await fetch_all_venues(connectors, list(config.pairs), run_id)
     by_pair = reorganize_by_pair(venue_data, list(config.pairs))
-    ts_now = int(time.time() * 1000)
+    ts_now = now_ms()
     opportunities: list[ArbOpportunity] = []
 
     for pair in config.pairs:

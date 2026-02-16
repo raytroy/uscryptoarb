@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import time
 from typing import Any
 
 import httpx
@@ -12,6 +11,7 @@ from uscryptoarb.connectors.kraken.symbols import KRAKEN_SYMBOLS
 from uscryptoarb.http.backoff import BackoffPolicy
 from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
+from uscryptoarb.misc.time_utils import now_ms
 from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ class KrakenClient(BaseAsyncConnector):
 
         symbol_str = ",".join(symbols)
         result = await self._request("GET", self.TICKER_PATH, params={"pair": symbol_str})
-        ts_local_ms = int(time.time() * 1000)
+        ts_local_ms = now_ms()
         return parse_ticker_response(result, ts_local_ms=ts_local_ms, symbols=self._symbols)
 
     async def validate_symbols(self) -> None:
