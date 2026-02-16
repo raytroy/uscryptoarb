@@ -35,6 +35,10 @@
 ### Key Decisions Made
 - <Any architectural or design decisions made this session>
 
+### Refactor Candidates
+- <2nd-instance patterns created this session: pattern name, file1, file2>
+- <Empty section is fine — forces conscious check>
+
 ### Files Modified
 - <List of files created, modified, or deleted>
 

@@ -236,3 +236,13 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Fix applied**: Moved `EmailConfig` to `notification/email.py`. Orchestration imports it from there (allowed: orchestration can import everything).
 - **Rule going forward**: When creating a config dataclass, ask: "Which layer consumes this type?" Define the type in that layer, not in the layer that happens to build/populate it. Builders import from consumers, not vice versa. See also LL-053 for the same pattern with calculation types.
 - **Affected files**: `notification/email.py`, `orchestration/config.py`, `tests/unit/test_notification/test_email.py`
+
+### LL-059: Second instance of a pattern = mandatory refactor flag
+- **Date**: 2026-02-15
+- **Category**: Process
+- **Severity**: High
+- **What happened**: Code review found 5 DRY violations (duplicated retry loops, config helpers, symbol construction, fixture boilerplate) that accumulated across sessions. Each duplication was defensible when created — Coding Rule 10.1 says "don't generalize until 2 real callers" — but no session flagged the 2nd instance for follow-up.
+- **Root cause**: The workflow had no checkpoint between "2nd instance created" and "refactor needed." Sessions focused on delivering features vertically and never looked across the codebase horizontally.
+- **Fix applied**: Added Coding Rule 10.8 (Refactor Checkpoint) and a mandatory "Refactor Candidates" section to the SESSION_HANDOFFS template. When a session creates a 2nd instance of a pattern, it must be flagged. The next session must either refactor or explicitly defer with rationale in DECISION_LOG.
+- **Rule going forward**: When you create a 2nd connector, 2nd config helper, 2nd fixture shape, or any 2nd instance of a structural pattern — stop and add it to "Refactor Candidates" in SESSION_HANDOFFS before ending the session.
+- **Affected files**: CLAUDE_INSTRUCTIONS.md (Rule 10.8), docs/SESSION_HANDOFFS.md (template), docs/LESSONS_LEARNED.md (this entry)
