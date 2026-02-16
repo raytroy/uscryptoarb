@@ -258,3 +258,10 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Fix applied**: Added Coding Rule 10.8 (Refactor Checkpoint) and a mandatory "Refactor Candidates" section to the SESSION_HANDOFFS template. When a session creates a 2nd instance of a pattern, it must be flagged. The next session must either refactor or explicitly defer with rationale in DECISION_LOG.
 - **Rule going forward**: When you create a 2nd connector, 2nd config helper, 2nd fixture shape, or any 2nd instance of a structural pattern — stop and add it to "Refactor Candidates" in SESSION_HANDOFFS before ending the session.
 - **Affected files**: CLAUDE_INSTRUCTIONS.md (Rule 10.8), docs/SESSION_HANDOFFS.md (template), docs/LESSONS_LEARNED.md (this entry)
+
+### LL-061: Don't assert production config values in unit tests
+- **Date**: 2026-02-15
+- **Context**: Multiple tests called `load_config("config.yaml")` and asserted hardcoded values like `threshold == Decimal("0.0055")`. Changing any config.yaml value broke tests.
+- **Lesson**: Unit tests that verify parsing logic should use synthetic YAML fixtures with known values. A single smoke test can validate the production config loads without asserting specific values.
+- **Pattern**: `conftest.py` provides `FULL_CFG` string and `full_config_path` fixture that writes it to `tmp_path`. Tests assert against the synthetic values they control.
+- **Applies to**: Any test that calls `load_config()` — always pass a fixture path, never the production file, unless it's a smoke test.

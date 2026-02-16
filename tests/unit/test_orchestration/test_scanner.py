@@ -47,8 +47,8 @@ def _tob(venue: str, pair: str, bid: str, ask: str) -> TopOfBook:
     )
 
 
-def test_create_connectors_both_venues() -> None:
-    config = load_config("config.yaml")
+def test_create_connectors_both_venues(full_config_path: str) -> None:
+    config = load_config(full_config_path)
 
     async def run() -> None:
         async with AsyncExitStack() as stack:
@@ -81,8 +81,8 @@ def test_reorganize_by_pair_basic() -> None:
     assert set(out["BTC/USD"].keys()) == {"kraken", "coinbase"}
 
 
-def test_run_scan_cycle_detects_opportunity() -> None:
-    base_cfg = load_config("config.yaml")
+def test_run_scan_cycle_detects_opportunity(full_config_path: str) -> None:
+    base_cfg = load_config(full_config_path)
     arb = replace(base_cfg.arbitrage, max_staleness_ms=10_000_000_000_000)
     cfg = replace(base_cfg, pairs=("BTC/USD",), arbitrage=arb)
     connectors = {
@@ -100,8 +100,8 @@ def test_run_scan_cycle_detects_opportunity() -> None:
     asyncio.run(run())
 
 
-def test_run_scan_cycle_missing_fees_skips() -> None:
-    cfg = replace(load_config("config.yaml"), pairs=("BTC/USD",), fees_by_pair_venue={})
+def test_run_scan_cycle_missing_fees_skips(full_config_path: str) -> None:
+    cfg = replace(load_config(full_config_path), pairs=("BTC/USD",), fees_by_pair_venue={})
     connectors = {
         "kraken": MockConnector("kraken", {"BTC/USD": _tob("kraken", "BTC/USD", "109", "110")}),
         "coinbase": MockConnector(
@@ -117,8 +117,8 @@ def test_run_scan_cycle_missing_fees_skips() -> None:
     asyncio.run(run())
 
 
-def test_run_scan_loop_single_cycle_and_shutdown() -> None:
-    cfg = load_config("config.yaml")
+def test_run_scan_loop_single_cycle_and_shutdown(full_config_path: str) -> None:
+    cfg = load_config(full_config_path)
     shutdown = asyncio.Event()
 
     async def run() -> None:
