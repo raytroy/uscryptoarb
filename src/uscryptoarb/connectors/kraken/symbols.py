@@ -14,4 +14,3 @@ KRAKEN_SYMBOL_MAP: dict[str, str] = {
 }
 
 KRAKEN_SYMBOLS = create_translator("kraken", KRAKEN_SYMBOL_MAP)
-

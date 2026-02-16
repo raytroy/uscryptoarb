@@ -14,4 +14,3 @@ COINBASE_SYMBOL_MAP: dict[str, str] = {
 }
 
 COINBASE_SYMBOLS = create_translator("coinbase", COINBASE_SYMBOL_MAP)
-
