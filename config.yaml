@@ -51,14 +51,17 @@ venue_configs:
     timeout_s: 10.0
     max_retries: 3
 
-# === Fee Rates (taker rates, DEC-013) ===
+# === Fee Rates (taker rates at lowest volume tier, DEC-013) ===
+# Kraken: 0.40% taker at $0-$10K tier (kraken.com/features/fee-schedule, Dec 2025)
+# Coinbase: 1.20% taker at Intro 1 tier (help.coinbase.com advanced-trade-fees, Feb 2026)
+# Gemini: 0.40% taker at $0 tier (gemini.com/fees/activetrader-fee-schedule, Jan 2026)
 fees:
   kraken:
-    buy: "0.0026"
-    sell: "0.0026"
+    buy: "0.0040"
+    sell: "0.0040"
   coinbase:
-    buy: "0.006"
-    sell: "0.006"
+    buy: "0.012"
+    sell: "0.012"
   gemini:
     buy: "0.004"
     sell: "0.004"

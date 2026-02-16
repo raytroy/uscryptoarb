@@ -190,8 +190,8 @@ def fee_schedule_factory():
         *,
         venue: str,
         pair: str = "BTC/USD",
-        buy_pct: str = "0.0026",
-        sell_pct: str = "0.0026",
+        buy_pct: str = "0.0040",
+        sell_pct: str = "0.0040",
         buy_flat: str = "0",
         sell_flat: str = "0",
         buy_withdrawal_currency: str | None = None,
@@ -269,10 +269,10 @@ def kraken_btc_usd_fees(fee_schedule_factory) -> FeeSchedule:
     return fee_schedule_factory(
         venue="kraken",
         pair="BTC/USD",
-        buy_pct="0.0026",
-        sell_pct="0.0026",
+        buy_pct="0.0040",
+        sell_pct="0.0040",
         buy_withdrawal_currency="BTC",
-        buy_withdrawal_flat="0.00005",
+        buy_withdrawal_flat="0.00001",
         buy_withdrawal_pct="0",
         # sell_withdrawal = None (no currency -> None)
         price_decimals=1,
@@ -293,8 +293,8 @@ def coinbase_btc_usd_fees(fee_schedule_factory) -> FeeSchedule:
     return fee_schedule_factory(
         venue="coinbase",
         pair="BTC/USD",
-        buy_pct="0.006",
-        sell_pct="0.006",
+        buy_pct="0.012",
+        sell_pct="0.012",
         # buy_withdrawal = None (no currency -> None)
         sell_withdrawal_currency="USD",
         sell_withdrawal_flat="0",

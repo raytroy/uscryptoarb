@@ -1,16 +1,18 @@
 {
   "_comment": "Phase 1 fee data (DEC-013). Trading fee RATES come from config.yaml, NOT this file. This file contains withdrawal fees and trading accuracy (precision/sizing).",
   "_sources": {
-    "kraken_trading": "https://www.kraken.com/features/fee-schedule \u2014 taker rate at $0-$50k tier",
-    "coinbase_trading": "https://help.coinbase.com/en/exchange/trading-and-funding/exchange-fees \u2014 taker rate at base tier",
-    "kraken_withdrawal": "https://support.kraken.com/articles/360000767986 \u2014 dynamic, estimates used",
-    "coinbase_withdrawal": "https://help.coinbase.com/en/coinbase/getting-started/fees-and-commissions \u2014 dynamic, estimates used",
-    "gemini_trading_accuracy": "https://api.gemini.com/v1/symbols/details/{symbol} \u2014 captured 2026-02-16"
+    "kraken_trading": "https://www.kraken.com/features/fee-schedule — taker rate at $0-$10k tier, verified 2026-02-16",
+    "coinbase_trading": "https://help.coinbase.com/en/coinbase/trading-and-funding/advanced-trade/advanced-trade-fees — Intro 1 taker rate, verified 2026-02-16",
+    "gemini_trading": "https://www.gemini.com/fees/activetrader-fee-schedule — taker rate at $0 tier, verified 2026-02-16",
+    "kraken_withdrawal": "https://support.kraken.com/articles/360000767986 — dynamic fees, estimates from cefirates.com Feb 2026",
+    "coinbase_withdrawal": "https://help.coinbase.com/en/coinbase/trading-and-funding/pricing-and-fees/fees — network fees only, no Coinbase surcharge",
+    "gemini_withdrawal": "https://www.gemini.com/fees/transfer-fee-schedule — dynamic fees, Jan 2026",
+    "gemini_trading_accuracy": "https://api.gemini.com/v1/symbols/details/{symbol} — captured 2026-02-16"
   },
   "withdrawal_fees": {
     "kraken": {
       "BTC": {
-        "flat_fee": "0.00005",
+        "flat_fee": "0.00001",
         "pct_fee": "0"
       },
       "LTC": {
@@ -18,7 +20,7 @@
         "pct_fee": "0"
       },
       "SOL": {
-        "flat_fee": "0.02",
+        "flat_fee": "0.005",
         "pct_fee": "0"
       },
       "USD": {

@@ -1242,3 +1242,52 @@
 - DRY violation backlog is cleared — no outstanding refactor candidates.
 - Documentation is synchronized with actual code state.
 - 5 flat test files were migrated to proper `tests/unit/` hierarchy.
+
+---
+
+## 2026-02-16 — Fee schedule audit and update
+
+**Interface**: Claude.ai
+**Branch**: main
+
+### Completed
+- Full fee schedule audit against primary exchange documentation for all 3 exchanges
+- Web research: Kraken (kraken.com fee schedule), Coinbase (help.coinbase.com advanced fees), Gemini (gemini.com/fees/activetrader-fee-schedule, gemini.com/fees/transfer-fee-schedule)
+- Gap analysis comparing current config values vs documented exchange rates
+- Phase A (research) and Phase B (gap analysis) complete — see fee_audit_2026-02-16.md
+
+### In Progress
+- Phase C implementation (approved, ready for Claude Code execution)
+
+### Blocked / Needs Decision
+- Nothing — all 5 decisions made
+
+### Key Decisions Made
+- DEC-022: Kraken taker fee corrected from 0.26% to 0.40% (base tier)
+- DEC-023: Coinbase taker fee updated from 0.60% to 1.20% (Intro 1 tier, strict DEC-013)
+- Kraken withdrawal fees: BTC updated (0.00005→0.00001), SOL updated (0.02→0.005)
+- Coinbase/Gemini withdrawal fees: kept at zero (conservative, network fees only)
+- Gemini trading fee: confirmed correct at 0.40%
+
+### Key Findings
+- Kraken 0.26% didn't match any current tier — was underestimating costs by ~54%
+- Coinbase restructured tiers: new "Intro 1" at 0.60%/1.20%, old base tier eliminated
+- Gemini was already correct at 0.40%
+- All exchanges now use dynamic (network-based) withdrawal fees
+- Added LL-056 (dynamic withdrawal fees), LL-057 (fee tier structures change)
+
+### Files to Modify (Phase C)
+- MODIFY: config.yaml (Kraken 0.26%→0.40%, Coinbase 0.60%→1.20%)
+- MODIFY: src/uscryptoarb/resources/fee_schedules.json (Kraken BTC/SOL withdrawal, _sources)
+- MODIFY: tests/fixtures/fee_schedules.json (mirror production changes)
+- MODIFY: tests/conftest.py (named fixture fee rates + factory defaults)
+- MODIFY: tests/unit/test_orchestration/conftest.py (synthetic config fees)
+- MODIFY: docs/DECISION_LOG.md (DEC-022, DEC-023)
+- MODIFY: docs/LESSONS_LEARNED.md (LL-056, LL-057)
+- MODIFY: docs/SESSION_HANDOFFS.md (this entry)
+
+### Next Steps (Priority Order)
+1. Execute Phase C changes via Claude Code
+2. Run pytest — expect some test value changes needed in fee math tests
+3. Run dry-run to compare behavior with old vs new fees
+4. Gemini connector implementation (next major feature)

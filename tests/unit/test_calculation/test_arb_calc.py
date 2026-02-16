@@ -87,11 +87,11 @@ class TestCalcArbOpportunity:
 
         assert opp.buy_leg.venue == "kraken"
         assert opp.buy_leg.side == "buy"
-        assert opp.buy_leg.fee_rate == Decimal("0.0026")
+        assert opp.buy_leg.fee_rate == Decimal("0.0040")
 
         assert opp.sell_leg.venue == "coinbase"
         assert opp.sell_leg.side == "sell"
-        assert opp.sell_leg.fee_rate == Decimal("0.006")
+        assert opp.sell_leg.fee_rate == Decimal("0.012")
 
     def test_frozen_output(
         self,

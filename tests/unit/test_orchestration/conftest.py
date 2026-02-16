@@ -51,11 +51,11 @@ venue_configs:
 
 fees:
   kraken:
-    buy: "0.0026"
-    sell: "0.0026"
+    buy: "0.0040"
+    sell: "0.0040"
   coinbase:
-    buy: "0.006"
-    sell: "0.006"
+    buy: "0.012"
+    sell: "0.012"
   gemini:
     buy: "0.004"
     sell: "0.004"
