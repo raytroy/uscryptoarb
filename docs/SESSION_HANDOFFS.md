@@ -1556,3 +1556,44 @@
 3. Run continuous mode for 2-3 cycles with 4+ exchanges, Ctrl+C
 4. Address Refactor Candidate: simplify create_connectors() cast to BaseAsyncConnector
 5. Consider next exchange connector backlog item
+
+
+## 2026-02-17 — Comprehensive Refactoring (3 Code Reviews)
+
+**Interface**: Claude Code
+**Branch**: main
+
+### Completed
+- Phase 1: Documentation sync (CLAUDE_INSTRUCTIONS, PROJECT_INSTRUCTIONS, CHANGELOG, README, notebook rename)
+- Phase 2: 2A through 2G completed
+- Phase 3: 3A through 3D completed
+- Phase 4: 4A and 4B completed
+- Phase 5: DEC-025 through DEC-032 documented as explicit deferrals
+
+### In Progress
+- None
+
+### Blocked / Needs Decision
+- None
+
+### Key Decisions Made
+- DEC-033: Class-level ClassVar defaults for connector constructors
+- DEC-025 through DEC-032: Explicit deferrals documented
+
+### Refactor Candidates (Rule 10.9)
+- None new
+
+### Files Created
+- None
+
+### Files Modified
+- Multiple across src/, tests/, and docs for phases 1-5
+
+### Files Deleted
+- fixtures/ (root directory, consolidated to tests/fixtures/)
+
+### Next Steps
+1. Copy updated CLAUDE_INSTRUCTIONS.md into Claude.ai project instructions UI
+2. Run full CI: ruff → mypy → pytest
+3. Run dry-run with 5 exchanges
+4. Run continuous mode for 2-3 cycles

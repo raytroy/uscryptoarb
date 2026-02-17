@@ -29,7 +29,7 @@ class EmailConfig:
 
 
 def format_opportunity_email(opp: ArbOpportunity) -> tuple[str, str]:
-    pct_display = f"{float(opp.return_net) * 100:+.2f}%"
+    pct_display = f"{opp.return_net * 100:+.2f}%"
     subject = f"ARB: {opp.pair} {pct_display} buy {opp.buy_venue} sell {opp.sell_venue}"
     ts_utc = datetime.fromtimestamp(
         opp.ts_calculated_ms / 1000,

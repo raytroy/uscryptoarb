@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 from dataclasses import dataclass
 
 
@@ -13,6 +14,7 @@ class CanonicalPair:
         return f"{self.base}/{self.quote}"
 
 
+@functools.lru_cache(maxsize=32)
 def parse_pair(s: str) -> CanonicalPair:
     """
     Parse canonical pair strings like 'SOL/USDC'.

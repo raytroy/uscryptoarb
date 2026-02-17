@@ -107,34 +107,6 @@ def test_fetch_tickers_timeout_retries(kraken_ticker_fixture) -> None:
     assert calls["n"] == 2
 
 
-def test_validate_symbols_happy_path(kraken_asset_pairs_fixture) -> None:
-    symbols = dict(KRAKEN_SYMBOL_MAP)
-    payload = dict(kraken_asset_pairs_fixture)
-    for symbol in symbols.values():
-        payload.setdefault(symbol, {"status": "online"})
-
-    async def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json=make_kraken_response(payload))
-
-    async def run() -> None:
-        async with make_client(handler) as client:
-            kc = KrakenClient(client=client, rate_limiter=RateLimiter(0))
-            await kc.validate_symbols()
-
-    asyncio.run(run())
-
-
-def test_validate_symbols_missing_pair_raises(kraken_asset_pairs_fixture) -> None:
-    async def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json=make_kraken_response(kraken_asset_pairs_fixture))
-
-    async def run() -> None:
-        async with make_client(handler) as client:
-            kc = KrakenClient(client=client, rate_limiter=RateLimiter(0))
-            with pytest.raises(ValueError):
-                await kc.validate_symbols()
-
-    asyncio.run(run())
 
 
 def test_request_respects_rate_limit(kraken_ticker_fixture) -> None:

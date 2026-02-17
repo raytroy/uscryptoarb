@@ -209,7 +209,7 @@ class TestSelectTrade:
         coinbase_btc_usd_fees: FeeSchedule,
         gemini_btc_usd_fees: FeeSchedule,
     ) -> None:
-        """3 venues = 6 directional opportunities. Best should be returned."""
+        """3 venues produce only positive-spread directional opportunities."""
         opps = calc_all_opportunities(
             tobs_by_venue={
                 "kraken": kraken_btc_usd_tob,
@@ -224,7 +224,7 @@ class TestSelectTrade:
             trade_amount=Decimal("0.01"),
             ts_calculated_ms=1707900000000,
         )
-        assert len(opps) == 6  # 3 * 2 = 6 permutations
+        assert len(opps) == 3
         best = select_trade(opps, Decimal("-1.0"))
         assert best is not None
         expected = max(opps, key=lambda o: o.return_net)

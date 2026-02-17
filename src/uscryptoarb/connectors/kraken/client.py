@@ -1,15 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
-
-import httpx
+from typing import Any, ClassVar
 
 from uscryptoarb.connectors.connector_base import BaseAsyncConnector
 from uscryptoarb.connectors.kraken.parser import parse_ticker_response
 from uscryptoarb.connectors.kraken.symbols import KRAKEN_SYMBOLS
-from uscryptoarb.http.backoff import BackoffPolicy
-from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.misc.time_utils import now_ms
 from uscryptoarb.venues.symbol_translator import SymbolTranslator
@@ -18,31 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 class KrakenClient(BaseAsyncConnector):
+    VENUE_NAME: ClassVar[str] = "kraken"
+    DEFAULT_SYMBOLS: ClassVar[SymbolTranslator] = KRAKEN_SYMBOLS
+
     """Async Kraken public API client."""
 
     BASE_URL: str = "https://api.kraken.com"
     TICKER_PATH: str = "/0/public/Ticker"
     ORDERBOOK_PATH: str = "/0/public/Depth"
-    ASSET_PAIRS_PATH: str = "/0/public/AssetPairs"
-
-    def __init__(
-        self,
-        client: httpx.AsyncClient,
-        rate_limiter: RateLimiter,
-        symbols: SymbolTranslator | None = None,
-        timeout_s: float = 10.0,
-        max_retries: int = 3,
-        backoff: BackoffPolicy | None = None,
-    ) -> None:
-        super().__init__(
-            client=client,
-            rate_limiter=rate_limiter,
-            symbols=symbols or KRAKEN_SYMBOLS,
-            venue_name="kraken",
-            timeout_s=timeout_s,
-            max_retries=max_retries,
-            backoff=backoff,
-        )
 
     async def fetch_tickers(self, pairs: list[str]) -> dict[str, TopOfBook]:
         if not pairs:
@@ -62,19 +41,6 @@ class KrakenClient(BaseAsyncConnector):
         result = await self._request("GET", self.TICKER_PATH, params={"pair": symbol_str})
         ts_local_ms = now_ms()
         return parse_ticker_response(result, ts_local_ms=ts_local_ms, symbols=self._symbols)
-
-    async def validate_symbols(self) -> None:
-        result = await self._request("GET", self.ASSET_PAIRS_PATH)
-        missing: list[str] = []
-        for canonical, kraken_symbol in self._symbols.canonical_to_venue.items():
-            if kraken_symbol not in result:
-                missing.append(f"{canonical} ({kraken_symbol})")
-            else:
-                logger.info("Validated Kraken symbol: %s -> %s", canonical, kraken_symbol)
-
-        if missing:
-            joined = ", ".join(missing)
-            raise ValueError(f"Missing Kraken symbol(s) from AssetPairs: {joined}")
 
     async def _request(
         self,

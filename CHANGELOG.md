@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Fixed documentation drift in CLAUDE_INSTRUCTIONS.md and PROJECT_INSTRUCTIONS.md (exchanges, file tree, debug config, tooling, layering rules). Fixed CHANGELOG.md duplicate entries between [Unreleased] and [0.0.1]. Updated README.md exchange table. Renamed 04_okx notebook to 05_okx.
+- Added low-risk correctness fixes (SymbolTranslator collision detection, OKX parser canonical mapping path, parse_pair memoization, email percent formatting, Coinbase dual-key warning handling, dead Kraken validate_symbols removal).
+- Added DRY refactors (connector class defaults, cast removal, fixture consolidation to tests/fixtures, conftest fixture loader de-duplication, integration connector factory consolidation).
+- Added architectural improvements (startup fee coverage validation and positive-spread early exit in calc_all_opportunities).
+
 ### Added
 - OKX US connector (`src/uscryptoarb/connectors/okx/`) — async httpx client using batch `/api/v5/market/tickers?instType=SPOT` endpoint. Single API call for all pairs, client-side filtering. 7/8 pairs (LTC/BTC not listed on OKX US).
   - `symbols.py`: OKX_SYMBOL_MAP with 7 target pairs (dash-separated uppercase format)
@@ -236,17 +242,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2025-01-04
 
 ### Added
-- Bitstamp connector (`src/uscryptoarb/connectors/bitstamp/`) — async httpx client using `/api/v2/order_book/{symbol}/` endpoint (tickers lack bid/ask sizes per LL-060). Per-pair requests with 150ms rate limiting. Inherits BaseAsyncConnector (DEC-018).
-  - `symbols.py`: BITSTAMP_SYMBOL_MAP with 6/8 target pairs (missing LTC/USDC, SOL/BTC)
-  - `parser.py`: parse_book_response() with arrays-of-arrays index-based parsing (LL-070) and microsecond timestamp conversion (LL-071)
-  - `client.py`: BitstampClient(BaseAsyncConnector) with HTML and JSON error handling
-- `orchestration/scan_loop.py`: Bitstamp connector wired into _CONNECTOR_REGISTRY
-- `config.yaml`: Bitstamp added to venues.primary with 150ms rate limit, 0.40% taker fee
-- `venues/registry.py`: Bitstamp added to DEFAULT_VENUES as Ohio-eligible
-- `resources/fee_schedules.json`: Bitstamp withdrawal fees and trading accuracy for 6 pairs
-- `tests/unit/test_connectors/test_bitstamp/`: 3 test modules (~35 tests)
-- `tests/fixtures/`: 3 Bitstamp book fixtures from notebook Section 11 live capture
-- Initial project structure
+- `misc/decimals.py` (`to_decimal`, `floor_to_step`, `ceil_to_step`)
+- `markets/pairs.py` (`CanonicalPair`, `parse_pair`)
+- `venues/registry.py`, `venues/symbols.py`
+- `marketdata/topofbook.py`
+- `validation/guards.py`
+- Initial test structure
+- `pyproject.toml`, `.gitignore`, `README.md`, `docs/` skeleton
 
 [Unreleased]: https://github.com/raytroy/uscryptoarb/compare/v0.0.1...HEAD
 [0.0.1]: https://github.com/raytroy/uscryptoarb/releases/tag/v0.0.1

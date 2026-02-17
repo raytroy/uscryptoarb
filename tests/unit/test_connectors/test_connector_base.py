@@ -26,11 +26,14 @@ from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 # Minimal concrete subclass for testing the ABC
 class StubConnector(BaseAsyncConnector):
+    VENUE_NAME = "stub"
+    DEFAULT_SYMBOLS = SymbolTranslator(venue="stub", canonical_to_venue={"BTC/USD": "BTC-USD"})
+
     async def fetch_tickers(self, pairs: list[str]) -> dict[str, TopOfBook]:
         return {}
 
 
-STUB_SYMBOLS = SymbolTranslator(venue="stub", canonical_to_venue={"BTC/USD": "BTC-USD"})
+STUB_SYMBOLS = StubConnector.DEFAULT_SYMBOLS
 FAST_BACKOFF = BackoffPolicy(base_ms=1, cap_ms=1, jitter_ratio=0)
 
 
@@ -44,7 +47,6 @@ def _make_connector(client, rate_limiter=None, max_retries=3, backoff=None):
         client=client,
         rate_limiter=rate_limiter or RateLimiter(0),
         symbols=STUB_SYMBOLS,
-        venue_name="stub",
         max_retries=max_retries,
         backoff=backoff or FAST_BACKOFF,
     )

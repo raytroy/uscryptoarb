@@ -35,6 +35,7 @@ import httpx
 from uscryptoarb.calculation.calc_types import ArbOpportunity
 from uscryptoarb.connectors.bitstamp.client import BitstampClient
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
+from uscryptoarb.connectors.connector_base import BaseAsyncConnector
 from uscryptoarb.connectors.gemini.client import GeminiClient
 from uscryptoarb.connectors.kraken.client import KrakenClient
 from uscryptoarb.connectors.okx.client import OkxClient
@@ -190,59 +191,37 @@ def _bitstamp_book_response(bid: str, ask: str) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _make_kraken(handler, max_retries: int = 1) -> KrakenClient:
-    transport = httpx.MockTransport(handler)
-    client = httpx.AsyncClient(transport=transport)
-    return KrakenClient(
+def _make_connector(
+    cls: type[BaseAsyncConnector],
+    client: httpx.AsyncClient,
+    max_retries: int = 1,
+    backoff: BackoffPolicy | None = None,
+) -> BaseAsyncConnector:
+    return cls(
         client=client,
         rate_limiter=RateLimiter(0),
         max_retries=max_retries,
-        backoff=FAST_BACKOFF,
+        backoff=backoff or FAST_BACKOFF,
     )
 
 
-def _make_coinbase(handler, max_retries: int = 1) -> CoinbaseClient:
+def _make_test_client(handler) -> httpx.AsyncClient:
     transport = httpx.MockTransport(handler)
-    client = httpx.AsyncClient(transport=transport)
-    return CoinbaseClient(
-        client=client,
-        rate_limiter=RateLimiter(0),
-        max_retries=max_retries,
-        backoff=FAST_BACKOFF,
-    )
+    return httpx.AsyncClient(transport=transport)
 
 
-def _make_gemini(handler, max_retries: int = 1) -> GeminiClient:
-    transport = httpx.MockTransport(handler)
-    client = httpx.AsyncClient(transport=transport)
-    return GeminiClient(
-        client=client,
-        rate_limiter=RateLimiter(0),
-        max_retries=max_retries,
-        backoff=FAST_BACKOFF,
-    )
 
 
-def _make_okx(handler, max_retries: int = 1) -> OkxClient:
-    transport = httpx.MockTransport(handler)
-    client = httpx.AsyncClient(transport=transport)
-    return OkxClient(
-        client=client,
-        rate_limiter=RateLimiter(0),
-        max_retries=max_retries,
-        backoff=FAST_BACKOFF,
-    )
-
-
-def _make_bitstamp(handler, max_retries: int = 1) -> BitstampClient:
-    transport = httpx.MockTransport(handler)
-    client = httpx.AsyncClient(transport=transport)
-    return BitstampClient(
-        client=client,
-        rate_limiter=RateLimiter(0),
-        max_retries=max_retries,
-        backoff=FAST_BACKOFF,
-    )
+def _make_connector_from_handler(
+    cls: type[BaseAsyncConnector],
+    handler,
+    max_retries: int = 1,
+    backoff: BackoffPolicy | None = None,
+) -> BaseAsyncConnector:
+    client = _make_test_client(handler)
+    connector = _make_connector(cls, client, max_retries=max_retries, backoff=backoff)
+    connector._owned_test_client = client
+    return connector
 
 
 def _write_config(tmp_path: Path, venues: list[str], email_enabled: bool = False) -> str:
@@ -296,6 +275,13 @@ def _patch_now_ms(func):
     return wrapper
 
 
+async def _close_connectors(connectors: dict[str, BaseAsyncConnector]) -> None:
+    for c in connectors.values():
+        client = getattr(c, "_client", None)
+        if isinstance(client, httpx.AsyncClient):
+            await client.aclose()
+
+
 # ===========================================================================
 # Test 1: No opportunity — all exchanges return similar prices
 # ===========================================================================
@@ -340,10 +326,10 @@ class TestNoOpportunitySimilarPrices:
             )
 
         connectors = {
-            "kraken": _make_kraken(kraken_handler),
-            "coinbase": _make_coinbase(coinbase_handler),
-            "gemini": _make_gemini(gemini_handler),
-            "bitstamp": _make_bitstamp(bitstamp_handler),
+            "kraken": _make_connector_from_handler(KrakenClient, kraken_handler),
+            "coinbase": _make_connector_from_handler(CoinbaseClient, coinbase_handler),
+            "gemini": _make_connector_from_handler(GeminiClient, gemini_handler),
+            "bitstamp": _make_connector_from_handler(BitstampClient, bitstamp_handler),
         }
 
         cfg_path = _write_config(tmp_path, ["kraken", "coinbase", "gemini", "bitstamp"])
@@ -362,6 +348,7 @@ class TestNoOpportunitySimilarPrices:
             )
 
         asyncio.run(run())
+        asyncio.run(_close_connectors(connectors))
 
 
 # ===========================================================================
@@ -394,8 +381,8 @@ class TestOpportunityDetectedEmailSent:
             )
 
         connectors = {
-            "kraken": _make_kraken(kraken_handler),
-            "coinbase": _make_coinbase(coinbase_handler),
+            "kraken": _make_connector_from_handler(KrakenClient, kraken_handler),
+            "coinbase": _make_connector_from_handler(CoinbaseClient, coinbase_handler),
         }
 
         cfg_path = _write_config(
@@ -459,6 +446,7 @@ class TestOpportunityDetectedEmailSent:
             assert "Sell: coinbase" in body
 
         asyncio.run(run())
+        asyncio.run(_close_connectors(connectors))
 
 
 # ===========================================================================
@@ -487,11 +475,11 @@ class TestNoOpportunityWithOkx:
             return httpx.Response(200, json=_okx_ticker_response("99485.0", "99585.0"))
 
         connectors = {
-            "kraken": _make_kraken(kraken_handler),
-            "coinbase": _make_coinbase(coinbase_handler),
-            "gemini": _make_gemini(gemini_handler),
-            "bitstamp": _make_bitstamp(bitstamp_handler),
-            "okx": _make_okx(okx_handler),
+            "kraken": _make_connector_from_handler(KrakenClient, kraken_handler),
+            "coinbase": _make_connector_from_handler(CoinbaseClient, coinbase_handler),
+            "gemini": _make_connector_from_handler(GeminiClient, gemini_handler),
+            "bitstamp": _make_connector_from_handler(BitstampClient, bitstamp_handler),
+            "okx": _make_connector_from_handler(OkxClient, okx_handler),
         }
 
         cfg_path = _write_config(tmp_path, ["kraken", "coinbase", "gemini", "bitstamp", "okx"])
@@ -510,6 +498,7 @@ class TestNoOpportunityWithOkx:
             assert opportunities == []
 
         asyncio.run(run())
+        asyncio.run(_close_connectors(connectors))
 
 
 class TestPartialFailureGracefulDegradation:
@@ -543,10 +532,14 @@ class TestPartialFailureGracefulDegradation:
             )
 
         connectors = {
-            "kraken": _make_kraken(kraken_handler),
-            "coinbase": _make_coinbase(coinbase_500_handler, max_retries=1),
-            "gemini": _make_gemini(gemini_handler),
-            "bitstamp": _make_bitstamp(bitstamp_handler),
+            "kraken": _make_connector_from_handler(KrakenClient, kraken_handler),
+            "coinbase": _make_connector_from_handler(
+                CoinbaseClient,
+                coinbase_500_handler,
+                max_retries=1,
+            ),
+            "gemini": _make_connector_from_handler(GeminiClient, gemini_handler),
+            "bitstamp": _make_connector_from_handler(BitstampClient, bitstamp_handler),
         }
 
         cfg_path = _write_config(tmp_path, ["kraken", "coinbase", "gemini", "bitstamp"])
@@ -576,6 +569,7 @@ class TestPartialFailureGracefulDegradation:
             assert "coinbase" not in (opp.buy_venue, opp.sell_venue)
 
         asyncio.run(run())
+        asyncio.run(_close_connectors(connectors))
 
 
 # ===========================================================================
@@ -602,8 +596,12 @@ class TestTimeoutInsufficientVenues:
             raise httpx.TimeoutException("connection timed out")
 
         connectors = {
-            "kraken": _make_kraken(kraken_handler),
-            "gemini": _make_gemini(gemini_timeout_handler, max_retries=1),
+            "kraken": _make_connector_from_handler(KrakenClient, kraken_handler),
+            "gemini": _make_connector_from_handler(
+                GeminiClient,
+                gemini_timeout_handler,
+                max_retries=1,
+            ),
         }
 
         cfg_path = _write_config(tmp_path, ["kraken", "gemini"])
@@ -625,3 +623,4 @@ class TestTimeoutInsufficientVenues:
             )
 
         asyncio.run(run())
+        asyncio.run(_close_connectors(connectors))

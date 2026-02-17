@@ -1,15 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
-
-import httpx
+from typing import Any, ClassVar
 
 from uscryptoarb.connectors.bitstamp.parser import parse_book_response
 from uscryptoarb.connectors.bitstamp.symbols import BITSTAMP_SYMBOLS
 from uscryptoarb.connectors.connector_base import BaseAsyncConnector
-from uscryptoarb.http.backoff import BackoffPolicy
-from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
@@ -17,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 class BitstampClient(BaseAsyncConnector):
+    VENUE_NAME: ClassVar[str] = "bitstamp"
+    DEFAULT_SYMBOLS: ClassVar[SymbolTranslator] = BITSTAMP_SYMBOLS
+
     """Async Bitstamp public API client.
 
     Uses /api/v2/order_book/{symbol}/ endpoint (tickers lack bid/ask sizes
@@ -29,25 +28,6 @@ class BitstampClient(BaseAsyncConnector):
 
     BASE_URL: str = "https://www.bitstamp.net"
     BOOK_PATH_PREFIX: str = "/api/v2/order_book"
-
-    def __init__(
-        self,
-        client: httpx.AsyncClient,
-        rate_limiter: RateLimiter,
-        symbols: SymbolTranslator | None = None,
-        timeout_s: float = 10.0,
-        max_retries: int = 3,
-        backoff: BackoffPolicy | None = None,
-    ) -> None:
-        super().__init__(
-            client=client,
-            rate_limiter=rate_limiter,
-            symbols=symbols or BITSTAMP_SYMBOLS,
-            venue_name="bitstamp",
-            timeout_s=timeout_s,
-            max_retries=max_retries,
-            backoff=backoff,
-        )
 
     async def fetch_tickers(self, pairs: list[str]) -> dict[str, TopOfBook]:
         """Fetch top-of-book for multiple pairs."""

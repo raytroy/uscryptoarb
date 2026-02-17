@@ -25,6 +25,8 @@ Cross-exchange, taker-only crypto arbitrage scanner for Ohio-eligible exchanges.
 | Kraken | ✅ Connector built | BTC/USD, BTC/USDC, LTC/USD, LTC/USDC, LTC/BTC, SOL/USD, SOL/USDC, SOL/BTC |
 | Coinbase | ✅ Connector built | BTC/USD, BTC/USDC, LTC/USD, LTC/USDC, LTC/BTC, SOL/USD, SOL/USDC, SOL/BTC |
 | Gemini | ✅ Connector built | BTC/USD, BTC/USDC, LTC/USD, LTC/USDC, LTC/BTC, SOL/USD, SOL/USDC, SOL/BTC |
+| Bitstamp | ✅ Connector built | 6/8 pairs (missing LTC/USDC, SOL/BTC) |
+| OKX | ✅ Connector built | 7/8 pairs (missing LTC/BTC) |
 
 ## Setup
 

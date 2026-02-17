@@ -6,7 +6,6 @@ import time
 import uuid
 from contextlib import AsyncExitStack
 from decimal import Decimal
-from typing import cast
 
 import httpx
 
@@ -57,16 +56,7 @@ async def create_connectors(
         venue_cfg = config.venue_configs[venue]
         http_client = await stack.enter_async_context(httpx.AsyncClient())
         limiter = RateLimiter(min_interval_ms=venue_cfg.rate_limit_ms)
-
-        concrete_connector_cls = cast(
-            type[KrakenClient]
-            | type[CoinbaseClient]
-            | type[GeminiClient]
-            | type[BitstampClient]
-            | type[OkxClient],
-            connector_cls,
-        )
-        connectors[venue] = concrete_connector_cls(
+        connectors[venue] = connector_cls(
             client=http_client,
             rate_limiter=limiter,
             timeout_s=venue_cfg.timeout_s,
@@ -279,10 +269,7 @@ async def run_scan_loop(
                 )
                 cycle_opportunities = len(opportunities)
                 for opp in opportunities:
-                    try:
-                        await send_alert(opp, config.email)
-                    except Exception as exc:
-                        logger.error("[%s] Email failed for %s: %s", run_id, opp.pair, exc)
+                    await send_alert(opp, config.email)
             except Exception as exc:
                 logger.error("[%s] Scan cycle failed: %s", run_id, exc)
 

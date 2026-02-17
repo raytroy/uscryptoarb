@@ -86,15 +86,12 @@ def parse_batch_tickers(
 
     data_list = require_nonempty_list(raw.get("data"), "OKX tickers data")
 
-    reverse_map = {
-        venue_sym: canonical for canonical, venue_sym in symbols.canonical_to_venue.items()
-    }
-
     results: dict[str, TopOfBook] = {}
     for item in data_list:
         inst_id = item.get("instId", "")
-        canonical = reverse_map.get(inst_id)
-        if canonical is None:
+        try:
+            canonical = symbols.to_canonical(inst_id)
+        except KeyError:
             continue
 
         try:

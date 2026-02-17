@@ -12,7 +12,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
-from typing import Any, Protocol
+from typing import Any, ClassVar, Protocol
 
 import httpx
 
@@ -59,21 +59,23 @@ class BaseAsyncConnector(ABC):
     {"error": [], "result": {...}}, Coinbase returns {"pricebook": {...}}).
     """
 
+    VENUE_NAME: ClassVar[str]
+    DEFAULT_SYMBOLS: ClassVar[SymbolTranslator]
+
     def __init__(
         self,
         *,
         client: httpx.AsyncClient,
         rate_limiter: RateLimiter,
-        symbols: SymbolTranslator,
-        venue_name: str,
+        symbols: SymbolTranslator | None = None,
         timeout_s: float = 10.0,
         max_retries: int = 3,
         backoff: BackoffPolicy | None = None,
     ) -> None:
         self._client = client
         self._rate_limiter = rate_limiter
-        self._symbols = symbols
-        self._venue_name = venue_name
+        self._symbols = symbols or self.DEFAULT_SYMBOLS
+        self._venue_name = self.VENUE_NAME
         self._timeout_s = timeout_s
         self._max_retries = max_retries
         self._backoff = backoff or DEFAULT_BACKOFF_POLICY

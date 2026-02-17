@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, ClassVar
 
 # Re-export for type checking — httpx is used by callers constructing clients
-import httpx
-
 from uscryptoarb.connectors.connector_base import BaseAsyncConnector
 from uscryptoarb.connectors.gemini.parser import parse_book_response
 from uscryptoarb.connectors.gemini.symbols import GEMINI_SYMBOLS
-from uscryptoarb.http.backoff import BackoffPolicy
-from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
@@ -18,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiClient(BaseAsyncConnector):
+    VENUE_NAME: ClassVar[str] = "gemini"
+    DEFAULT_SYMBOLS: ClassVar[SymbolTranslator] = GEMINI_SYMBOLS
+
     """Async Gemini public API client.
 
     Uses /v1/book/{symbol} endpoint (not ticker — LL-062: tickers lack sizes).
@@ -27,25 +26,6 @@ class GeminiClient(BaseAsyncConnector):
 
     BASE_URL: str = "https://api.gemini.com"
     BOOK_PATH_PREFIX: str = "/v1/book"
-
-    def __init__(
-        self,
-        client: httpx.AsyncClient,
-        rate_limiter: RateLimiter,
-        symbols: SymbolTranslator | None = None,
-        timeout_s: float = 10.0,
-        max_retries: int = 3,
-        backoff: BackoffPolicy | None = None,
-    ) -> None:
-        super().__init__(
-            client=client,
-            rate_limiter=rate_limiter,
-            symbols=symbols or GEMINI_SYMBOLS,
-            venue_name="gemini",
-            timeout_s=timeout_s,
-            max_retries=max_retries,
-            backoff=backoff,
-        )
 
     async def fetch_tickers(self, pairs: list[str]) -> dict[str, TopOfBook]:
         """Fetch top-of-book for multiple pairs."""

@@ -33,22 +33,11 @@ Build a production-grade cross-exchange crypto arbitrage system for Ohio-eligibl
 
 ## 3. Exchanges
 
-### 3.1 Primary (Phase 1)
-| Exchange | Ohio Status | SDK | Symbol Format |
-|----------|-------------|-----|---------------|
-| Kraken | ✅ (not ME/NY) | custom httpx | `XBTUSD` (XBT=BTC) |
-| Coinbase | ✅ | custom httpx | `BTC-USD` |
-| Gemini | ✅ OHMT licensed | Custom wrapper | `btcusd` |
+Primary: Kraken (custom httpx), Coinbase (custom httpx), Gemini (custom httpx), Bitstamp (custom httpx), OKX (custom httpx)
 
-### 3.2 Secondary (Phase 2)
-| Exchange | Ohio Status | SDK |
-|----------|-------------|-----|
-| Bitstamp | Verify | Direct REST |
-| bitFlyer USA | ✅ OHMT126 | Lightning API |
-| OKCoin | ✅ | V5 REST/WS |
+**Symbol formats**: Kraken=`XBTUSD` (XBT for BTC) | Coinbase=`BTC-USD` | Gemini=`btcusd` | Bitstamp=`btcusd` | OKX=`BTC-USD`
 
-### 3.3 Tertiary (Phase 3)
-CEX.IO, Crypto.com (verify eligibility)
+All translation runs through `venues/symbol_translator.py` and connector-specific `symbols.py` modules.
 
 ---
 
@@ -77,7 +66,7 @@ pairs:
 ```
 ┌────────────────────────────────────────────────────────────┐
 │  Orchestration (imperative)                                │
-│  - main.py, CLI, scheduling, config loading                │
+│  - __main__.py, CLI, scheduling, config loading            │
 └────────────────────────────────────────────────────────────┘
                             │
 ┌────────────────────────────────────────────────────────────┐
@@ -85,7 +74,7 @@ pairs:
 └────────────────────────────────────────────────────────────┘
                             │
 ┌────────────────────────────────────────────────────────────┐
-│  Execution (imperative) - Order placement, balances        │
+│  Execution (future — Phase 4+) - Order placement, balances │
 └────────────────────────────────────────────────────────────┘
                             │
 ┌────────────────────────────────────────────────────────────┐
@@ -105,7 +94,7 @@ pairs:
 └────────────────────────────────────────────────────────────┘
                             │
 ┌────────────────────────────────────────────────────────────┐
-│  Domain/Core (pure) - Dataclasses, MarketBaseConvert       │
+│  Domain/Core (pure) - Dataclasses, canonical models        │
 └────────────────────────────────────────────────────────────┘
 ```
 
@@ -118,7 +107,7 @@ Domain/Core     → (nothing)
 Validation      → Domain/Core
 Calculation     → Domain/Core, Validation
 Strategy        → Domain/Core, Validation, Calculation
-Connectors      → Domain/Core
+Connectors      → Domain/Core, HTTP, MarketData, Venues, Misc, Validation (outputs canonical types)
 Execution       → All pure layers, Connectors
 Notification    → Domain/Core
 Orchestration   → Everything
@@ -130,117 +119,49 @@ Orchestration   → Everything
 uscryptoarb/
 ├── src/uscryptoarb/
 │   ├── __init__.py
-│   ├── __main__.py                # CLI entry point: python -m uscryptoarb (RunFinal[] equivalent)
-│   ├── config/
-│   │   ├── __init__.py
-│   │   └── app_config.py          # AppConfig, validate_config (legacy — superseded by orchestration/config.py)
-│   ├── misc/
-│   │   ├── __init__.py
-│   │   └── decimals.py            # to_decimal, floor_to_step, ceil_to_step
-│   ├── markets/
-│   │   ├── __init__.py
-│   │   └── pairs.py               # CanonicalPair, parse_pair
-│   ├── venues/
-│   │   ├── __init__.py
-│   │   ├── registry.py            # VenueInfo, ohio_eligible
-│   │   └── symbol_translator.py   # SymbolTranslator, to_canonical
-│   ├── marketdata/
-│   │   ├── __init__.py
-│   │   └── topofbook.py           # TopOfBook, validate_tob, tob_from_raw
-│   ├── validation/
-│   │   ├── __init__.py
-│   │   └── guards.py              # is_missing, require_present, require_positive, require_non_negative
-│   ├── http/
-│   │   ├── __init__.py
-│   │   ├── backoff.py             # Bounded retry with async backoff
-│   │   └── rate_limiter.py        # RateLimiter for exchange API rate limiting
-│   ├── calculation/
-│   │   ├── __init__.py
-│   │   ├── calc_types.py          # TradingFeeRate, WithdrawalFee, TradingAccuracy, FeeSchedule, ArbLeg, ArbOpportunity
-│   │   ├── returns.py             # calc_return_raw, calc_return_grs, calc_return_net, calc_profit_base
-│   │   ├── fees.py                # calc_buy_leg, calc_sell_leg, effective_buy_cost, effective_sell_proceeds, total_buy_cost, net_sell_proceeds
-│   │   ├── sizing.py              # calc_kelly_fraction, calc_kelly_amount, calc_position_size
-│   │   └── arb_calc.py            # calc_arb_opportunity, calc_all_opportunities, sort_opportunities, filter_profitable
-│   ├── strategy/
-│   │   ├── __init__.py
-│   │   ├── selection.py           # select_trade, passes_threshold
-│   │   └── trade_finder.py        # find_trades_to_execute, filter_valid_exchanges
+│   ├── __main__.py
+│   ├── calculation/{__init__.py, arb_calc.py, calc_types.py, fees.py, returns.py, sizing.py}
 │   ├── connectors/
-│   │   ├── __init__.py
-│   │   ├── connector_base.py      # ExchangeConnector Protocol, BaseAsyncConnector
-│   │   ├── kraken/
-│   │   │   ├── __init__.py
-│   │   │   ├── symbols.py         # Kraken symbol mapping (BTC/USD → XXBTZUSD)
-│   │   │   ├── parser.py          # parse_ticker_response, parse_orderbook_response
-│   │   │   └── client.py          # KrakenClient (async httpx)
-│   │   ├── coinbase/
-│   │   │   ├── __init__.py
-│   │   │   ├── symbols.py         # Coinbase symbol mapping (BTC/USD → BTC-USD)
-│   │   │   ├── parser.py          # parse_product_book_response
-│   │   │   └── client.py          # CoinbaseClient (async httpx)
-│   │   ├── gemini/
-│   │   │   ├── __init__.py
-│   │   │   ├── symbols.py         # Gemini symbol mapping (BTC/USD → btcusd)
-│   │   │   ├── parser.py          # parse_book_response
-│   │   │   └── client.py          # GeminiClient (async httpx)
-│   │   └── okx/
-│   │       ├── __init__.py
-│   │       ├── symbols.py         # OKX symbol mapping (BTC/USD → BTC-USD)
-│   │       ├── parser.py          # parse_okx_ticker, parse_batch_tickers
-│   │       └── client.py          # OkxClient (async httpx)
-│   ├── notification/
-│   │   ├── __init__.py
-│   │   └── email.py               # EmailConfig, send_alert, format_opportunity_email
-│   ├── orchestration/
-│   │   ├── __init__.py
-│   │   ├── config.py              # ScannerConfig, load_config, _build_fee_schedules
-│   │   └── scan_loop.py           # run_scan_loop, run_scan_cycle, create_connectors, fetch_all_venues
-│   └── resources/
-│       ├── __init__.py
-│       └── fee_schedules.json     # Production fee data (withdrawal fees, trading accuracy)
+│   │   ├── connector_base.py
+│   │   ├── kraken/{__init__.py, client.py, parser.py, symbols.py}
+│   │   ├── coinbase/{__init__.py, client.py, parser.py, symbols.py}
+│   │   ├── gemini/{__init__.py, client.py, parser.py, symbols.py}
+│   │   ├── bitstamp/{__init__.py, client.py, parser.py, symbols.py}
+│   │   └── okx/{__init__.py, client.py, parser.py, symbols.py}
+│   ├── http/{__init__.py, backoff.py, rate_limiter.py}
+│   ├── marketdata/{__init__.py, topofbook.py}
+│   ├── markets/{__init__.py, pairs.py}
+│   ├── misc/{__init__.py, decimals.py, time_utils.py}
+│   ├── notification/{__init__.py, email.py}
+│   ├── orchestration/{__init__.py, config.py, run_stats.py, scan_loop.py}
+│   ├── resources/{__init__.py, fee_schedules.json}
+│   ├── strategy/{__init__.py, selection.py, trade_finder.py}
+│   ├── validation/{__init__.py, guards.py}
+│   └── venues/{__init__.py, registry.py, symbol_translator.py}
 ├── tests/
-│   ├── __init__.py
-│   ├── conftest.py                # Shared fixtures (TopOfBook, FeeSchedule, etc.)
-│   ├── helpers.py                 # Shared test utilities (DummyRateLimiter)
-│   ├── test_backoff.py
-│   ├── test_decimals.py
-│   ├── test_pairs_and_symbols.py
-│   ├── test_registry_and_config.py  # Legacy tests for venues and AppConfig
-│   ├── test_topofbook.py
+│   ├── integration/{__init__.py, test_end_to_end.py}
 │   ├── unit/
-│   │   ├── test_calculation/
-│   │   ├── test_connectors/
-│   │   │   ├── test_kraken/
-│   │   │   ├── test_coinbase/
-│   │   │   ├── test_gemini/
-│   │   │   └── test_okx/
-│   │   ├── test_http/
-│   │   ├── test_notification/
-│   │   ├── test_orchestration/
-│   │   ├── test_strategy/
-│   │   └── test_validation/
-│   └── fixtures/
-│       ├── README.md              # Fixture provenance documentation
-│       └── fee_schedules.json     # Test fee data
-├── notebooks/
-│   ├── 01_kraken_exploration.ipynb
-│   └── 02_coinbase_exploration.ipynb
-- 03_gemini_exploration.ipynb
-├── docs/
-│   ├── LESSONS_LEARNED.md
-│   ├── SESSION_HANDOFFS.md
-│   ├── DECISION_LOG.md
-│   └── MATHEMATICA_MAP.md
-├── config.yaml
-├── .env.example
-├── pyproject.toml
-├── README.md
-├── CHANGELOG.md
-├── CLAUDE_INSTRUCTIONS.md
-└── PROJECT_INSTRUCTIONS.md
+│   │   ├── test_calculation/{conftest.py, test_arb_calc.py, test_fees.py, test_returns.py, test_sizing.py}
+│   │   ├── test_connectors/{test_connector_base.py, test_kraken/*, test_coinbase/*, test_gemini/*, test_bitstamp/*, test_okx/*}
+│   │   ├── test_http/{test_backoff.py, test_rate_limiter.py}
+│   │   ├── test_marketdata/{test_topofbook.py}
+│   │   ├── test_markets/{test_pairs_and_symbols.py}
+│   │   ├── test_misc/{test_decimals.py, test_time_utils.py}
+│   │   ├── test_notification/{test_email.py}
+│   │   ├── test_orchestration/{conftest.py, test_config.py, test_fee_data_consistency.py, test_run_stats.py, test_scan_loop.py}
+│   │   ├── test_strategy/{conftest.py, test_selection.py, test_trade_finder.py}
+│   │   ├── test_validation/{test_guards.py}
+│   │   └── test_venues/{test_registry.py}
+│   ├── fixtures/*.json
+│   ├── conftest.py
+│   └── helpers.py
+└── notebooks/
+    ├── 01_kraken_exploration.ipynb
+    ├── 02_coinbase_exploration.ipynb
+    ├── 03_gemini_exploration.ipynb
+    ├── 04_bitstamp_exploration.ipynb
+    └── 05_okx_exploration.ipynb
 ```
-
----
 
 ## 6. Key Patterns (from Mathematica)
 

@@ -9,12 +9,11 @@ no live network (DEC-007, LL-010).
 
 from __future__ import annotations
 
-import json
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 
+from tests.helpers import load_fixture
 from uscryptoarb.calculation.calc_types import (
     FeeSchedule,
     TradingAccuracy,
@@ -23,8 +22,6 @@ from uscryptoarb.calculation.calc_types import (
 )
 from uscryptoarb.marketdata.topofbook import TopOfBook
 
-FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures"
-
 # ---------------------------------------------------------------------------
 # JSON fixture loaders (for connector tests)
 # ---------------------------------------------------------------------------
@@ -32,74 +29,62 @@ FIXTURES_DIR = Path(__file__).resolve().parent.parent / "fixtures"
 
 @pytest.fixture
 def kraken_ticker_fixture() -> dict:
-    with open(FIXTURES_DIR / "kraken_ticker_response.json") as f:
-        return json.load(f)
+    return load_fixture("kraken_ticker_response.json")
 
 
 @pytest.fixture
 def kraken_orderbook_fixture() -> dict:
-    with open(FIXTURES_DIR / "kraken_orderbook_response.json") as f:
-        return json.load(f)
+    return load_fixture("kraken_orderbook_response.json")
 
 
 @pytest.fixture
 def kraken_asset_pairs_fixture() -> dict:
-    with open(FIXTURES_DIR / "kraken_asset_pairs_btcusd.json") as f:
-        return json.load(f)
+    return load_fixture("kraken_asset_pairs_btcusd.json")
 
 
 @pytest.fixture
 def coinbase_product_book_btc_usd_fixture() -> dict:
-    with open(FIXTURES_DIR / "coinbase_product_book_btc_usd.json") as f:
-        return json.load(f)
+    return load_fixture("coinbase_product_book_btc_usd.json")
 
 
 @pytest.fixture
 def coinbase_product_book_ltc_btc_fixture() -> dict:
-    with open(FIXTURES_DIR / "coinbase_product_book_ltc_btc.json") as f:
-        return json.load(f)
+    return load_fixture("coinbase_product_book_ltc_btc.json")
 
 
 @pytest.fixture
 def coinbase_product_book_sol_btc_fixture() -> dict:
-    with open(FIXTURES_DIR / "coinbase_product_book_sol_btc.json") as f:
-        return json.load(f)
+    return load_fixture("coinbase_product_book_sol_btc.json")
 
 
 @pytest.fixture
 def gemini_book_btc_usd_fixture() -> dict:
-    with open(FIXTURES_DIR / "gemini_book_btc_usd.json") as f:
-        return json.load(f)
+    return load_fixture("gemini_book_btc_usd.json")
 
 
 @pytest.fixture
 def gemini_book_ltc_btc_fixture() -> dict:
-    with open(FIXTURES_DIR / "gemini_book_ltc_btc.json") as f:
-        return json.load(f)
+    return load_fixture("gemini_book_ltc_btc.json")
 
 
 @pytest.fixture
 def gemini_book_sol_btc_fixture() -> dict:
-    with open(FIXTURES_DIR / "gemini_book_sol_btc.json") as f:
-        return json.load(f)
+    return load_fixture("gemini_book_sol_btc.json")
 
 
 @pytest.fixture
 def bitstamp_book_btc_usd_fixture() -> dict:
-    with open(FIXTURES_DIR / "bitstamp_book_btc_usd.json") as f:
-        return json.load(f)
+    return load_fixture("bitstamp_book_btc_usd.json")
 
 
 @pytest.fixture
 def bitstamp_book_ltc_btc_fixture() -> dict:
-    with open(FIXTURES_DIR / "bitstamp_book_ltc_btc.json") as f:
-        return json.load(f)
+    return load_fixture("bitstamp_book_ltc_btc.json")
 
 
 @pytest.fixture
 def bitstamp_book_btc_usdc_fixture() -> dict:
-    with open(FIXTURES_DIR / "bitstamp_book_btc_usdc.json") as f:
-        return json.load(f)
+    return load_fixture("bitstamp_book_btc_usdc.json")
 
 
 # ---------------------------------------------------------------------------
