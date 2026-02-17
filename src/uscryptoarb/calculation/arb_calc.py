@@ -167,6 +167,9 @@ def calc_all_opportunities(
         buy_fee = fees_by_venue[buy_venue]
         sell_fee = fees_by_venue[sell_venue]
 
+        if sell_tob.bid_px <= buy_tob.ask_px:
+            continue
+
         opp = calc_arb_opportunity(
             buy_tob=buy_tob,
             sell_tob=sell_tob,

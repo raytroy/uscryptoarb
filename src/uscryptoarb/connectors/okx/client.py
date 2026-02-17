@@ -10,21 +10,20 @@ OKX-specific envelope validation (code == "0") in parse_batch_tickers (LL-070).
 
 from __future__ import annotations
 
-from typing import Any
-
-import httpx
+from typing import Any, ClassVar
 
 from uscryptoarb.connectors.connector_base import BaseAsyncConnector
 from uscryptoarb.connectors.okx.parser import parse_batch_tickers
 from uscryptoarb.connectors.okx.symbols import OKX_SYMBOLS
-from uscryptoarb.http.backoff import BackoffPolicy
-from uscryptoarb.http.rate_limiter import RateLimiter
 from uscryptoarb.marketdata.topofbook import TopOfBook
 from uscryptoarb.misc.time_utils import now_ms
 from uscryptoarb.venues.symbol_translator import SymbolTranslator
 
 
 class OkxClient(BaseAsyncConnector):
+    VENUE_NAME: ClassVar[str] = "okx"
+    DEFAULT_SYMBOLS: ClassVar[SymbolTranslator] = OKX_SYMBOLS
+
     """Async OKX US public API client.
 
     Uses batch ticker endpoint for all pairs in a single request.
@@ -33,25 +32,6 @@ class OkxClient(BaseAsyncConnector):
 
     BASE_URL: str = "https://app.okx.com"
     TICKERS_PATH: str = "/api/v5/market/tickers"
-
-    def __init__(
-        self,
-        client: httpx.AsyncClient,
-        rate_limiter: RateLimiter,
-        symbols: SymbolTranslator | None = None,
-        timeout_s: float = 10.0,
-        max_retries: int = 3,
-        backoff: BackoffPolicy | None = None,
-    ) -> None:
-        super().__init__(
-            client=client,
-            rate_limiter=rate_limiter,
-            symbols=symbols or OKX_SYMBOLS,
-            venue_name="okx",
-            timeout_s=timeout_s,
-            max_retries=max_retries,
-            backoff=backoff,
-        )
 
     async def fetch_tickers(self, pairs: list[str]) -> dict[str, TopOfBook]:
         """Fetch top-of-book for multiple pairs via batch endpoint.

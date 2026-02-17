@@ -36,6 +36,20 @@ def test_symbol_translator_reverse_missing() -> None:
         tr.to_canonical("XXBTZUSD")
 
 
+def test_duplicate_venue_symbol_raises() -> None:
+    with pytest.raises(ValueError, match="Duplicate venue symbols"):
+        SymbolTranslator(
+            venue="test",
+            canonical_to_venue={"BTC/USD": "BTCUSD", "BTC/USDC": "BTCUSD"},
+        )
+
+
+def test_parse_pair_returns_cached_instance() -> None:
+    a = parse_pair("BTC/USD")
+    b = parse_pair("BTC/USD")
+    assert a is b
+
+
 def test_create_translator_happy_path() -> None:
     t = create_translator("test_venue", {"BTC/USD": "BTC-USD", "SOL/USD": "SOL-USD"})
     assert t.venue == "test_venue"

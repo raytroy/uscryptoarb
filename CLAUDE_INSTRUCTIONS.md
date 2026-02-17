@@ -11,10 +11,9 @@ The Mathematica notebook is a **validated reference**, not gospel. It proves the
 - When in doubt, **suggest the better approach** rather than defaulting to what Mathematica does.
 
 ## Exchanges
-Primary: Kraken (custom httpx), Coinbase (custom httpx), Gemini (custom httpx)
-Secondary: Bitstamp, bitFlyer, OKCoin
+Primary: Kraken (custom httpx), Coinbase (custom httpx), Gemini (custom httpx), Bitstamp (custom httpx), OKX (custom httpx)
 
-**Symbol formats**: Kraken=`XBTUSD` (XBT for BTC) | Coinbase=`BTC-USD` | Gemini=`btcusd`
+**Symbol formats**: Kraken=`XBTUSD` (XBT for BTC) | Coinbase=`BTC-USD` | Gemini=`btcusd` | Bitstamp=`btcusd` | OKX=`BTC-USD`
 
 All translation runs through `venues/symbol_translator.py` and connector-specific `symbols.py` modules.
 
@@ -58,12 +57,12 @@ spread = tob.ask_px - tob.bid_px  # No validation needed
 ```
 
 ## Key Functions (Mathematica → Python)
-`MarketBaseConvert[]`→`market_base_convert()`, `PairTranslator[]`→`pair_translator()`, `ReturnCalc[]`→`calc_return_raw()` / `calc_return_grs()` / `calc_return_net()`, `ArbCalcFinal[]`→`calc_arb_opportunity()`, `TradesToExecute[]`→`find_trades_to_execute()`, `SelectTradeToExecute[]`→`select_trade()`, `RunFinal[]`→`run_scan_loop()` in orchestration
+`ReturnCalc[]`→`calc_return_raw()` / `calc_return_grs()` / `calc_return_net()`, `ArbCalcFinal[]`→`calc_arb_opportunity()`, `TradesToExecute[]`→`find_trades_to_execute()`, `SelectTradeToExecute[]`→`select_trade()`, `RunFinal[]`→`run_scan_loop()` in orchestration
 
 See `docs/MATHEMATICA_MAP.md` for the complete mapping of all ~58 functions (DEC-010).
 
 ## Architecture
-Orchestration (imperative) → Execution → Connectors
+Orchestration (imperative) → Execution (future — Phase 4+) → Connectors
 ↓
 Strategy (pure) → Calculation (pure) → Validation (pure) → Domain/Core (pure)
 ↓
@@ -74,7 +73,7 @@ Imports flow DOWN only. Circular imports = hard failure.
 src/uscryptoarb/
 __main__.py           # CLI entry point (python -m uscryptoarb)
 config/
-app_config.py          # Legacy AppConfig (superseded by orchestration/config.py)
+.py          # Legacy AppConfig (superseded by orchestration/config.py)
 misc/
 decimals.py            # to_decimal, floor_to_step, ceil_to_step
 time_utils.py          # now_ms
@@ -191,7 +190,7 @@ Correct, testable, observable, cross-platform code. Reliability over cleverness.
 **7.2** Tests must be deterministic: no live network, use fixtures, stable rounding.
 
 ### 8. Tooling
-Lint: Ruff | Types: mypy | Package: pip + requirements.txt
+Lint: Ruff | Types: mypy | Package: pyproject.toml + pip install -e ".[dev]"
 CI: Ruff → mypy → pytest
 
 ### 9. Security
@@ -215,7 +214,7 @@ Domain/Core  → (nothing) - dataclasses, pure functions
 Validation   → Domain
 Calculation  → Domain, Validation
 Strategy     → Domain, Validation, Calculation
-Connectors   → Domain only (outputs canonical types)
+Connectors   → Domain, HTTP, MarketData, Venues, Misc, Validation (outputs canonical types)
 Notification → Domain/Core
 Execution    → All pure + Connectors
 Orchestration→ Everything
@@ -271,8 +270,7 @@ key: default
 debug:
   enabled: bool
   trace_pairs: list[str]
-  log_pipeline_stages: bool
-  snapshot_dir: str | null
+  log_level: str  # INFO, DEBUG, etc.
 
 logging:
   file_path: str | null
@@ -280,7 +278,7 @@ logging:
   backup_count: int
   stats_interval: int
 ```
-CLI: `--trace-pair PAIR --dry-run --max-markets N --log-level LEVEL --log-file PATH --stats-interval N`
+CLI: `--dry-run --trace-pair PAIR --log-level LEVEL --log-file PATH --stats-interval N`
 
 ---
 ## Success Metrics

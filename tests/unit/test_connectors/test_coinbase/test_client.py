@@ -275,3 +275,31 @@ def test_venue_property() -> None:
             assert cc.venue == "coinbase"
 
     asyncio.run(run())
+
+
+def test_dual_key_response_uses_pricebook_with_warning(caplog) -> None:
+    import logging
+
+    pricebook_data = {
+        "pricebook": {
+            "product_id": "BTC-USD",
+            "bids": [{"price": "69000.00", "size": "0.5"}],
+            "asks": [{"price": "69100.00", "size": "0.3"}],
+            "time": "2025-01-15T12:00:00Z",
+        },
+        "error": "PARTIAL_DATA",
+        "message": "Some data may be stale",
+    }
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=pricebook_data)
+
+    async def run() -> None:
+        async with make_client(handler) as client:
+            c = CoinbaseClient(client=client, rate_limiter=RateLimiter(0))
+            with caplog.at_level(logging.WARNING):
+                result = await c.fetch_tickers(["BTC/USD"])
+            assert "BTC/USD" in result
+            assert "both 'error' and 'pricebook'" in caplog.text
+
+    asyncio.run(run())

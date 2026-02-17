@@ -235,6 +235,11 @@ def load_config(path: str = "config.yaml") -> ScannerConfig:
         fee_data=fee_data,
     )
 
+    _validate_fee_coverage(fees_by_pair_venue, tuple(pairs), venues)
+    for pair in tuple(pairs):
+        venue_names = sorted(fees_by_pair_venue.get(pair, {}).keys())
+        logger.info("Fee coverage: %s → %d venues: %s", pair, len(venue_names), venue_names)
+
     return ScannerConfig(
         venues=venues,
         pairs=tuple(pairs),
@@ -246,6 +251,24 @@ def load_config(path: str = "config.yaml") -> ScannerConfig:
         logging=logging_cfg,
         fees_by_pair_venue=fees_by_pair_venue,
     )
+
+
+def _validate_fee_coverage(
+    fees: dict[str, dict[str, FeeSchedule]],
+    pairs: tuple[str, ...],
+    venues: tuple[str, ...],
+) -> None:
+    """Verify every configured pair has at least two venues with fee data."""
+    under_covered: list[str] = []
+    for pair in pairs:
+        venue_names = list(fees.get(pair, {}).keys())
+        if len(venue_names) < 2:
+            under_covered.append(f"{pair}: {len(venue_names)} venue(s) {venue_names}")
+    if under_covered:
+        raise ValueError(
+            "Insufficient fee coverage for cross-exchange comparison "
+            "(need ≥ 2 venues per pair):\n  " + "\n  ".join(under_covered)
+        )
 
 
 def _load_dotenv_if_available() -> None:

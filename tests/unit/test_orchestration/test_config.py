@@ -139,7 +139,7 @@ def test_load_config_unknown_venue_raises(tmp_path) -> None:
 
 
 def test_venue_config_defaults(tmp_path) -> None:
-    path = _write_config(tmp_path, BASIC_CFG)
+    path = _write_config(tmp_path, FULL_CFG)
     cfg = load_config(str(path))
     assert cfg.venue_configs["kraken"] == _DEFAULT_VENUE_CONFIG
 
@@ -199,3 +199,14 @@ def test_logging_config_absent_uses_defaults(tmp_path) -> None:
     assert cfg.logging.max_bytes == 10_485_760
     assert cfg.logging.backup_count == 5
     assert cfg.logging.stats_interval == 20
+
+
+def test_fee_coverage_validation_fails_with_single_venue(tmp_path) -> None:
+    cfg_text = FULL_CFG.replace(
+        "primary: [kraken, coinbase, gemini, bitstamp, okx]",
+        "primary: [kraken]",
+    )
+    p = tmp_path / "single_venue.yaml"
+    p.write_text(cfg_text)
+    with pytest.raises(ValueError, match="Insufficient fee coverage"):
+        load_config(str(p))

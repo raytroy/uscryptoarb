@@ -17,6 +17,16 @@ class SymbolTranslator:
 
     def __post_init__(self) -> None:
         reverse = {venue: canonical for canonical, venue in self.canonical_to_venue.items()}
+        if len(reverse) != len(self.canonical_to_venue):
+            seen: dict[str, list[str]] = {}
+            for canonical, venue_sym in self.canonical_to_venue.items():
+                seen.setdefault(venue_sym, []).append(canonical)
+            dupes = {
+                venue_sym: canonical_pairs
+                for venue_sym, canonical_pairs in seen.items()
+                if len(canonical_pairs) > 1
+            }
+            raise ValueError(f"Duplicate venue symbols in {self.venue} translator: {dupes}")
         object.__setattr__(self, "_venue_to_canonical", reverse)
 
     def to_venue_symbol(self, pair: str | CanonicalPair) -> str:

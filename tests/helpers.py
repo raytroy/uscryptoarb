@@ -17,7 +17,7 @@ class DummyRateLimiter:
         self.calls += 1
 
 
-FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
 
 def load_fixture(name: str) -> dict:

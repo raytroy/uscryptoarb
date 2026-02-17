@@ -346,4 +346,61 @@
 - **Alternatives Considered**: Per-pair requests (slower, unnecessary since batch endpoint exists and provides all TopOfBook fields).
 - **Rationale**: Batch approach matches Kraken pattern, minimizes API calls, well under rate limits.
 - **Consequences**: OKX fetch_tickers() overrides the abstract method directly (like KrakenClient) instead of using _fetch_tickers_per_pair() template (used by Coinbase/Gemini).
-- **References**: notebooks/04_okx_exploration.ipynb Section 4, DEC-018
+- **References**: notebooks/05_okx_exploration.ipynb Section 4, DEC-018
+
+
+### DEC-025: Keep assert statements in returns.py as programmer invariants
+- **Date**: 2026-02-17
+- **Decision**: Retain `assert` (not `if/raise`) in returns.py for invariant checks.
+- **Context**: Two code reviews flagged that `assert` is stripped under `-O`. These assertions were consciously added in the Consolidated Refactor session with tests asserting on `AssertionError`. Changing to `if/raise ValueError` would break those tests.
+- **Rationale**: Nobody runs production Python with `-O`. These are programmer invariants, not input validation. Boundary validation happens upstream.
+- **Risk**: If someone runs with `-O`, invariants are silently skipped. Mitigated by: (a) documentation, (b) CI never uses `-O`.
+- **Revisit when**: Phase 3+ execution layer, or if any CI/deployment uses `-O`.
+
+### DEC-026: Defer property-based tests (Hypothesis) to Phase 2+
+- **Date**: 2026-02-17
+- **Decision**: Do not add Hypothesis tests now despite PROJECT_INSTRUCTIONS Section 8.1 listing them.
+- **Rationale**: No existing Hypothesis infrastructure. ~2h to add. Good candidates: return_net <= return_grs <= return_raw invariant, fee symmetry, TopOfBook field ranges. Better ROI when WebSocket streams introduce sub-millisecond update rates in Phase 2.
+- **Revisit when**: Phase 2 (WebSocket) or when a calculation bug is found that unit tests missed.
+
+### DEC-027: Defer pytest-asyncio migration
+- **Date**: 2026-02-17
+- **Decision**: Keep `asyncio.run()` pattern in ~75+ async test functions.
+- **Rationale**: Large mechanical change. Risk of subtle event loop differences between pytest-asyncio modes (auto vs strict). Current pattern works. Better as a dedicated session.
+- **Revisit when**: Adding WebSocket tests (Phase 2) where async test lifecycle matters more.
+
+### DEC-028: Defer circuit breaker pattern for venue failures
+- **Date**: 2026-02-17
+- **Decision**: Do not add circuit breaker for persistent venue failures.
+- **Rationale**: Phase 1 is detection-only with human oversight. Current behavior: log warning, skip venue, continue. Circuit breaker adds complexity for a scenario that hasn't been observed in production.
+- **Revisit when**: Phase 2 (WebSocket) or when operational patterns show repeated venue failures.
+
+### DEC-029: Defer parallel per-pair fetching within connectors
+- **Date**: 2026-02-17
+- **Decision**: Keep sequential per-pair fetching in _fetch_tickers_per_pair().
+- **Rationale**: Would reduce latency for Coinbase/Gemini/Bitstamp from ~1.2s to ~300ms. But adds concurrency complexity (rate limiter interaction, partial failure ordering). Current sequential approach is simple and correct.
+- **Revisit when**: Phase 2 (WebSocket) when latency is critical, or when profiling shows fetch time as bottleneck.
+
+### DEC-030: Defer now_ms() dependency injection
+- **Date**: 2026-02-17
+- **Decision**: Keep _patch_now_ms decorator approach for test determinism.
+- **Rationale**: Clean DI (clock parameter) would touch many files. The patch decorator works with 4 sites currently. LL-067 documents the fragility.
+- **Revisit when**: A 6th patch site appears, or Phase 2 needs testable timestamp handling for WebSocket streams.
+
+### DEC-031: Defer ScannerConfig splitting into sub-configs
+- **Date**: 2026-02-17
+- **Decision**: Keep ScannerConfig as a single configuration object.
+- **Rationale**: Current structure works for Phase 1. The `replace()` pattern handles test overrides. Split when Phase 3/4 adds execution config, bankroll config, etc.
+- **Revisit when**: Phase 3 (Paper Trading) when execution-specific config is needed.
+
+### DEC-032: Defer rounding to exchange TradingAccuracy in fee calculations
+- **Date**: 2026-02-17
+- **Decision**: TradingAccuracy data is loaded but unused in current fee calcs.
+- **Rationale**: calc_buy_leg/calc_sell_leg operate on exact Decimal arithmetic. Rounding to exchange precision only matters for actual order placement (Phase 3+). Detection accuracy is unaffected.
+- **Revisit when**: Phase 3 (Paper Trading) when calc_position_size() feeds into order placement.
+
+### DEC-033: Push connector defaults to class-level ClassVar attributes
+- **Date**: 2026-02-17
+- **Decision**: Replaced 5 identical __init__ methods with ClassVar declarations (VENUE_NAME, DEFAULT_SYMBOLS) on each subclass. BaseAsyncConnector.__init__ reads these. Also removed the cast() union in create_connectors() which was flagged as a refactor candidate 3 times across sessions.
+- **Rationale**: 5 × ~15 lines of identical boilerplate. DEC-018 established BaseAsyncConnector ABC but left the __init__ duplication. Rule 10.5 mandates refactoring when same logic exists in 2+ places. The cast union grew with every new connector — 5 types after OKX.
+- **Alternatives considered**: (a) Keep status quo — each connector provides defaults in its own __init__. Rejected: pure boilerplate. (b) Registry-based defaults — too indirect. (c) __init_subclass__ — over-engineered for this use case.

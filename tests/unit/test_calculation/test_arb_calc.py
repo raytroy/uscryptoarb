@@ -132,11 +132,10 @@ class TestCalcAllOpportunities:
             trade_amount=Decimal("0.01"),
             ts_calculated_ms=1707900000000,
         )
-        assert len(opps) == 2
+        assert len(opps) == 1
 
         venues = {(o.buy_venue, o.sell_venue) for o in opps}
         assert ("kraken", "coinbase") in venues
-        assert ("coinbase", "kraken") in venues
 
     def test_single_venue_returns_empty(
         self,
@@ -189,3 +188,23 @@ class TestPairConsistency:
                 trade_amount=Decimal("0.01"),
                 ts_calculated_ms=1707900000000,
             )
+
+
+def test_calc_all_opportunities_skips_negative_spread(
+    kraken_btc_usd_tob,
+    coinbase_btc_usd_tob,
+    kraken_btc_usd_fees,
+    coinbase_btc_usd_fees,
+) -> None:
+    from dataclasses import replace
+
+    buy_tob = replace(coinbase_btc_usd_tob, ask_px=Decimal("69150.0"), bid_px=Decimal("69140.0"))
+    sell_tob = replace(kraken_btc_usd_tob, ask_px=Decimal("69155.0"), bid_px=Decimal("69145.0"))
+
+    opps = calc_all_opportunities(
+        tobs_by_venue={"kraken": sell_tob, "coinbase": buy_tob},
+        fees_by_venue={"kraken": kraken_btc_usd_fees, "coinbase": coinbase_btc_usd_fees},
+        trade_amount=Decimal("0.01"),
+        ts_calculated_ms=1707900000000,
+    )
+    assert opps == []
