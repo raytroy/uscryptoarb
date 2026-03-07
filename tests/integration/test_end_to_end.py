@@ -34,8 +34,10 @@ import httpx
 
 from uscryptoarb.calculation.calc_types import ArbOpportunity
 from uscryptoarb.connectors.bitstamp.client import BitstampClient
+from uscryptoarb.connectors.cexio.client import CexioClient
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
 from uscryptoarb.connectors.connector_base import BaseAsyncConnector
+from uscryptoarb.connectors.cryptodotcom.client import CryptodotcomClient
 from uscryptoarb.connectors.gemini.client import GeminiClient
 from uscryptoarb.connectors.kraken.client import KrakenClient
 from uscryptoarb.connectors.okx.client import OkxClient
@@ -183,6 +185,37 @@ def _bitstamp_book_response(bid: str, ask: str) -> dict:
         "microtimestamp": "1707900000000000",
         "bids": [[bid, "1.0"]],
         "asks": [[ask, "1.0"]],
+    }
+
+
+def _cexio_book_response(bid: str, ask: str) -> dict:
+    """Build a minimal valid CEX.IO /api/order_book response for BTC/USD."""
+    return {
+        "timestamp": 1707900000,
+        "timestamp_ms": 1707900000000,
+        "bids": [[float(bid), 1.0]],
+        "asks": [[float(ask), 1.0]],
+        "pair": "BTC:USD",
+        "id": 123456,
+    }
+
+
+def _cryptodotcom_book_response(bid: str, ask: str) -> dict:
+    """Build a minimal valid Crypto.com /public/get-book response for BTC_USD."""
+    return {
+        "id": 1,
+        "method": "public/get-book",
+        "code": 0,
+        "result": {
+            "data": [
+                {
+                    "bids": [[bid, "1.0", "1"]],
+                    "asks": [[ask, "1.0", "1"]],
+                    "t": 1707900000000,
+                }
+            ],
+            "instrument_name": "BTC_USD",
+        },
     }
 
 
@@ -619,6 +652,67 @@ class TestTimeoutInsufficientVenues:
             assert opportunities == [], (
                 f"Expected no opportunities with only 1 venue, got {len(opportunities)}"
             )
+
+        asyncio.run(run())
+        asyncio.run(_close_connectors(connectors))
+
+
+# ===========================================================================
+# Test 5: All 7 venues, similar prices → no opportunity
+# ===========================================================================
+
+
+class TestNoOpportunityWithAllSevenVenues:
+    """All 7 exchanges have near-identical BTC/USD prices → no opportunity."""
+
+    @_patch_now_ms
+    def test_no_opportunity_all_seven_venues(self, tmp_path: Path) -> None:
+        def kraken_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_kraken_ticker_response("99500.0", "99600.0"))
+
+        def coinbase_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_coinbase_book_response("99480.0", "99580.0"))
+
+        def gemini_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_gemini_book_response("99490.0", "99590.0"))
+
+        def bitstamp_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_bitstamp_book_response("99495.0", "99595.0"))
+
+        def okx_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_okx_ticker_response("99485.0", "99585.0"))
+
+        def cexio_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_cexio_book_response("99488.0", "99588.0"))
+
+        def cryptodotcom_handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_cryptodotcom_book_response("99492.0", "99592.0"))
+
+        connectors = {
+            "kraken": _make_connector_from_handler(KrakenClient, kraken_handler),
+            "coinbase": _make_connector_from_handler(CoinbaseClient, coinbase_handler),
+            "gemini": _make_connector_from_handler(GeminiClient, gemini_handler),
+            "bitstamp": _make_connector_from_handler(BitstampClient, bitstamp_handler),
+            "okx": _make_connector_from_handler(OkxClient, okx_handler),
+            "cexio": _make_connector_from_handler(CexioClient, cexio_handler),
+            "cryptodotcom": _make_connector_from_handler(CryptodotcomClient, cryptodotcom_handler),
+        }
+
+        venues = ["kraken", "coinbase", "gemini", "bitstamp", "okx", "cexio", "cryptodotcom"]
+        cfg_path = _write_config(tmp_path, venues)
+        config = load_config(cfg_path)
+        config = replace(
+            config,
+            arbitrage=replace(config.arbitrage, max_staleness_ms=10_000_000_000_000),
+        )
+
+        async def run() -> None:
+            opportunities, _errors = await run_scan_cycle(
+                connectors,
+                config,
+                run_id="integ-noarb-7venues",
+            )
+            assert opportunities == []
 
         asyncio.run(run())
         asyncio.run(_close_connectors(connectors))

@@ -433,3 +433,58 @@ _(Additional entries beyond API gotchas — add as encountered)_
 - **Fix applied**: Added _validate_fee_coverage() called after fee schedule construction. Raises ValueError at startup if any pair has < 2 venues.
 - **Rule going forward**: Data prerequisites for core functionality must fail at startup. Use warnings only for optional/degraded-mode features.
 - **Affected files**: orchestration/config.py
+
+
+### LL-077: CEX.IO returns HTTP 200 for invalid pairs with JSON error envelope
+- **Date**: 2026-03-07
+- **Category**: Exchange-Specific
+- **Severity**: Medium
+- **What happened**: CEX.IO API returns HTTP 200 for invalid symbol pairs with body `{"error": "Invalid Symbols Pair"}` instead of HTTP 4xx.
+- **Root cause**: API design choice — error signaling via JSON body, not HTTP status codes.
+- **Fix applied**: CexioClient._fetch_book() checks for `"error"` key in JSON response after successful HTTP.
+- **Rule going forward**: Always check for application-level error fields in JSON responses, even on HTTP 200. Same pattern as OKX (LL-072).
+- **Affected files**: connectors/cexio/client.py
+
+
+### LL-078: CEX.IO timestamp_ms is an integer — simplest timestamp format
+- **Date**: 2026-03-07
+- **Category**: Exchange-Specific
+- **Severity**: Low
+- **What happened**: CEX.IO order book `timestamp_ms` field is already an integer in milliseconds — no string parsing or unit conversion needed.
+- **Root cause**: Good API design by CEX.IO.
+- **Fix applied**: Parser uses `int(raw["timestamp_ms"])` directly. Fallback to `timestamp * 1000`.
+- **Rule going forward**: Document timestamp format per exchange. CEX.IO is the simplest; others need string parsing (OKX, Bitstamp) or unit conversion.
+- **Affected files**: connectors/cexio/parser.py
+
+
+### LL-079: CEX.IO order book depth=1 parameter reduces payload to top-of-book only
+- **Date**: 2026-03-07
+- **Category**: Exchange-Specific
+- **Severity**: Low
+- **What happened**: CEX.IO order book endpoint accepts `?depth=1` to return only the best bid and ask, reducing response from ~200+ entries to 1 each.
+- **Root cause**: API supports server-side filtering.
+- **Fix applied**: CexioClient passes `depth=1` in query params to minimize bandwidth and parsing overhead.
+- **Rule going forward**: Check if exchange order book endpoints support depth limiting. Use it when we only need top-of-book.
+- **Affected files**: connectors/cexio/client.py
+
+
+### LL-080: Crypto.com ticker endpoint lacks bid/ask sizes
+- **Date**: 2026-03-07
+- **Category**: Exchange-Specific
+- **Severity**: Medium
+- **What happened**: Crypto.com `/public/get-tickers` returns bid (`b`) and ask (`k`) prices but no corresponding size fields (`bs`/`ks`).
+- **Root cause**: Ticker is a lightweight summary endpoint, not a full BBO feed.
+- **Fix applied**: Connector uses `/public/get-book` order book endpoint instead, which provides full bid/ask with sizes.
+- **Rule going forward**: Same pattern as Gemini (LL-062) and Bitstamp (LL-060). Always verify bid/ask size availability before choosing data source.
+- **Affected files**: connectors/cryptodotcom/client.py
+
+
+### LL-081: Crypto.com response envelope uses integer code 0 for success
+- **Date**: 2026-03-07
+- **Category**: Exchange-Specific
+- **Severity**: Low
+- **What happened**: Crypto.com API uses `"code": 0` (integer) for success, unlike OKX which uses `"code": "0"` (string).
+- **Root cause**: Different API design conventions between exchanges.
+- **Fix applied**: CryptodotcomClient checks `code != 0` (integer comparison), not string comparison.
+- **Rule going forward**: Document the type (int vs string) of status/error code fields for each exchange. Don't assume consistency across exchanges.
+- **Affected files**: connectors/cryptodotcom/client.py

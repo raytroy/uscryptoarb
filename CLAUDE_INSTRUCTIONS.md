@@ -11,9 +11,9 @@ The Mathematica notebook is a **validated reference**, not gospel. It proves the
 - When in doubt, **suggest the better approach** rather than defaulting to what Mathematica does.
 
 ## Exchanges
-Primary: Kraken (custom httpx), Coinbase (custom httpx), Gemini (custom httpx), Bitstamp (custom httpx), OKX (custom httpx)
+Primary: Kraken (custom httpx), Coinbase (custom httpx), Gemini (custom httpx), Bitstamp (custom httpx), OKX (custom httpx), CEX.IO (custom httpx), Crypto.com (custom httpx)
 
-**Symbol formats**: Kraken=`XBTUSD` (XBT for BTC) | Coinbase=`BTC-USD` | Gemini=`btcusd` | Bitstamp=`btcusd` | OKX=`BTC-USD`
+**Symbol formats**: Kraken=`XBTUSD` (XBT for BTC) | Coinbase=`BTC-USD` | Gemini=`btcusd` | Bitstamp=`btcusd` | OKX=`BTC-USD` | CEX.IO=`BTC/USD` | Crypto.com=`BTC_USD`
 
 All translation runs through `venues/symbol_translator.py` and connector-specific `symbols.py` modules.
 
