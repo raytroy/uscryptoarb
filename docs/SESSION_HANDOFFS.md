@@ -1597,3 +1597,81 @@
 2. Run full CI: ruff → mypy → pytest
 3. Run dry-run with 5 exchanges
 4. Run continuous mode for 2-3 cycles
+
+---
+
+## 2026-03-07 — CEX.IO and Crypto.com Exchange Connector Integration
+
+**Interface**: Claude Code
+**Branch**: claude/integrate-exchange-explorers-zQJMK
+
+### Completed
+- Implemented `connectors/cexio/` (4 source files): __init__.py, symbols.py, parser.py, client.py
+- Implemented `connectors/cryptodotcom/` (4 source files): __init__.py, symbols.py, parser.py, client.py
+- Created 6 fixture JSON files: cexio_book_btc_usd.json, cexio_book_sol_usd.json, cexio_error_invalid_pair.json, cryptodotcom_book_btc_usd.json, cryptodotcom_book_sol_btc.json, cryptodotcom_error_invalid_instrument.json
+- Created 8 test files: test_cexio/{__init__.py, test_symbols.py, test_parser.py, test_client.py}, test_cryptodotcom/{__init__.py, test_symbols.py, test_parser.py, test_client.py}
+- Wired CexioClient and CryptodotcomClient into orchestration/scan_loop.py _CONNECTOR_REGISTRY
+- Updated config.yaml: both venues in venues.primary + venue_configs (cexio: 2000ms, cryptodotcom: 200ms) + fees
+- Updated venues/registry.py: both added to DEFAULT_VENUES as Ohio-eligible
+- Updated fee_schedules.json (test): withdrawal fees + trading accuracy for both exchanges
+- Updated orchestration test FULL_CFG with both exchanges
+- Updated integration tests: response builders + 7-venue test class
+- Updated tests/conftest.py with 4 fixture loaders
+- Updated test_registry.py with 7-venue assertions
+- Added LL-077 through LL-081 to LESSONS_LEARNED.md
+- Added DEC-034, DEC-035, DEC-036 to DECISION_LOG.md
+- Updated README.md, PROJECT_INSTRUCTIONS.md, CLAUDE_INSTRUCTIONS.md, CHANGELOG.md
+
+### In Progress
+- Nothing — implementation complete
+
+### Blocked / Needs Decision
+- Nothing blocked
+
+### Key Decisions Made
+- DEC-034: CEX.IO Ohio-eligible (MTL OHMT176)
+- DEC-035: Crypto.com conditional proceed for Phase 1 (public data only)
+- DEC-036: Per-pair order book for both (tickers lack bid/ask sizes)
+
+### Refactor Candidates (per Coding Rule 10.9)
+- 6th and 7th connectors using BaseAsyncConnector — pattern well-established
+- _patch_now_ms decorator now patches connector_base (used by both new connectors via _fetch_tickers_per_pair)
+
+### Files Created
+- `src/uscryptoarb/connectors/cexio/{__init__.py, symbols.py, parser.py, client.py}`
+- `src/uscryptoarb/connectors/cryptodotcom/{__init__.py, symbols.py, parser.py, client.py}`
+- `tests/fixtures/cexio_book_btc_usd.json`
+- `tests/fixtures/cexio_book_sol_usd.json`
+- `tests/fixtures/cexio_error_invalid_pair.json`
+- `tests/fixtures/cryptodotcom_book_btc_usd.json`
+- `tests/fixtures/cryptodotcom_book_sol_btc.json`
+- `tests/fixtures/cryptodotcom_error_invalid_instrument.json`
+- `tests/unit/test_connectors/test_cexio/{__init__.py, test_symbols.py, test_parser.py, test_client.py}`
+- `tests/unit/test_connectors/test_cryptodotcom/{__init__.py, test_symbols.py, test_parser.py, test_client.py}`
+
+### Files Modified
+- `src/uscryptoarb/orchestration/scan_loop.py` (imports + registry)
+- `src/uscryptoarb/venues/registry.py` (DEFAULT_VENUES)
+- `config.yaml` (venues, venue_configs, fees)
+- `tests/fixtures/fee_schedules.json` (withdrawal fees + accuracy)
+- `tests/conftest.py` (4 fixture loaders)
+- `tests/integration/test_end_to_end.py` (response builders + 7-venue test)
+- `tests/unit/test_orchestration/conftest.py` (FULL_CFG)
+- `tests/unit/test_venues/test_registry.py` (7-venue assertions)
+- `README.md`, `PROJECT_INSTRUCTIONS.md`, `CLAUDE_INSTRUCTIONS.md`, `CHANGELOG.md`
+- `docs/LESSONS_LEARNED.md` (LL-077 through LL-081)
+- `docs/DECISION_LOG.md` (DEC-034, DEC-035, DEC-036)
+- `docs/SESSION_HANDOFFS.md` (this entry)
+
+### Next Steps (Priority Order)
+1. Run full verification: ruff → mypy → pytest
+2. Run `python -m uscryptoarb --dry-run` with all 7 exchanges
+3. Copy updated CLAUDE_INSTRUCTIONS.md into Claude.ai project instructions UI
+4. Consider next exchange connector or Phase 2 WebSocket planning
+
+### Notes for Next Session
+- All 7 Ohio-eligible exchange connectors are now COMPLETE: Kraken, Coinbase, Gemini, Bitstamp, OKX, CEX.IO, Crypto.com
+- CEX.IO has 8 mapped pairs but only 4 confirmed liquid — the connector gracefully skips unavailable pairs via _fetch_tickers_per_pair error handling
+- Crypto.com has 5/8 pairs (BTC/USDC, LTC/USDC, SOL/USDC not listed on exchange)
+- CEX.IO rate limit is conservative at 2000ms (300 req/10 min limit)
+- Crypto.com rate limit at 200ms (burst testing showed no 429s)

@@ -1,0 +1,6 @@
+{
+  "id": -1,
+  "method": "public/get-book",
+  "code": 10001,
+  "msg": "Invalid instrument_name"
+}

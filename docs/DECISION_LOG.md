@@ -276,6 +276,7 @@
 | 2026-02-14 | DEC-016 | Orchestration before Gemini connector (strategic pivot) |
 | 2026-02-15 | DEC-017 | EmailConfig moved from orchestration to notification layer |
 | 2026-02-15 | DEC-018 | BaseAsyncConnector ABC design — shared retry, subclass parsing |
+| 2026-03-07 | DEC-034, DEC-035, DEC-036 | CEX.IO and Crypto.com exchange integration decisions |
 
 
 ### DEC-011: Use raw httpx (not SDK) for Coinbase connector
@@ -404,3 +405,33 @@
 - **Decision**: Replaced 5 identical __init__ methods with ClassVar declarations (VENUE_NAME, DEFAULT_SYMBOLS) on each subclass. BaseAsyncConnector.__init__ reads these. Also removed the cast() union in create_connectors() which was flagged as a refactor candidate 3 times across sessions.
 - **Rationale**: 5 × ~15 lines of identical boilerplate. DEC-018 established BaseAsyncConnector ABC but left the __init__ duplication. Rule 10.5 mandates refactoring when same logic exists in 2+ places. The cast union grew with every new connector — 5 types after OKX.
 - **Alternatives considered**: (a) Keep status quo — each connector provides defaults in its own __init__. Rejected: pure boilerplate. (b) Registry-based defaults — too indirect. (c) __init_subclass__ — over-engineered for this use case.
+
+### DEC-034: CEX.IO Ohio eligibility confirmed (MTL OHMT176)
+- **Date**: 2026-03-07
+- **Status**: Accepted
+- **Context**: CEX.IO needed Ohio eligibility verification before adding as a primary exchange.
+- **Decision**: CEX.IO is Ohio-eligible. Holds Ohio Money Transmitter License OHMT176 (issued by Ohio Division of Financial Institutions). Added to DEFAULT_VENUES with `ohio_allowed=True`.
+- **Rationale**: Verified via CEX.IO compliance documentation. MTL licensing confirms lawful operation in Ohio for cryptocurrency trading.
+- **Consequences**: CEX.IO added to primary venues. 8 pairs mapped; 4 confirmed liquid (BTC/USD, LTC/USD, SOL/USD, SOL/USDC), others gracefully skipped.
+- **References**: DEC-006, notebooks/07_cexio_exploration.ipynb
+
+### DEC-035: Crypto.com Ohio eligibility — conditional proceed (Phase 1 public data)
+- **Date**: 2026-03-07
+- **Status**: Accepted
+- **Context**: Crypto.com Exchange needed Ohio eligibility verification. Crypto.com holds FinCEN MSB registration with progressive US rollout, but state-level MTL status varies.
+- **Decision**: Proceed with Crypto.com connector for Phase 1 (detection-only, public data). Phase 1 uses only unauthenticated public market data endpoints, which do not require state-level licensing. Re-verify before Phase 3+ (authenticated trading).
+- **Rationale**: Public market data access has no regulatory constraint. The connector provides valuable price discovery from an additional venue. Trading eligibility can be verified when needed for execution phases.
+- **Consequences**: Crypto.com added to primary venues with `ohio_allowed=True` for Phase 1 detection. 5 pairs mapped (BTC/USDC, LTC/USDC, SOL/USDC not listed on exchange).
+- **References**: DEC-006, notebooks/08_cryptodotcom_exploration.ipynb
+
+### DEC-036: Both exchanges use per-pair order book (not batch ticker)
+- **Date**: 2026-03-07
+- **Status**: Accepted
+- **Context**: CEX.IO and Crypto.com both offer ticker endpoints, but neither provides bid/ask sizes in ticker responses. TopOfBook requires bid_sz and ask_sz fields.
+- **Decision**: Use per-pair order book endpoints for both exchanges. CEX.IO: `/api/order_book/{SYM1}/{SYM2}?depth=1`. Crypto.com: `/public/get-book?instrument_name={symbol}&depth=5`.
+- **Alternatives Considered**:
+  1. Batch ticker endpoints — rejected because neither provides bid/ask sizes (same issue as Gemini LL-062, Bitstamp LL-060).
+  2. Ticker + separate size lookup — rejected because doubles API calls per pair with no benefit.
+- **Rationale**: Order book endpoint provides all TopOfBook fields in a single call. Both connectors use `_fetch_tickers_per_pair()` template method (DEC-018) for sequential per-pair fetching.
+- **Consequences**: CEX.IO uses `depth=1` to minimize payload. Crypto.com uses `depth=5` (minimum available). Both follow the Bitstamp/Gemini per-pair pattern.
+- **References**: DEC-024 (OKX batch ticker), LL-060, LL-062, LL-080

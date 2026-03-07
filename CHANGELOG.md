@@ -14,6 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added architectural improvements (startup fee coverage validation and positive-spread early exit in calc_all_opportunities).
 
 ### Added
+- CEX.IO connector (`src/uscryptoarb/connectors/cexio/`) — async httpx client using `/api/order_book/{sym1}/{sym2}` endpoint. Per-pair order book fetches (tickers lack bid/ask sizes per LL-060). 8 pairs mapped, 4 confirmed liquid. Rate limit: 2000ms (300 req/10 min).
+  - `symbols.py`: CEXIO_SYMBOL_MAP with all 8 target pairs (slash-separated, matching canonical format)
+  - `parser.py`: parse_cexio_book() with arrays-of-arrays parsing (LL-070) and integer timestamp_ms (LL-078)
+  - `client.py`: CexioClient(BaseAsyncConnector) with per-pair pattern, depth=1 optimization (LL-079), JSON error envelope handling (LL-077)
+- CEX.IO wired into orchestration: _CONNECTOR_REGISTRY, config.yaml (2000ms rate limit, 0.25% taker), venues/registry.py, fee_schedules.json
+- Crypto.com connector (`src/uscryptoarb/connectors/cryptodotcom/`) — async httpx client using `/public/get-book` endpoint. Per-pair order book fetches (tickers lack bid/ask sizes per LL-080). 5/8 pairs (USDC pairs not listed).
+  - `symbols.py`: CRYPTODOTCOM_SYMBOL_MAP with 5 target pairs (underscore-separated uppercase format)
+  - `parser.py`: parse_cryptodotcom_book() with string arrays-of-arrays parsing and integer timestamp (LL-081)
+  - `client.py`: CryptodotcomClient(BaseAsyncConnector) with per-pair pattern, response envelope validation (code==0)
+- Crypto.com wired into orchestration: _CONNECTOR_REGISTRY, config.yaml (200ms rate limit, 0.075% taker), venues/registry.py, fee_schedules.json
+- Test fixtures: cexio_book_btc_usd.json, cexio_book_sol_usd.json, cexio_error_invalid_pair.json, cryptodotcom_book_btc_usd.json, cryptodotcom_book_sol_btc.json, cryptodotcom_error_invalid_instrument.json
+- Tests: CEX.IO test_symbols.py (~6), test_parser.py (~12), test_client.py (~6); Crypto.com test_symbols.py (~7), test_parser.py (~11), test_client.py (~6)
+- Integration test: TestNoOpportunityWithAllSevenVenues (all 7 exchanges)
+- LESSONS_LEARNED: LL-077 (CEX.IO HTTP 200 errors), LL-078 (CEX.IO integer timestamps), LL-079 (CEX.IO depth=1), LL-080 (Crypto.com ticker lacks sizes), LL-081 (Crypto.com integer code)
+- DECISION_LOG: DEC-034 (CEX.IO Ohio eligibility), DEC-035 (Crypto.com Ohio eligibility), DEC-036 (both use per-pair order book)
 - OKX US connector (`src/uscryptoarb/connectors/okx/`) — async httpx client using batch `/api/v5/market/tickers?instType=SPOT` endpoint. Single API call for all pairs, client-side filtering. 7/8 pairs (LTC/BTC not listed on OKX US).
   - `symbols.py`: OKX_SYMBOL_MAP with 7 target pairs (dash-separated uppercase format)
   - `parser.py`: parse_okx_ticker() and parse_batch_tickers() with HTTP-200 error code validation (LL-072) and millisecond timestamps (LL-073)

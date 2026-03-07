@@ -27,6 +27,8 @@ Cross-exchange, taker-only crypto arbitrage scanner for Ohio-eligible exchanges.
 | Gemini | ✅ Connector built | BTC/USD, BTC/USDC, LTC/USD, LTC/USDC, LTC/BTC, SOL/USD, SOL/USDC, SOL/BTC |
 | Bitstamp | ✅ Connector built | 6/8 pairs (missing LTC/USDC, SOL/BTC) |
 | OKX | ✅ Connector built | 7/8 pairs (missing LTC/BTC) |
+| CEX.IO | ✅ Connector built | 8 mapped, 4 confirmed liquid (BTC/USD, LTC/USD, SOL/USD, SOL/USDC) |
+| Crypto.com | ✅ Connector built | 5/8 pairs (missing BTC/USDC, LTC/USDC, SOL/USDC) |
 
 ## Setup
 

@@ -10,7 +10,13 @@
     "gemini_trading_accuracy": "https://api.gemini.com/v1/symbols/details/{symbol} \u2014 captured 2026-02-16",
     "okx_trading": "https://www.okx.com/fees \u2014 taker rate at lowest tier, verified 2026-02-16",
     "okx_withdrawal": "https://www.okx.com/fees/crypto \u2014 estimates from notebook, Feb 2026",
-    "okx_trading_accuracy": "https://www.okx.com/api/v5/public/instruments?instType=SPOT \u2014 inferred from notebook ticker data 2026-02-16"
+    "okx_trading_accuracy": "https://www.okx.com/api/v5/public/instruments?instType=SPOT \u2014 inferred from notebook ticker data 2026-02-16",
+    "cexio_trading": "https://cex.io/fee-schedule \u2014 taker rate at base tier (0.25%), verified 2026-03-07",
+    "cexio_withdrawal": "CEX.IO currency_limits API \u2014 estimates from notebook 07_cexio_exploration, Mar 2026",
+    "cexio_trading_accuracy": "CEX.IO currency_limits API \u2014 captured from notebook 07_cexio_exploration 2026-03-07",
+    "cryptodotcom_trading": "https://crypto.com/exchange/fees \u2014 taker rate at base tier (0.075%), verified 2026-03-07",
+    "cryptodotcom_withdrawal": "Crypto.com instruments API \u2014 estimates from notebook 08_cryptodotcom_exploration, Mar 2026",
+    "cryptodotcom_trading_accuracy": "Crypto.com instruments API \u2014 captured from notebook 08_cryptodotcom_exploration 2026-03-07"
   },
   "withdrawal_fees": {
     "kraken": {
@@ -120,6 +126,50 @@
       },
       "USDC": {
         "flat_fee": "0",
+        "pct_fee": "0"
+      }
+    },
+    "cexio": {
+      "BTC": {
+        "flat_fee": "0.0005",
+        "pct_fee": "0"
+      },
+      "LTC": {
+        "flat_fee": "0.001",
+        "pct_fee": "0"
+      },
+      "SOL": {
+        "flat_fee": "0.01",
+        "pct_fee": "0"
+      },
+      "USD": {
+        "flat_fee": "0.0",
+        "pct_fee": "0"
+      },
+      "USDC": {
+        "flat_fee": "1.0",
+        "pct_fee": "0"
+      }
+    },
+    "cryptodotcom": {
+      "BTC": {
+        "flat_fee": "0.0004",
+        "pct_fee": "0"
+      },
+      "LTC": {
+        "flat_fee": "0.001",
+        "pct_fee": "0"
+      },
+      "SOL": {
+        "flat_fee": "0.01",
+        "pct_fee": "0"
+      },
+      "USD": {
+        "flat_fee": "0.0",
+        "pct_fee": "0"
+      },
+      "USDC": {
+        "flat_fee": "0.0",
         "pct_fee": "0"
       }
     }
@@ -429,6 +479,114 @@
         "max_order_size": null,
         "tick_size": "0.0000001",
         "lot_step": "0.0001"
+      }
+    },
+    "cexio": {
+      "BTC/USD": {
+        "price_decimals": 1,
+        "lot_decimals": 8,
+        "min_order_size": "0.00035981",
+        "max_order_size": null,
+        "tick_size": "0.1",
+        "lot_step": "0.00000001"
+      },
+      "BTC/USDC": {
+        "price_decimals": 1,
+        "lot_decimals": 8,
+        "min_order_size": "0.00035981",
+        "max_order_size": null,
+        "tick_size": "0.1",
+        "lot_step": "0.00000001"
+      },
+      "LTC/USD": {
+        "price_decimals": 3,
+        "lot_decimals": 8,
+        "min_order_size": "0.13798541",
+        "max_order_size": null,
+        "tick_size": "0.001",
+        "lot_step": "0.00000001"
+      },
+      "LTC/USDC": {
+        "price_decimals": 2,
+        "lot_decimals": 8,
+        "min_order_size": "0.15",
+        "max_order_size": null,
+        "tick_size": "0.01",
+        "lot_step": "0.00000001"
+      },
+      "LTC/BTC": {
+        "price_decimals": 8,
+        "lot_decimals": 8,
+        "min_order_size": "0.13798541",
+        "max_order_size": null,
+        "tick_size": "0.00000001",
+        "lot_step": "0.00000001"
+      },
+      "SOL/USD": {
+        "price_decimals": 4,
+        "lot_decimals": 6,
+        "min_order_size": "0.217106",
+        "max_order_size": null,
+        "tick_size": "0.0001",
+        "lot_step": "0.000001"
+      },
+      "SOL/USDC": {
+        "price_decimals": 3,
+        "lot_decimals": 2,
+        "min_order_size": "0.01",
+        "max_order_size": null,
+        "tick_size": "0.001",
+        "lot_step": "0.01"
+      },
+      "SOL/BTC": {
+        "price_decimals": 8,
+        "lot_decimals": 6,
+        "min_order_size": "0.217106",
+        "max_order_size": null,
+        "tick_size": "0.00000001",
+        "lot_step": "0.000001"
+      }
+    },
+    "cryptodotcom": {
+      "BTC/USD": {
+        "price_decimals": 2,
+        "lot_decimals": 5,
+        "min_order_size": "0.00001",
+        "max_order_size": null,
+        "tick_size": "0.01",
+        "lot_step": "0.00001"
+      },
+      "LTC/USD": {
+        "price_decimals": 3,
+        "lot_decimals": 3,
+        "min_order_size": "0.001",
+        "max_order_size": null,
+        "tick_size": "0.001",
+        "lot_step": "0.001"
+      },
+      "LTC/BTC": {
+        "price_decimals": 7,
+        "lot_decimals": 3,
+        "min_order_size": "0.001",
+        "max_order_size": null,
+        "tick_size": "0.0000001",
+        "lot_step": "0.001"
+      },
+      "SOL/USD": {
+        "price_decimals": 2,
+        "lot_decimals": 3,
+        "min_order_size": "0.001",
+        "max_order_size": null,
+        "tick_size": "0.01",
+        "lot_step": "0.001"
+      },
+      "SOL/BTC": {
+        "price_decimals": 7,
+        "lot_decimals": 3,
+        "min_order_size": "0.001",
+        "max_order_size": null,
+        "tick_size": "0.0000001",
+        "lot_step": "0.001"
       }
     }
   }
