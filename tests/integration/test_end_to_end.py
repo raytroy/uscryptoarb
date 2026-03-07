@@ -210,8 +210,6 @@ def _make_test_client(handler) -> httpx.AsyncClient:
     return httpx.AsyncClient(transport=transport)
 
 
-
-
 def _make_connector_from_handler(
     cls: type[BaseAsyncConnector],
     handler,

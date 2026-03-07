@@ -107,8 +107,6 @@ def test_fetch_tickers_timeout_retries(kraken_ticker_fixture) -> None:
     assert calls["n"] == 2
 
 
-
-
 def test_request_respects_rate_limit(kraken_ticker_fixture) -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json=make_kraken_response(kraken_ticker_fixture))
