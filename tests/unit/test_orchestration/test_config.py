@@ -53,7 +53,11 @@ def test_load_config_happy_path(
     monkeypatch.setenv("SMTP_FROM_ADDR", "bot@example.com")
     monkeypatch.setenv("SMTP_PASSWORD", "secret")
     cfg = load_config(full_config_path)
-    assert cfg.venues == ("kraken", "coinbase", "gemini", "bitstamp", "okx")
+    expected = (
+        "kraken", "coinbase", "gemini", "bitstamp",
+        "okx", "cexio", "cryptodotcom",
+    )
+    assert cfg.venues == expected
     assert "BTC/USD" in cfg.pairs
     assert cfg.arbitrage.threshold == Decimal("0.0055")
     assert cfg.email.from_addr == "bot@example.com"
@@ -203,7 +207,7 @@ def test_logging_config_absent_uses_defaults(tmp_path) -> None:
 
 def test_fee_coverage_validation_fails_with_single_venue(tmp_path) -> None:
     cfg_text = FULL_CFG.replace(
-        "primary: [kraken, coinbase, gemini, bitstamp, okx]",
+        "primary: [kraken, coinbase, gemini, bitstamp, okx, cexio, cryptodotcom]",
         "primary: [kraken]",
     )
     p = tmp_path / "single_venue.yaml"

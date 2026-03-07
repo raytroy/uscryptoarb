@@ -87,6 +87,26 @@ def bitstamp_book_btc_usdc_fixture() -> dict:
     return load_fixture("bitstamp_book_btc_usdc.json")
 
 
+@pytest.fixture
+def cexio_book_btc_usd_fixture() -> dict:
+    return load_fixture("cexio_book_btc_usd.json")
+
+
+@pytest.fixture
+def cexio_book_sol_usd_fixture() -> dict:
+    return load_fixture("cexio_book_sol_usd.json")
+
+
+@pytest.fixture
+def cryptodotcom_book_btc_usd_fixture() -> dict:
+    return load_fixture("cryptodotcom_book_btc_usd.json")
+
+
+@pytest.fixture
+def cryptodotcom_book_sol_btc_fixture() -> dict:
+    return load_fixture("cryptodotcom_book_sol_btc.json")
+
+
 # ---------------------------------------------------------------------------
 # TopOfBook fixtures — deterministic BTC/USD snapshots
 # ---------------------------------------------------------------------------

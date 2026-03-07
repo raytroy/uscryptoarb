@@ -12,8 +12,10 @@ import httpx
 from uscryptoarb.calculation.calc_types import ArbOpportunity
 from uscryptoarb.calculation.returns import calc_return_raw
 from uscryptoarb.connectors.bitstamp.client import BitstampClient
+from uscryptoarb.connectors.cexio.client import CexioClient
 from uscryptoarb.connectors.coinbase.client import CoinbaseClient
 from uscryptoarb.connectors.connector_base import BaseAsyncConnector, ExchangeConnector
+from uscryptoarb.connectors.cryptodotcom.client import CryptodotcomClient
 from uscryptoarb.connectors.gemini.client import GeminiClient
 from uscryptoarb.connectors.kraken.client import KrakenClient
 from uscryptoarb.connectors.okx.client import OkxClient
@@ -34,6 +36,8 @@ _CONNECTOR_REGISTRY: dict[str, type[BaseAsyncConnector]] = {
     "gemini": GeminiClient,
     "bitstamp": BitstampClient,
     "okx": OkxClient,
+    "cexio": CexioClient,
+    "cryptodotcom": CryptodotcomClient,
 }
 
 
